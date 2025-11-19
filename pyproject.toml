@@ -1,0 +1,39 @@
+# Copyright (c) 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
+
+[build-system]
+requires = [
+    "setuptools>=68",
+    "wheel"
+]
+ build-backend = "setuptools.build_meta"
+
+[project]
+name = "dfa"
+version = "0.1.0"
+description = "Package for AGCS Data Feed Analytics"
+readme = "README.md"
+#license = ""
+requires-python = ">=3.11"
+authors = [
+    { name = "Oracle" },
+]
+classifiers = [
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "fdk",
+    "oci",
+    "oracledb",
+    "pandas",
+    "pypika",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["__pycache__"] 
+
+[tool.black]
+line-length = 100

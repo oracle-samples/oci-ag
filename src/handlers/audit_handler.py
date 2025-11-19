@@ -1,0 +1,34 @@
+# Copyright (c) 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
+
+import io
+import json
+
+from common.logger.logger import Logger
+from common.ocihelpers.stream import DataEnablementStream
+from dfa.bootstrap.envvars import bootstrap_base_environment_variables
+from dfa.etl.audit_transformer import AuditTransformer
+
+
+def handler(ctx, data: io.BytesIO = None):
+    logger = Logger(__name__).get_logger()
+
+    try:
+        cfg = ctx.Config()
+        bootstrap_base_environment_variables(cfg)
+
+        messages = json.loads(data.getvalue())
+
+        logger.info("Decoding connector hub source stream messages")
+        messages = DataEnablementStream.decode_connector_hub_source_stream_messages(messages)
+        logger.info("Sorting connector hub source stream messages")
+        messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
+
+        logger.info("Creating instance of AuditTransformer")
+        transformer = AuditTransformer()
+        transformer.transform_messages(messages)
+        transformer.load_data()
+
+    except Exception as e:
+        logger.exception("Audit handler caught exception - %s", e)
+        raise Exception("Audit handler exception") from e
