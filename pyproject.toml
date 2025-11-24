@@ -1,0 +1,82 @@
+# Copyright (c) 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
+
+[build-system]
+requires = [
+    "setuptools>=68",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dfa"
+version = "0.1.0"
+description = "Package for AGCS Data Feed Analytics"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.12"
+authors = [
+    { name = "Oracle" },
+]
+classifiers = [
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "fdk",
+    "oci",
+    "oracledb",
+    "pandas",
+    "pypika",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pylint",
+    "black",
+    "isort",
+    "mypy",
+    "types-requests",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["__pycache__"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+src_paths = ["src", "tests"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+no_implicit_optional = true
+show_error_codes = true
+pretty = true
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+  "tests/*",
+  "src/common/ocihelpers/*",
+  "src/dfa/adw/*",
+  "src/dfa/etl/transformers/*",
+  "src/handlers/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 80

@@ -1,0 +1,9 @@
+# Dependency constraints for deterministic installs (Python 3.12)
+# These ranges are intended to keep within compatible major versions while allowing patch updates.
+# Adjust/pin exact versions after CI validation if needed.
+
+fdk>=0.1,<1
+oci>=2.120,<3
+oracledb>=2.1,<3
+pandas>=2.2,<3
+pypika>=0.48,<1
