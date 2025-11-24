@@ -7,22 +7,22 @@ Data Feed Analytics (DFA) is an implementation to extract, transform, and load (
 ### Prerequisites
 
 Please verify the following resources can be created in your OCI tenancy (ensuring access and permissions to list, create, and manage the resource as well as availability of resource limits):
-    - VCN
-    - Vault
-    - Master Encryption Key
-    - Secrets
-    - Autonomous Database
-    - Functions Application
-    - Concurrency for Functions (70 units required by default)
-    - Event Rules
-    - Connector Hubs
-    - Dynamic Group
-    - Policy
+    - VCN  
+    - Vault  
+    - Master Encryption Key  
+    - Secrets  
+    - Autonomous Database  
+    - Functions Application  
+    - Concurrency for Functions (70 units required by default)  
+    - Event Rules  
+    - Connector Hubs  
+    - Dynamic Group  
+    - Policy  
 
-Install OCI CLI: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm 
-Install Python: https://www.python.org/downloads/. Python version 3.12.x is required.
-Install Docker/Podman in order to build images: https://www.docker.com/get-started https://podman.io/get-started 
-Set up a virtual environment for Python: https://docs.python.org/3/library/venv.html
+Install OCI CLI: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm  
+Install Python: https://www.python.org/downloads/. Python version 3.12.x is required.  
+Install Docker/Podman in order to build images: https://www.docker.com/get-started https://podman.io/get-started  
+Set up a virtual environment for Python: https://docs.python.org/3/library/venv.html  
 
 
 ### Run Unit Tests
@@ -170,7 +170,7 @@ The script will create the required OCI Policies, but for reference the followin
 - Allow any-user to use fn-function in compartment id &lt;compartment-ocid&gt; where all {request.principal.type='serviceconnector', request.principal.compartment.id='&lt;compartment-ocid&gt;'}
 - Allow any-user to use fn-invocation in compartment id &lt;compartment-ocid&gt; where all {request.principal.type='serviceconnector', request.principal.compartment.id='&lt;compartment-ocid&gt;'}
 
-### Config.ini Variable Explained
+### Config.ini Variables Explained
 There are a few variables in the config.ini file that can be replaced if you choose to and some that are required. 
 </br>
 
@@ -209,11 +209,11 @@ The `DFA_RECREATE_DFA_ADW_TABLES` variable should be set to false when running t
 
 In the case you need to delete the OCI resources created by the installer script, search for the tag `'Data Feed Analytics(DFA)'` in OCI. Then, delete all the resources associated with that tag as all the OCI resources created by the script will contain the tag. 
 
-**Relevant Documentation**
-Applications and Functions: https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionscreatingapps.htm#top
-Connector Hub: https://docs.oracle.com/en-us/iaas/Content/connector-hub/create-service-connector.htm
-Event Rules: https://docs.oracle.com/en-us/iaas/Content/Events/Concepts/eventsgetstarted.htm#Console
-Using Cloud Shell Private Networking (for databases on private endpoint): https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cloudshellintro_topic-Cloud_Shell_Networking.htm#Cloud_Shell_Private_Access:~:text=Using%20Cloud%20Shell%20Private%20Networking 
+### Relevant Documentation
+- Applications and Functions: https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionscreatingapps.htm#top  
+- Connector Hub: https://docs.oracle.com/en-us/iaas/Content/connector-hub/create-service-connector.htm  
+- Event Rules: https://docs.oracle.com/en-us/iaas/Content/Events/Concepts/eventsgetstarted.htm#Console  
+- Using Cloud Shell Private Networking (for databases on private endpoint): https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cloudshellintro_topic-Cloud_Shell_Networking.htm#Cloud_Shell_Private_Access:~:text=Using%20Cloud%20Shell%20Private%20Networking 
 
 ## Examples
 
