@@ -60,6 +60,7 @@ class AbstractTransformer(ABC):
             "ROLE",
             "ACCESS_GUARDRAIL",
             "APPROVAL_WORKFLOW",
+            "OWNERSHIP_COLLECTION"
         ]
 
         if object_type in valid_object_types:
