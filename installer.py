@@ -27,7 +27,7 @@ from dfa.adw.tables.cloud_group import *
 from dfa.adw.tables.cloud_policy import *
 from dfa.adw.tables.global_identity_collection import *
 from dfa.adw.tables.identity import *
-from dfa.adw.tables.ownership_collection import OwnershipCollectionStateTable, OwnershipCollectionTimeSeriesTable
+from dfa.adw.tables.ownership_collection import *
 from dfa.adw.tables.permission import *
 from dfa.adw.tables.permission_assignment import *
 from dfa.adw.tables.policy import *

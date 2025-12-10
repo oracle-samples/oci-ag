@@ -37,8 +37,8 @@ class OwnershipCollectionEventTransformer(BaseEventTransformer):
                 ownership_collection["event_timestamp"] = self._get_event_timestamp()
 
             if self.get_operation_type() == "DELETE":
-                    if "id" in raw_event:
-                        ownership_collection["id"] = raw_event["id"]
+                if "id" in raw_event:
+                    ownership_collection["id"] = raw_event["id"]
             else:
                 if "ownershipCollectionId" in raw_event:
                     ownership_collection["id"] = raw_event["ownershipCollectionId"]
