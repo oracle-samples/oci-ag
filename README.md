@@ -131,19 +131,20 @@ Once the configuration file is ready:
 ### Run the Installer
 
 To run the installer:
-1. Make sure you are authenticated. 
-2. Ensure Docker images are pushed to OCI.
-2. In a terminal or IDE, navigate to the DFA project's root. 
-3. Create and activate the virtual environment. 
-4. Install the following packages in the virtual environment using `pip install`
+1. Clone the DFA repository. 
+2. Make sure you are authenticated to OCI. 
+3. Ensure Docker images are pushed to OCI.
+4. In a terminal or IDE, navigate to the DFA project's root. 
+5. Create and activate the virtual environment. 
+6. Install the following packages in the virtual environment using `pip install`
     - fdk
     - oci
     - oracledb
     - pandas
     - pypika
-5. Run `export PYTHONPATH=/Users/yourName/oci-ag/src`
+7. Run `export PYTHONPATH=/Users/yourName/oci-ag/src`
 Paste the full path to DFA's source directory for the PYTHONPATH. 
-6. Run `python installer.py installer.log 2>&1`
+8. Run `python installer.py installer.log 2>&1`
 
 Note: The creation of the Vault and Master Key can take time, the script will wait a max of 20 minutes for an Active state before timing out. In the case of a timeout, please run the script again once the resource is in an active state in OCI. 
 
