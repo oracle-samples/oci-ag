@@ -108,9 +108,14 @@ class CloudGroupStateUpdateQueryBuilder(CloudGroupStateQueryBuilder):
 class CloudGroupStateDeleteQueryBuilder(CloudGroupStateQueryBuilder):
     def execute_sql_for_events(self):
         for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["id", "service_instance_id", "tenancy_id"]
-            )
+            if event['identity_global_id'] != "":
+                delete_sql = DeleteQueryBuilder().get_operation_sql(
+                self, event, ["id", "identity_global_id", "service_instance_id", "tenancy_id"]
+                )
+            else:
+                delete_sql = DeleteQueryBuilder().get_operation_sql(
+                    self, event, ["id", "service_instance_id", "tenancy_id"]
+                )
             AdwConnection.get_cursor().execute(delete_sql)
 
         self.logger.info("Committing work for now")

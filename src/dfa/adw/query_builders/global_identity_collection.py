@@ -112,9 +112,14 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
 class GlobalIdentityCollectionStateDeleteQueryBuilder(GlobalIdentityCollectionStateQueryBuilder):
     def execute_sql_for_events(self):
         for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["id", "service_instance_id", "tenancy_id"]
+            if event["member_global_id"] != "":
+                delete_sql = DeleteQueryBuilder().get_operation_sql(
+                self, event, ["id", "member_global_id", "service_instance_id", "tenancy_id"]
             )
+            else:
+                delete_sql = DeleteQueryBuilder().get_operation_sql(
+                    self, event, ["id", "service_instance_id", "tenancy_id"]
+                )
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for global identity collection delete request")
 
