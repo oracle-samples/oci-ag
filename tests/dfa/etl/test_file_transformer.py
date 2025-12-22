@@ -335,3 +335,26 @@ class TestFileTransformer(unittest.TestCase):
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "3 role events"))
+
+    def test_ownership_collection(self):
+        content = self.read_file_content("tests/dfa/etl/test_data/file/ownership_collection.jsonl")
+        mock_object = MagicMock()
+        mock_object.data.content.decode.return_value = content
+        self.mock_storage.download.return_value = mock_object
+
+        self.transformer.extract_data()
+        self.assertEqual(len(self.transformer._raw_events), 7)
+        self.assertEqual(self.transformer._event_object_type, "OWNERSHIP_COLLECTION")
+        self.assertEqual(self.transformer._operation_type, "CREATE")
+
+        self.transformer.transform_data()
+        self.assertEqual(len(self.transformer._prepared_events), 7)
+        self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
+
+        self.transformer.clean_data()
+        self.assertEqual(len(self.transformer._prepared_events), 7)
+        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
+
+        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
+            self.transformer.load_data()
+            self.assertTrue(self.check_logs(logs.output, "7 ownership collection events"))
