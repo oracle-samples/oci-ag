@@ -78,15 +78,6 @@ class OrchestratedSystemStateUpdateQueryBuilder(OrchestratedSystemStateQueryBuil
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
                 self.logger.info("orchestrated system update failed - %s", batch_error.message)
 
-        unique_id_timstamp_pairs = DeleteQueryBuilder().remove_duplicates(self.events)
-        self.logger.info(
-            "Removing outdated rows for %d unique orchestrated system id, timestamp pairs",
-            len(unique_id_timstamp_pairs),
-        )
-        for event in unique_id_timstamp_pairs:
-            delete_outdated_sql = DeleteQueryBuilder().delete_outdated_rows(self, event)
-            AdwConnection.get_cursor().execute(delete_outdated_sql)
-
         AdwConnection.commit()
 
     def execute_sql_for_events(self):
