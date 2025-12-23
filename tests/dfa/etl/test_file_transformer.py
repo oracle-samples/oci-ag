@@ -358,3 +358,26 @@ class TestFileTransformer(unittest.TestCase):
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "7 ownership collection events"))
+
+    def test_orchestrated_system(self):
+            content = self.read_file_content("tests/dfa/etl/test_data/file/orchestrated_system.jsonl")
+            mock_object = MagicMock()
+            mock_object.data.content.decode.return_value = content
+            self.mock_storage.download.return_value = mock_object
+
+            self.transformer.extract_data()
+            self.assertEqual(len(self.transformer._raw_events), 1)
+            self.assertEqual(self.transformer._event_object_type, "ORCHESTRATED_SYSTEM")
+            self.assertEqual(self.transformer._operation_type, "CREATE")
+
+            self.transformer.transform_data()
+            self.assertEqual(len(self.transformer._prepared_events), 1)
+            self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
+
+            self.transformer.clean_data()
+            self.assertEqual(len(self.transformer._prepared_events), 1)
+            self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
+
+            with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
+                self.transformer.load_data()
+                self.assertTrue(self.check_logs(logs.output, "1 orchestrated system events"))

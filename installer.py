@@ -28,6 +28,7 @@ from dfa.adw.tables.cloud_policy import *
 from dfa.adw.tables.global_identity_collection import *
 from dfa.adw.tables.identity import *
 from dfa.adw.tables.ownership_collection import *
+from dfa.adw.tables.orchestrated_system import *
 from dfa.adw.tables.permission import *
 from dfa.adw.tables.permission_assignment import *
 from dfa.adw.tables.policy import *
@@ -71,6 +72,7 @@ def create_adw_tables():
     aw_table = ApprovalWorkflowStateTable()
     aes_table = AuditEventsTable()
     ocs_table = OwnershipCollectionStateTable()
+    oss_table = OrchestratedSystemStateTable()
 
     if os.environ.get("CREATE_TIME_SERIES", "false").lower() == "true":
         its_table = IdentityTimeSeriesTable()
@@ -87,6 +89,7 @@ def create_adw_tables():
         agrts_table = AccessGuardrailTimeSeriesTable()
         awts_table = ApprovalWorkflowTimeSeriesTable()
         octs_table = OwnershipCollectionTimeSeriesTable()
+        osts_table = OrchestratedSystemTimeSeriesTable()
 
     ## Look for recreate environment variable to determine if DFA ADW tables need to be recreated (delete first)
     if "DFA_RECREATE_DFA_ADW_TABLES" in os.environ:
@@ -110,6 +113,7 @@ def create_adw_tables():
             aw_table.delete()
             aes_table.delete()
             ocs_table.delete()
+            oss_table.delete()
 
             if os.environ.get("CREATE_TIME_SERIES", "false").lower() == "true":
                 its_table.delete()
@@ -126,6 +130,7 @@ def create_adw_tables():
                 agrts_table.delete()
                 awts_table.delete()
                 octs_table.delete()
+                osts_table.delete()
 
     ## Create DFA ADW tables
     is_table.create()
@@ -143,6 +148,7 @@ def create_adw_tables():
     aw_table.create()
     aes_table.create()
     ocs_table.create()
+    oss_table.create()
 
     if os.environ.get("CREATE_TIME_SERIES", "false").lower() == "true":
         its_table.create()
@@ -159,6 +165,7 @@ def create_adw_tables():
         agrts_table.create()
         awts_table.create()
         octs_table.create()
+        osts_table.create()
 
 
 def setup(application_ocid):
