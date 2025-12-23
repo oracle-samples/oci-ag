@@ -63,10 +63,10 @@ class OrchestratedSystemEventTransformer(BaseEventTransformer):
                 orchestrated_system["updated_on"] = raw_event["timeUpdated"]
 
             if "ownershipCollectionId" in raw_event:
-                            orchestrated_system["ownership_collection_id"] = raw_event["ownershipCollectionId"]
+                orchestrated_system["ownership_collection_id"] = raw_event["ownershipCollectionId"]
 
             if "primaryOwner" in raw_event:
-                            orchestrated_system["primary_owner"] = raw_event["primaryOwner"]
+                orchestrated_system["primary_owner"] = raw_event["primaryOwner"]
 
             if "customAttributes" in raw_event:
                 orchestrated_system["attributes"] = json.dumps(raw_event["customAttributes"])
