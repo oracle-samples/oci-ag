@@ -55,7 +55,7 @@ class OrchestratedSystemStateUpdateQueryBuilder(OrchestratedSystemStateQueryBuil
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
             else:
-                self.logger.info("identity create failed - %s", batch_error.message)
+                self.logger.info("orchestrated system create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
