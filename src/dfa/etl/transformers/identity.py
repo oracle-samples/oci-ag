@@ -17,7 +17,7 @@ class IdentityEventTransformer(BaseEventTransformer):
             "ag_sub_type": "",
             "display_name": "",
             "location": "",
-            "risk": 0,
+            "risk": None,
             "ag_risk_attributes": "{}",
             "status": "",
             "username": "",
