@@ -4,28 +4,13 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.ownership_collection import OwnershipCollectionStateTable
 
 class OwnershipCollectionEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        ownership_collection = {
-            "id": "",
-            "entity_id": "",
-            "entity_name": "",
-            "is_primary": "", 
-            "external_id": "",
-            "resource_name": "",
-            "created_on": None,
-            "updated_on": None,
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        ownership_collection = OwnershipCollectionStateTable().get_default_row()
         ownership_collection_list = []
+
         try:
             if self._get_tenancy_id():
                 ownership_collection["tenancy_id"] = self._get_tenancy_id()

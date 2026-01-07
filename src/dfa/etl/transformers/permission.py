@@ -4,33 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.permission import PermissionStateTable
 
 class PermissionEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_permission = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "external_id": "",
-            "name": "",
-            "description": "",
-            "display_name": "",
-            "permission_type_id": "",
-            "resource_id": "",
-            "resource_name": "",
-            "risk_level": "",
-            "status": "",
-            "target_id": "",
-            "user_defined_tags": "",
-            "owner_display_name": "",
-            "owner_value": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_permission = PermissionStateTable().get_default_row()
         permission_list = []
 
         try:

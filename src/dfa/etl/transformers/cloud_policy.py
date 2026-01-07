@@ -4,33 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.cloud_policy import CloudPolicyStateTable
 
 class CloudPolicyEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_policy_statement = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "compartment_id": "",
-            "description": "",
-            "external_id": "",
-            "location": "",
-            "name": "",
-            "policy_statement_id": "",
-            "resource_type": "",
-            "statement": "",
-            "subject_id": "",
-            "subject_name": "",
-            "subject_type": "",
-            "target_id": "",
-            "verb": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_policy_statement = CloudPolicyStateTable().get_default_row()
         policies = []
 
         try:

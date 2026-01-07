@@ -4,48 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.global_identity_collection import GlobalIdentityCollectionStateTable
 
 class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_gic = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "name": "",
-            "member_operation_type": "",
-            "member_global_id": "",
-            "display_name": "",
-            "external_id": "",
-            "target_id": "",
-            "identity_collection_description": "",
-            "risk": None,
-            "identity_collection_type": "",
-            "is_managed_at_target": "",
-            "status": "",
-            "created_by": "",
-            "created_by_display_name": "",
-            "created_by_value": "",
-            "created_by_resource_type": "",
-            "created_on": None,
-            "updated_by": "",
-            "updated_by_display_name": "",
-            "updated_by_value": "",
-            "updated_by_resource_type": "",
-            "updated_on": None,
-            "ag_managed": "",
-            "owner_display_name": "",
-            "owner_value": "",
-            "ownership_collection_id": "",
-            "tags": "",
-            "managed_by_ids": "[]",
-            "owner_uids": "[]",
-            "access_guardrail_ids": "[]",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
+        base_gic = GlobalIdentityCollectionStateTable().get_default_row()
         gic_list = []
 
         try:
@@ -139,7 +102,7 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
                 ):
                     base_gic["tags"] = ",".join(raw_event["tags"])
                 else:
-                    base_gic["tags"] = raw_event["tags"]
+                    base_gic["tags"] = json.dumps(raw_event["tags"])
 
             if "managedByIds" in raw_event:
                 base_gic["managed_by_ids"] = json.dumps(raw_event["managedByIds"])
@@ -152,9 +115,6 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
 
             if "customAttributes" in raw_event:
                 base_gic["attributes"] = json.dumps(raw_event["customAttributes"])
-
-            if "tags" in raw_event:
-                base_gic["tags"] = json.dumps(raw_event["tags"])
 
             if "managedByIds" in raw_event:
                 base_gic["managed_by_ids"] = json.dumps(raw_event["managedByIds"])
@@ -173,7 +133,7 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
             new_gic = {
                 key: value
                 for key, value in base_gic.items()
-                if key in ["id", "name", "tenancy_id", "service_instance_id"]
+                if key in ["id", "name", "event_timestamp","tenancy_id", "service_instance_id"]
             }
             if "add" in raw_event and "members" in raw_event["add"]:
                 add_members_list = raw_event["add"]["members"]

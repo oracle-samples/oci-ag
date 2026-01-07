@@ -4,30 +4,13 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.orchestrated_system import OrchestratedSystemStateTable
 
 class OrchestratedSystemEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        orchestrated_system = {
-            "id": "",
-            "name": "",
-            "type": "",
-            "state": "",
-            "created_by": "",
-            "created_on": None,
-            "updated_on": None,
-            "target_mode": "",
-            "ownership_collection_id": "",
-            "primary_owner": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        orchestrated_system = OrchestratedSystemStateTable().get_default_row()
         orchestrated_system_list = []
+
         try:
             if self._get_tenancy_id():
                 orchestrated_system["tenancy_id"] = self._get_tenancy_id()

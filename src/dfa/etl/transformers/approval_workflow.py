@@ -4,31 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.approval_workflow import ApprovalWorkflowStateTable
 
 class ApprovalWorkflowEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        approval_workflow = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "name": "",
-            "description": "",
-            "status": "",
-            "created_by": "",
-            "created_on": None,
-            "updated_by": "",
-            "updated_on": None,
-            "version": None,
-            "etag_version": None,
-            "tags": "",
-            "summary": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        approval_workflow = ApprovalWorkflowStateTable().get_default_row()
         aw_list = []
 
         try:

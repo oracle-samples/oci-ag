@@ -4,61 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.access_bundle import AccessBundleStateTable
 
 class AccessBundleEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_access_bundle = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "external_id": "",
-            "name": "",
-            "description": "",
-            "display_name": "",
-            "requestable_by": "",
-            "status": "",
-            "approval_workflow_id": "",
-            "approval_workflow_name": "",
-            "approval_workflow_description": "",
-            "access_guardrail_ids": "[]",
-            "target_id": "",
-            "tags": "",
-            "access_bundle_type": "",
-            "permission_id": "",
-            "created_by": "",
-            "created_by_display_name": "",
-            "created_by_value": "",
-            "created_by_resource_type": "",
-            "created_on": None,
-            "updated_by": "",
-            "updated_by_display_name": "",
-            "updated_by_value": "",
-            "updated_by_resource_type": "",
-            "updated_on": None,
-            "ag_managed": "",
-            "owner_display_name": "",
-            "owner_value": "",
-            "ownership_collection_id": "",
-            "managed_by_ids": "[]",
-            "owner_uids": "[]",
-            "account_profile_exists": "",
-            "account_profile_id": "",
-            "account_profile_name": "",
-            "auto_approval_if_no_violation": "",
-            "access_limit_type": "",
-            "expiration_time": None,
-            "notification_time": None,
-            "extension_time": None,
-            "extension_approval_workflow_id": "",
-            "extension_approval_workflow_name": "",
-            "extension_approval_workflow_description": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_access_bundle = AccessBundleStateTable().get_default_row()
         access_bundle_list = []
 
         try:
@@ -150,7 +100,7 @@ class AccessBundleEventTransformer(BaseEventTransformer):
                 base_access_bundle["updated_on"] = raw_event["updatedOn"]
 
             if "agManaged" in raw_event:
-                base_access_bundle["ag_managed"] = raw_event["agManaged"]
+                base_access_bundle["ag_managed"] = 'true' if raw_event["agManaged"] is True else 'false'
 
             if "owner" in raw_event:
                 if "displayName" in raw_event["owner"]:
@@ -191,7 +141,7 @@ class AccessBundleEventTransformer(BaseEventTransformer):
                 base_access_bundle["notification_time"] = raw_event["notificationTime"]
 
             if "extensionTime" in raw_event:
-                base_access_bundle["extension_time"] = raw_event["extensionTime"]
+                base_access_bundle["extension_time"] = str(raw_event["extensionTime"])
 
             if "extensionApprovalWorkflow" in raw_event:
                 if "id" in raw_event["extensionApprovalWorkflow"]:

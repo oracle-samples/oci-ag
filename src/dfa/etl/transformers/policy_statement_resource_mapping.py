@@ -4,26 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.policy_statement_resource_mapping import PolicyStatementResourceMappingStateTable
 
 class PolicyStatementResourceMappingEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_policy_statement_resource_mapping = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "compartment_id": "",
-            "policy_external_id": "",
-            "policy_statement_id": "",
-            "resource_id": "",
-            "resource_external_id": "",
-            "target_id": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_policy_statement_resource_mapping = PolicyStatementResourceMappingStateTable().get_default_row()
         psrm_list = []
 
         try:
