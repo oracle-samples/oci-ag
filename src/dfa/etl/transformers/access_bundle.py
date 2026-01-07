@@ -100,7 +100,7 @@ class AccessBundleEventTransformer(BaseEventTransformer):
                 base_access_bundle["updated_on"] = raw_event["updatedOn"]
 
             if "agManaged" in raw_event:
-                base_access_bundle["ag_managed"] = 'true' if raw_event["agManaged"] is True else 'false'
+                base_access_bundle["ag_managed"] = raw_event["agManaged"]
 
             if "owner" in raw_event:
                 if "displayName" in raw_event["owner"]:
