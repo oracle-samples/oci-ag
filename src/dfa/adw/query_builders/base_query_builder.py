@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-import pandas as pd
+import oracledb
 from pypika import CustomFunction, Order, Parameter, Query, Table
 from pypika.functions import ToDate
 
@@ -99,16 +99,17 @@ class InsertManyQueryBuilder:
         insert_sql = insert_sql.replace(f'"{table_name}"', f'"{table_name}" ({column_list_str}) ')
         return insert_sql
 
-    def get_input_sizes(self, events):
-        events_df = pd.DataFrame(events)
+    def get_input_sizes(self, columns_definition: list[dict[str, Any]]):
         input_sizes = {}
-        for column_name in events_df.columns:
-            # For non-string types, let driver infer sizes
-            if str(events_df[column_name].dtype) not in ("object", "string"):
+        for column in columns_definition:
+            column_name = column["column_name"]
+            data_type = column["data_type"].upper()
+            if data_type.startswith("VARCHAR"):
+                input_sizes[column_name] = column["data_length"]
+            elif data_type == "NUMBER":
+                input_sizes[column_name] = oracledb.NUMBER
+            else:
                 input_sizes[column_name] = None
-                continue
-            max_len = events_df[column_name].astype("string").str.len().max()
-            input_sizes[column_name] = None if pd.isna(max_len) else int(max_len)
 
         return input_sizes
 
@@ -337,7 +338,9 @@ class BaseQueryBuilder:
             return
 
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(self.events)
+        input_sizes = InsertManyQueryBuilder().get_input_sizes(
+            self.table_manager.get_column_list_definition_for_table_ddl()
+            )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
 

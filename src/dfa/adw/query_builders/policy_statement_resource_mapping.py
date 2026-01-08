@@ -56,7 +56,9 @@ class PolicyStatementResourceMappingStateUpdateQueryBuilder(
             return
 
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(self.events)
+        input_sizes = InsertManyQueryBuilder().get_input_sizes(
+            PolicyStatementResourceMappingStateTable().get_column_list_definition_for_table_ddl()
+            )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
 
@@ -82,6 +84,7 @@ class PolicyStatementResourceMappingStateUpdateQueryBuilder(
                 self.table_manager.get_unique_contraint_definition_details()["columns"],  #
             )
 
+            AdwConnection.get_cursor().setinputsizes(**input_sizes)
             AdwConnection.get_cursor().executemany(
                 update_sql, constraint_violating_rows, batcherrors=True
             )

@@ -142,6 +142,8 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
                         gic_copy = new_gic.copy()
                         gic_copy["member_operation_type"] = "add"
                         gic_copy["member_global_id"] = member_id["globalIdentityId"]
+                        if "membershipType" in member_id:
+                            gic_copy["membership_type"] = member_id["membershipType"]
                         gic_list.append(gic_copy)
 
             if "remove" in raw_event and "members" in raw_event["remove"]:
@@ -151,6 +153,8 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
                         gic_copy = new_gic.copy()
                         gic_copy["member_operation_type"] = "remove"
                         gic_copy["member_global_id"] = member_id["globalIdentityId"]
+                        if "membershipType" in member_id:
+                            gic_copy["membership_type"] = member_id["membershipType"]
                         gic_list.append(gic_copy)
 
         except KeyError as e:

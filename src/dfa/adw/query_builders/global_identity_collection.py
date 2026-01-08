@@ -68,7 +68,9 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
             return
 
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, gic_adds, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(gic_adds)
+        input_sizes = InsertManyQueryBuilder().get_input_sizes(
+            GlobalIdentityCollectionStateTable().get_column_list_definition_for_table_ddl()
+            )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, gic_adds, batcherrors=True)
 
@@ -94,6 +96,7 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
                 self.table_manager.get_unique_contraint_definition_details()["columns"],
             )
 
+            AdwConnection.get_cursor().setinputsizes(**input_sizes)
             AdwConnection.get_cursor().executemany(
                 update_sql, constraint_violating_rows, batcherrors=True
             )

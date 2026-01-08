@@ -57,6 +57,9 @@ class ApprovalWorkflowEventTransformer(BaseEventTransformer):
             if "summary" in raw_event:
                 approval_workflow["summary"] = str(raw_event["summary"])
 
+            if "ownershipCollectionId" in raw_event:
+                approval_workflow["ownership_collection_id"] = raw_event["ownershipCollectionId"]
+
             if "customAttributes" in raw_event:
                 approval_workflow["attributes"] = json.dumps(raw_event["customAttributes"])
 
