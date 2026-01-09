@@ -49,7 +49,7 @@ class AccessBundleTimeSeriesTable(BaseTable):
         {"field_name":"ACCESS_LIMIT_TYPE","column_name":"ACCESS_LIMIT_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"EXPIRATION_TIME","column_name":"EXPIRATION_TIME","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
         {"field_name":"NOTIFICATION_TIME","column_name":"NOTIFICATION_TIME","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
-        {"field_name":"EXTENSION_TIME","column_name":"EXTENSION_TIME","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
+        {"field_name":"EXTENSION_TIME","column_name":"EXTENSION_TIME","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
         {"field_name":"EXTENSION_APPROVAL_WORKFLOW_ID","column_name":"EXTENSION_APPROVAL_WORKFLOW_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"EXTENSION_APPROVAL_WORKFLOW_NAME","column_name":"EXTENSION_APPROVAL_WORKFLOW_NAME","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"EXTENSION_APPROVAL_WORKFLOW_DESCRIPTION","column_name":"EXTENSION_APPROVAL_WORKFLOW_DESCRIPTION","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},

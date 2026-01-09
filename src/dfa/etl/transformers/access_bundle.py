@@ -141,7 +141,7 @@ class AccessBundleEventTransformer(BaseEventTransformer):
                 base_access_bundle["notification_time"] = raw_event["notificationTime"]
 
             if "extensionTime" in raw_event:
-                base_access_bundle["extension_time"] = str(raw_event["extensionTime"])
+                base_access_bundle["extension_time"] = raw_event["extensionTime"]
 
             if "extensionApprovalWorkflow" in raw_event:
                 if "id" in raw_event["extensionApprovalWorkflow"]:
