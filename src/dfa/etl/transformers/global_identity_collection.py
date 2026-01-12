@@ -133,7 +133,7 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
             new_gic = {
                 key: value
                 for key, value in base_gic.items()
-                if key in ["id", "name", "event_timestamp","tenancy_id", "service_instance_id"]
+                if key in ["id", "name", "createdOn", "updatedOn", "event_timestamp","tenancy_id", "service_instance_id"]
             }
             if "add" in raw_event and "members" in raw_event["add"]:
                 add_members_list = raw_event["add"]["members"]
