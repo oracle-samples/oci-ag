@@ -48,6 +48,8 @@ class CloudGroupEventTransformer(BaseEventTransformer):
             base_group["event_object_type"] = self.get_event_object_type()
             base_group["operation_type"] = self.get_operation_type()
 
+            group_list.append(base_group)
+
             add_identities = []
             remove_identities = []
 

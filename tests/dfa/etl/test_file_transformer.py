@@ -112,16 +112,16 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._operation_type, "CREATE")
 
         self.transformer.transform_data()
-        self.assertEqual(len(self.transformer._prepared_events), 231)
+        self.assertEqual(len(self.transformer._prepared_events), 233)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
         self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 231)
+        self.assertEqual(len(self.transformer._prepared_events), 233)
         self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "231 cloud group membership events"))
+            self.assertTrue(self.check_logs(logs.output, "233 cloud group membership events"))
 
     def test_cloud_policy(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/cloud_policy.jsonl")
