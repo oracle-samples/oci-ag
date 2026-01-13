@@ -4,40 +4,12 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.identity import IdentityStateTable
 
 class IdentityEventTransformer(BaseEventTransformer):
 
     def transform_raw_event(self, raw_event):
-        identity = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "ag_status": "",
-            "ag_sub_type": "",
-            "display_name": "",
-            "location": "",
-            "risk": 0,
-            "ag_risk_attributes": "{}",
-            "status": "",
-            "username": "",
-            "last_name": "",
-            "first_name": "",
-            "identity_attributes": "{}",
-            "ti_external_id": "",
-            "ti_id": "",
-            "ti_target_id": "",
-            "ti_domain_id": "",
-            "ti_identity_name": "",
-            "ti_identity_status": "",
-            "ti_operation_type": "",
-            "ti_event_timestamp": "",
-            "ti_attributes": "{}",
-            "identity_type": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-        }
+        identity = IdentityStateTable().get_default_row()
         identities_list = []
 
         try:

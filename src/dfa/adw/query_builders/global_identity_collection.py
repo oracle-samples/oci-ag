@@ -68,7 +68,9 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
             return
 
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, gic_adds, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(gic_adds)
+        input_sizes = InsertManyQueryBuilder().get_input_sizes(
+            GlobalIdentityCollectionStateTable().get_column_list_definition_for_table_ddl()
+            )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, gic_adds, batcherrors=True)
 
@@ -94,6 +96,7 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
                 self.table_manager.get_unique_contraint_definition_details()["columns"],
             )
 
+            AdwConnection.get_cursor().setinputsizes(**input_sizes)
             AdwConnection.get_cursor().executemany(
                 update_sql, constraint_violating_rows, batcherrors=True
             )
@@ -112,9 +115,14 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
 class GlobalIdentityCollectionStateDeleteQueryBuilder(GlobalIdentityCollectionStateQueryBuilder):
     def execute_sql_for_events(self):
         for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["id", "service_instance_id", "tenancy_id"]
+            if event["member_global_id"] != "":
+                delete_sql = DeleteQueryBuilder().get_operation_sql(
+                self, event, ["id", "member_global_id", "service_instance_id", "tenancy_id"]
             )
+            else:
+                delete_sql = DeleteQueryBuilder().get_operation_sql(
+                    self, event, ["id", "service_instance_id", "tenancy_id"]
+                )
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for global identity collection delete request")
 

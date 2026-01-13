@@ -4,43 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.access_guardrail import AccessGuardrailStateTable
 
 class AccessGuardrailEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_access_guardrail = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "external_id": "",
-            "name": "",
-            "description": "",
-            "action_on_failure_action_type": "",
-            "action_on_failure_revoke_after_number_of_days": 0,
-            "action_on_failure_risk": "",
-            "action_on_failure_should_user_manager_be_notified": "",
-            "created_by_display_name": "",
-            "created_by_resource_type": "",
-            "created_by_value": "",
-            "created_on": 0,
-            "etag": "",
-            "is_detective_violation_check_enabled": "",
-            "lifecycle_state": "",
-            "owner_display_name": "",
-            "owner_value": "",
-            "ownership_collection_id": "",
-            "rules": "[]",
-            "tags": "",
-            "updated_by_display_name": "",
-            "updated_by_resource_type": "",
-            "updated_by_value": "",
-            "updated_on": 0,
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_access_guardrail = AccessGuardrailStateTable().get_default_row()
         access_guardrail_list = []
 
         try:

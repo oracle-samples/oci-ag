@@ -16,6 +16,7 @@ class GlobalIdentityCollectionTimeSeriesTable(BaseTable):
         {"field_name":"DISPLAY_NAME","column_name":"DISPLAY_NAME","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"MEMBER_OPERATION_TYPE","column_name":"MEMBER_OPERATION_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"MEMBER_GLOBAL_ID","column_name":"MEMBER_GLOBAL_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
+        {"field_name":"MEMBERSHIP_TYPE","column_name":"MEMBERSHIP_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"EXTERNAL_ID","column_name":"EXTERNAL_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"TARGET_ID","column_name":"TARGET_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"IDENTITY_COLLECTION_DESCRIPTION","column_name":"IDENTITY_COLLECTION_DESCRIPTION","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
@@ -58,5 +59,5 @@ class GlobalIdentityCollectionStateTable(BaseStateTable, GlobalIdentityCollectio
     def get_unique_contraint_definition_details(self):
         return {
             "name": "DFA_UNQ_GIC_ST_CONST",
-            "columns": ["ID", "MEMBER_GLOBAL_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            "columns": ["ID", "MEMBER_GLOBAL_ID", "TARGET_ID","SERVICE_INSTANCE_ID", "TENANCY_ID"],
         }

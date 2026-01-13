@@ -12,11 +12,11 @@ from dfa.adw.query_builders.base_query_builder import (
     InsertManyQueryBuilder,
     UpdateManyQueryBuilder,
 )
-from dfa.adw.tables.access_bundle import AccessBundleStateTable, AccessBundleTimeSeriesTable
+from dfa.adw.tables.orchestrated_system import OrchestratedSystemStateTable, OrchestratedSystemTimeSeriesTable
 
 
-class AccessBundleStateQueryBuilder(Table, ABC, BaseQueryBuilder):
-    table_manager = AccessBundleStateTable()
+class OrchestratedSystemStateQueryBuilder(Table, ABC, BaseQueryBuilder):
+    table_manager = OrchestratedSystemStateTable()
 
     def __init__(self, events: list):
         super().__init__(self.table_manager.get_table_name().upper())
@@ -27,27 +27,27 @@ class AccessBundleStateQueryBuilder(Table, ABC, BaseQueryBuilder):
         pass
 
 
-class AccessBundleStateCreateQueryBuilder(AccessBundleStateQueryBuilder):
+class OrchestratedSystemStateCreateQueryBuilder(OrchestratedSystemStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return AccessBundleStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return OrchestratedSystemStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
 
 
-class AccessBundleStateUpdateQueryBuilder(AccessBundleStateQueryBuilder):
+class OrchestratedSystemStateUpdateQueryBuilder(OrchestratedSystemStateQueryBuilder):
     def executemany_sql_for_events(self):
         self.logger.info(
-            "Using bulk insert / update operations for %d access bundle events", len(self.events)
+            "Using bulk insert / update operations for %d orchestrated system events", len(self.events)
         )
 
         if len(self.events) == 0:
-            self.logger.info("No events to process by access bundle query builder")
+            self.logger.info("No events to process by orchestrated system query builder")
             return
 
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
         input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            AccessBundleStateTable().get_column_list_definition_for_table_ddl()
+            OrchestratedSystemStateTable().get_column_list_definition_for_table_ddl()
             )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
@@ -57,14 +57,15 @@ class AccessBundleStateUpdateQueryBuilder(AccessBundleStateQueryBuilder):
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
             else:
-                self.logger.info("access bundle create failed - %s", batch_error.message)
+                self.logger.info("orchestrated system create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d access bundle creates failed for unique constraint violation - \
-                performing bulk access bundle updates",
+                "%d orchestrated system creates failed for unique constraint violation - \
+                performing bulk orchestrated system updates",
                 len(constraint_violating_rows),
             )
+
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
                 self,
                 constraint_violating_rows,
@@ -78,16 +79,7 @@ class AccessBundleStateUpdateQueryBuilder(AccessBundleStateQueryBuilder):
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("access bundle update failed - %s", batch_error.message)
-
-        unique_id_timstamp_pairs = DeleteQueryBuilder().remove_duplicates(self.events)
-        self.logger.info(
-            "Removing outdated rows for %d unique access bundle id, timestamp pairs",
-            len(unique_id_timstamp_pairs),
-        )
-        for event in unique_id_timstamp_pairs:
-            delete_outdated_sql = DeleteQueryBuilder().delete_outdated_rows(self, event)
-            AdwConnection.get_cursor().execute(delete_outdated_sql)
+                self.logger.info("orchestrated system update failed - %s", batch_error.message)
 
         AdwConnection.commit()
 
@@ -95,21 +87,21 @@ class AccessBundleStateUpdateQueryBuilder(AccessBundleStateQueryBuilder):
         return self.executemany_sql_for_events()
 
 
-class AccessBundleStateDeleteQueryBuilder(AccessBundleStateQueryBuilder):
+class OrchestratedSystemStateDeleteQueryBuilder(OrchestratedSystemStateQueryBuilder):
     def execute_sql_for_events(self):
         for event in self.events:
             delete_sql = DeleteQueryBuilder().get_operation_sql(
                 self, event, ["id", "service_instance_id", "tenancy_id"]
             )
             AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for access bundle delete request")
+            self.logger.info("Row delete for orchestrated system delete request")
 
         self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 
-class AccessBundleTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
-    table_manager = AccessBundleTimeSeriesTable()
+class OrchestratedSystemTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
+    table_manager = OrchestratedSystemTimeSeriesTable()
 
     def __init__(self, events: list):
         super().__init__(self.table_manager.get_table_name().upper())
@@ -120,16 +112,16 @@ class AccessBundleTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
         pass
 
 
-class AccessBundleTimeSeriesCreateQueryBuilder(AccessBundleTimeSeriesQueryBuilder):
+class OrchestratedSystemTimeSeriesCreateQueryBuilder(OrchestratedSystemTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
 
 
-class AccessBundleTimeSeriesUpdateQueryBuilder(AccessBundleTimeSeriesQueryBuilder):
+class OrchestratedSystemTimeSeriesUpdateQueryBuilder(OrchestratedSystemTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
 
 
-class AccessBundleTimeSeriesDeleteQueryBuilder(AccessBundleTimeSeriesQueryBuilder):
+class OrchestratedSystemTimeSeriesDeleteQueryBuilder(OrchestratedSystemTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

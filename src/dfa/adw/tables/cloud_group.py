@@ -44,6 +44,7 @@ class CloudGroupStateTable(BaseStateTable, CloudGroupTimeSeriesTable):
                 "ID",
                 "IDENTITY_GLOBAL_ID",
                 "IDENTITY_TARGET_IDENTITY_ID",
+                "TARGET_ID",
                 "SERVICE_INSTANCE_ID",
                 "TENANCY_ID",
             ],

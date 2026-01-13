@@ -4,30 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.cloud_group import CloudGroupStateTable
 
 class CloudGroupEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_group = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "external_id": "",
-            "target_id": "",
-            "compartment_id": "",
-            "name": "",
-            "domain_id": "",
-            "identity_operation_type": "",
-            "identity_external_id": "",
-            "identity_global_id": "",
-            "identity_target_identity_id": "",
-            "group_membership_type": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_group = CloudGroupStateTable().get_default_row()
         group_list = []
 
         try:
@@ -66,6 +47,8 @@ class CloudGroupEventTransformer(BaseEventTransformer):
 
             base_group["event_object_type"] = self.get_event_object_type()
             base_group["operation_type"] = self.get_operation_type()
+
+            group_list.append(base_group)
 
             add_identities = []
             remove_identities = []

@@ -4,24 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.resource import ResourceStateTable
 
 class ResourceEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        resource = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "description": "",
-            "external_id": "",
-            "resource_name": "",
-            "resource_type": "",
-            "target_id": "",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
+        resource = ResourceStateTable().get_default_row()
 
         resource_list = []
         try:

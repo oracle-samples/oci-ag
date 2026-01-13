@@ -4,40 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.audit_events import AuditEventsTable
 
 class AuditEventsEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_audit_event = {
-            "source": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "audit_event_type": "",
-            "audit_event_type_version": "",
-            "content_type": "",
-            "region": "",
-            "availability_domain": "",
-            "identity_host": "",
-            "identity_user_agent": "",
-            "identity_principal_id": "",
-            "request_time": 0,
-            "request_id": "",
-            "request_path": "",
-            "request_action": "",
-            "request_parameters": "{}",
-            "request_headers": "{}",
-            "request_payload": "{}",
-            "response_time": 0,
-            "response_status": "",
-            "response_headers": "{}",
-            "response_payload": "{}",
-            "state_change": "{}",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_audit_event = AuditEventsTable().get_default_row()
         audit_events_list = []
 
         try:

@@ -161,6 +161,18 @@ class BaseTable(ABC):
 
         return column_names_for_table_ddl
 
+    def get_default_row(self):
+        column_definitions = json.loads(self._column_definitions())
+        default_row = {}
+        for definition in column_definitions:
+            if definition["data_type"] == "CLOB":
+                default_row[definition["column_name"].lower()] = json.dumps({})
+            elif definition["data_type"].startswith("VARCHAR"):
+                default_row[definition["column_name"].lower()] = ""
+            else:
+                default_row[definition["column_name"].lower()] = None
+        return default_row
+
 
 class BaseStateTable(BaseTable, ABC):
     @abstractmethod

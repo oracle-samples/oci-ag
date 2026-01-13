@@ -4,38 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.role import RoleStateTable
 
 class RoleEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        role = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "external_id": "",
-            "name": "",
-            "description": "",
-            "requestable_by": "",
-            "status": "",
-            "approval_workflow_id": "",
-            "approval_workflow_name": "",
-            "approval_workflow_description": "",
-            "access_bundle_id": "",
-            "created_by": "",
-            "created_on": 0,
-            "updated_by": "",
-            "updated_on": 0,
-            "ag_managed": "",
-            "owner_display_name": "",
-            "owner_value": "",
-            "ownership_collection_id": "",
-            "managed_by_ids": "[]",
-            "owner_uids": "[]",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
+        role = RoleStateTable().get_default_row()
 
         role_list = []
 

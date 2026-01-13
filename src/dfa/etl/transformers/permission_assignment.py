@@ -4,7 +4,7 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.permission_assignment import PermissionAssignmentStateTable
 
 class PermissionAssignmentEventTransformer(BaseEventTransformer):
     def __process_permission_assignments(self, identities_list, operation_type, base_pa, pa_list):
@@ -61,41 +61,7 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
             pa_list.append(pa_copy)
 
     def transform_raw_event(self, raw_event):
-        base_pa = {
-            "target_identity_id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "global_identity_id": "",
-            "identity_operation_type": "",
-            "assignment_id": "",
-            "external_id": "",
-            "target_id": "",
-            "target_type": "",
-            "grant_type": "",
-            "permission_type": "",
-            "permission_id": "",
-            "permission_name": "",
-            "access_bundle_id": "",
-            "access_bundle_name": "",
-            "role_id": "",
-            "role_name": "",
-            "identity_group_id": "",
-            "identity_group_name": "",
-            "resource_id": "",
-            "resource_display_name": "",
-            "policy_id": "",
-            "policy_name": "",
-            "policy_rule_id": "",
-            "user_login": "",
-            "valid_from": 0,
-            "valid_to": 0,
-            "assignment_attributes": "{}",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_pa = PermissionAssignmentStateTable().get_default_row()
         pa_list = []
 
         try:

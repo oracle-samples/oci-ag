@@ -4,62 +4,11 @@
 import json
 
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-
+from dfa.adw.tables.policy import PolicyStateTable
 
 class PolicyEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_policy = {
-            "id": "",
-            "tenancy_id": "",
-            "service_instance_id": "",
-            "name": "",
-            "external_id": "",
-            "description": "",
-            "display_name": "",
-            "status": "",
-            "is_transformed_policy": "",
-            "constraints": "",
-            "tags": "",
-            "policy_type": "",
-            "policy_version": "",
-            "target_id": "",
-            "target_policy_id": "",
-            "policy_rule_id": "",
-            "policy_rule_assignment_id": "",
-            "policy_rule_identity_group_id": "",
-            "policy_rule_parsed_on": 0,
-            "policy_rule_version": "",
-            "policy_rule_action": "",
-            "policy_rule_statement": "",
-            "policy_rule_status": "",
-            "policy_rule_type": "",
-            "policy_rule_created_by": "",
-            "policy_rule_created_on": 0,
-            "policy_rule_updated_by": "",
-            "policy_rule_updated_on": 0,
-            "created_by": "",
-            "created_by_display_name": "",
-            "created_by_resource_type": "",
-            "created_by_value": "",
-            "created_on": 0,
-            "updated_by": "",
-            "updated_by_display_name": "",
-            "updated_by_resource_type": "",
-            "updated_by_value": "",
-            "updated_on": 0,
-            "ag_risk": 0,
-            "ag_managed": "",
-            "owner_display_name": "",
-            "owner_value": "",
-            "ownership_collection_id": "",
-            "managed_by_ids": "[]",
-            "owner_uids": "[]",
-            "event_object_type": "",
-            "operation_type": "",
-            "event_timestamp": "",
-            "attributes": "{}",
-        }
-
+        base_policy = PolicyStateTable().get_default_row()
         policy_list = []
 
         try:
