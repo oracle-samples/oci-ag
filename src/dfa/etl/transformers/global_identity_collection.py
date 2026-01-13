@@ -130,16 +130,11 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
             add_members_list = []
             remove_members_list = []
 
-            new_gic = {
-                key: value
-                for key, value in base_gic.items()
-                if key in ["id", "name", "created_on", "updated_on", "event_timestamp","tenancy_id", "service_instance_id"]
-            }
             if "add" in raw_event and "members" in raw_event["add"]:
                 add_members_list = raw_event["add"]["members"]
                 for member_id in add_members_list:
                     if "globalIdentityId" in member_id:
-                        gic_copy = new_gic.copy()
+                        gic_copy = base_gic.copy()
                         gic_copy["member_operation_type"] = "add"
                         gic_copy["member_global_id"] = member_id["globalIdentityId"]
                         if "membershipType" in member_id:
@@ -150,7 +145,7 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
                 remove_members_list = raw_event["remove"]["members"]
                 for member_id in remove_members_list:
                     if "globalIdentityId" in member_id:
-                        gic_copy = new_gic.copy()
+                        gic_copy = base_gic.copy()
                         gic_copy["member_operation_type"] = "remove"
                         gic_copy["member_global_id"] = member_id["globalIdentityId"]
                         if "membershipType" in member_id:
