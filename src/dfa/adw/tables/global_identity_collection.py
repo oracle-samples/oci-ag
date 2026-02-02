@@ -59,5 +59,5 @@ class GlobalIdentityCollectionStateTable(BaseStateTable, GlobalIdentityCollectio
     def get_unique_contraint_definition_details(self):
         return {
             "name": "DFA_UNQ_GIC_ST_CONST",
-            "columns": ["ID", "MEMBER_GLOBAL_ID", "TARGET_ID","SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            "columns": ["ID", "MEMBER_GLOBAL_ID", "TARGET_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
         }

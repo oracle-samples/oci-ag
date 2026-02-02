@@ -3,8 +3,9 @@
 
 import json
 
-from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 from dfa.adw.tables.audit_events import AuditEventsTable
+from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
+
 
 class AuditEventsEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):

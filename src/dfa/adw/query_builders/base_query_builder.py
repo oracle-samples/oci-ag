@@ -123,7 +123,7 @@ class UpdateQueryBuilder:
         where_columns,
         upsert_flag: bool = False,
     ):
-        update_sql: Query = None
+        update_sql: Any = None
         for column_name, column_value in event.items():
             if column_name in where_columns:
                 continue
@@ -133,6 +133,9 @@ class UpdateQueryBuilder:
                 update_sql = Query.update(query_builder).set(column_name.upper(), column_value)
             else:
                 update_sql = update_sql.set(column_name.upper(), column_value)
+
+        if update_sql is None:
+            return None
 
         for where_column_name in where_columns:
             update_sql = update_sql.where(
@@ -154,9 +157,7 @@ class UpdateQueryBuilder:
 class UpdateManyQueryBuilder:
     def get_operation_sql(self, query_builder, events, date_columns, where_columns):
         event = events[0]
-        update_sql = None
-        # for event in events:
-        update_sql = None
+        update_sql: Any = None
         for column_name, _ in event.items():
             if column_name in where_columns:
                 continue
@@ -168,6 +169,9 @@ class UpdateManyQueryBuilder:
                 )
             else:
                 update_sql = update_sql.set(column_name.upper(), Parameter(f":{column_name}"))
+
+        if update_sql is None:
+            return None
 
         for where_column_name in where_columns:
             update_sql = update_sql.where(
@@ -222,7 +226,7 @@ class AttibuteStatementHandler:
 
 class DeleteQueryBuilder:
     def get_operation_sql(self, query_builder, event, where_columns):
-        final_delete_sql = None
+        final_delete_sql: Any = None
         delete_sql = Query.from_(query_builder).delete()
         for where in where_columns:
             delete_sql = delete_sql.where(getattr(query_builder, where.upper()) == event[where])
@@ -340,7 +344,7 @@ class BaseQueryBuilder:
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
         input_sizes = InsertManyQueryBuilder().get_input_sizes(
             self.table_manager.get_column_list_definition_for_table_ddl()
-            )
+        )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
 

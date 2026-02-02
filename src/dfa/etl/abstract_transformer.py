@@ -61,7 +61,7 @@ class AbstractTransformer(ABC):
             "ACCESS_GUARDRAIL",
             "APPROVAL_WORKFLOW",
             "OWNERSHIP_COLLECTION",
-            "ORCHESTRATED_SYSTEM"
+            "ORCHESTRATED_SYSTEM",
         ]
 
         if object_type in valid_object_types:

@@ -3,8 +3,9 @@
 
 import json
 
-from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 from dfa.adw.tables.cloud_policy import CloudPolicyStateTable
+from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
+
 
 class CloudPolicyEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):

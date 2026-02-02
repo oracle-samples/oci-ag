@@ -75,7 +75,7 @@ class IdentityStateUpdateQueryBuilder(IdentityStateQueryBuilder):
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
         input_sizes = InsertManyQueryBuilder().get_input_sizes(
             IdentityStateTable().get_column_list_definition_for_table_ddl()
-            )
+        )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
 
@@ -116,9 +116,19 @@ class IdentityStateUpdateQueryBuilder(IdentityStateQueryBuilder):
 class IdentityStateDeleteQueryBuilder(IdentityStateQueryBuilder):
     def execute_sql_for_events(self):
         for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["id", "service_instance_id", "tenancy_id"]
-            )
+            # if delete target identity, id (global id) must be empty
+            if ((event.get("id") is None) or (event.get("id") == "")) and (
+                event.get("ti_id") is not None
+            ):
+                delete_sql = DeleteQueryBuilder().get_operation_sql(
+                    self, event, ["ti_id", "service_instance_id", "tenancy_id"]
+                )
+            elif (event.get("id") is not None) and (event.get("id") != ""):
+                delete_sql = DeleteQueryBuilder().get_operation_sql(
+                    self, event, ["id", "service_instance_id", "tenancy_id"]
+                )
+            else:
+                continue
 
             ## delete initial identity record if one exists
             AdwConnection.get_cursor().execute(delete_sql)

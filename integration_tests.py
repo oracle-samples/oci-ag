@@ -10,6 +10,7 @@ from common.ocihelpers.stream import DataEnablementStream
 from dfa.bootstrap.envvars import bootstrap_local_machine_environment_variables
 from dfa.etl.audit_transformer import AuditTransformer
 from dfa.etl.file_transformer import FileTransformer
+from dfa.etl.stream_transformer import StreamTransformer
 
 
 def read_file_content(jsonl_file_path):
@@ -54,6 +55,34 @@ def test_audit_transformer():
     transformer.transform_messages(messages)
     transformer.load_data()
 
+def test_identity_stream_transformer():
+    messages = []
+    with open("tests/dfa/etl/test_data/stream/identity_unmatched_created.json", "r") as file:
+        message = {}
+        message["value"] = file.read()
+        messages.append(message)
+        messages = DataEnablementStream.decode_source_stream_messages(messages)
+        messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
+
+    transformer = StreamTransformer(is_timeseries=False)
+    transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
+
+    transformer.transform_messages(messages)
+    transformer.load_data()
+
+    messages = []
+    with open("tests/dfa/etl/test_data/stream/target_identity_deleted.json", "r") as file:
+        message = {}
+        message["value"] = file.read()
+        messages.append(message)
+        messages = DataEnablementStream.decode_source_stream_messages(messages)
+        messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
+
+    transformer = StreamTransformer(is_timeseries=False)
+    transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
+
+    transformer.transform_messages(messages)
+    transformer.load_data()
 
 def main():
 
@@ -69,6 +98,7 @@ def main():
     # setup(application_ocid=os.getenv('DFA_APPLICATION_OCID')
 
     test_audit_transformer()
+    test_identity_stream_transformer()
     test_file_transformer(data_type="accessBundle")
     test_file_transformer(data_type="accessGuardrail")
     test_file_transformer(data_type="approvalWorkflow")

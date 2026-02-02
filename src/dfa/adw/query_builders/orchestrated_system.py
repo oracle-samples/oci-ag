@@ -12,7 +12,10 @@ from dfa.adw.query_builders.base_query_builder import (
     InsertManyQueryBuilder,
     UpdateManyQueryBuilder,
 )
-from dfa.adw.tables.orchestrated_system import OrchestratedSystemStateTable, OrchestratedSystemTimeSeriesTable
+from dfa.adw.tables.orchestrated_system import (
+    OrchestratedSystemStateTable,
+    OrchestratedSystemTimeSeriesTable,
+)
 
 
 class OrchestratedSystemStateQueryBuilder(Table, ABC, BaseQueryBuilder):
@@ -38,7 +41,8 @@ class OrchestratedSystemStateCreateQueryBuilder(OrchestratedSystemStateQueryBuil
 class OrchestratedSystemStateUpdateQueryBuilder(OrchestratedSystemStateQueryBuilder):
     def executemany_sql_for_events(self):
         self.logger.info(
-            "Using bulk insert / update operations for %d orchestrated system events", len(self.events)
+            "Using bulk insert / update operations for %d orchestrated system events",
+            len(self.events),
         )
 
         if len(self.events) == 0:
@@ -48,7 +52,7 @@ class OrchestratedSystemStateUpdateQueryBuilder(OrchestratedSystemStateQueryBuil
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
         input_sizes = InsertManyQueryBuilder().get_input_sizes(
             OrchestratedSystemStateTable().get_column_list_definition_for_table_ddl()
-            )
+        )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
 

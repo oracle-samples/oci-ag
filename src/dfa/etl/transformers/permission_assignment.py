@@ -3,8 +3,9 @@
 
 import json
 
-from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 from dfa.adw.tables.permission_assignment import PermissionAssignmentStateTable
+from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
+
 
 class PermissionAssignmentEventTransformer(BaseEventTransformer):
     def __process_permission_assignments(self, identities_list, operation_type, base_pa, pa_list):

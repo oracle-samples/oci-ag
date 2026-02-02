@@ -3,8 +3,9 @@
 
 import json
 
-from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 from dfa.adw.tables.access_guardrail import AccessGuardrailStateTable
+from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
+
 
 class AccessGuardrailEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
