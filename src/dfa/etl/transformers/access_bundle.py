@@ -169,8 +169,8 @@ class AccessBundleEventTransformer(BaseEventTransformer):
             base_access_bundle["event_object_type"] = self.get_event_object_type()
             base_access_bundle["operation_type"] = self.get_operation_type()
 
-            if "permissionIds" in raw_event and isinstance(raw_event.get("permissionIds"), list):
-                permission_ids_list = raw_event["permissionIds"]
+            permission_ids_list = raw_event.get("permissionIds", [])
+            if permission_ids_list:
                 for permission_id in permission_ids_list:
                     access_bundle_copy = base_access_bundle.copy()
                     access_bundle_copy["permission_id"] = permission_id
