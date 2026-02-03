@@ -25,6 +25,9 @@ class OrchestratedSystemEventTransformer(BaseEventTransformer):
             if "id" in raw_event:
                 orchestrated_system["id"] = raw_event["id"]
 
+            if "externalId" in raw_event:
+                orchestrated_system["external_id"] = raw_event["externalId"]
+
             if "name" in raw_event:
                 orchestrated_system["name"] = raw_event["name"]
 
