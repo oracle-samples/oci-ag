@@ -68,7 +68,7 @@ class CloudGroupStateUpdateQueryBuilder(CloudGroupStateQueryBuilder):
         )
         input_sizes = InsertManyQueryBuilder().get_input_sizes(
             CloudGroupStateTable().get_column_list_definition_for_table_ddl()
-            )
+        )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(
             insert_statement, group_membership_adds, batcherrors=True
@@ -111,9 +111,9 @@ class CloudGroupStateUpdateQueryBuilder(CloudGroupStateQueryBuilder):
 class CloudGroupStateDeleteQueryBuilder(CloudGroupStateQueryBuilder):
     def execute_sql_for_events(self):
         for event in self.events:
-            if event['identity_global_id'] != "":
+            if event["identity_global_id"] != "":
                 delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["id", "identity_global_id", "service_instance_id", "tenancy_id"]
+                    self, event, ["id", "identity_global_id", "service_instance_id", "tenancy_id"]
                 )
             else:
                 delete_sql = DeleteQueryBuilder().get_operation_sql(

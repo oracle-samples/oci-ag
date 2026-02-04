@@ -3,12 +3,17 @@
 
 import json
 
+from dfa.adw.tables.policy_statement_resource_mapping import (
+    PolicyStatementResourceMappingStateTable,
+)
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
-from dfa.adw.tables.policy_statement_resource_mapping import PolicyStatementResourceMappingStateTable
+
 
 class PolicyStatementResourceMappingEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
-        base_policy_statement_resource_mapping = PolicyStatementResourceMappingStateTable().get_default_row()
+        base_policy_statement_resource_mapping = (
+            PolicyStatementResourceMappingStateTable().get_default_row()
+        )
         psrm_list = []
 
         try:

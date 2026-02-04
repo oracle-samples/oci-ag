@@ -3,8 +3,9 @@
 
 import json
 
-from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 from dfa.adw.tables.identity import IdentityStateTable
+from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
+
 
 class IdentityEventTransformer(BaseEventTransformer):
 
@@ -73,42 +74,35 @@ class IdentityEventTransformer(BaseEventTransformer):
                     raw_event["globalIdentity"]["identity"]
                 )
 
-                if "targetIdentities" in raw_event["globalIdentity"]:
-                    identity["ti_operation_type"] = self.get_operation_type()
-                    target_identity_list = raw_event["globalIdentity"]["targetIdentities"]
-                    if len(target_identity_list) > 0:
-                        for ti in target_identity_list:
-                            target_identity = identity.copy()
-                            if self._get_event_timestamp():
-                                target_identity["ti_event_timestamp"] = self._get_event_timestamp()
-                            if "externalId" in ti:
-                                target_identity["ti_external_id"] = ti["externalId"]
-                            if "id" in ti:
-                                target_identity["ti_id"] = ti["id"]
-                            if "targetId" in ti:
-                                target_identity["ti_target_id"] = ti["targetId"]
-                            if "identity" in ti:
-                                target_identity["ti_attributes"] = json.dumps(ti["identity"])
-                                if "status" in ti["identity"]:
-                                    target_identity["ti_identity_status"] = ti["identity"]["status"]
-                                if "name" in ti["identity"]:
-                                    target_identity["ti_identity_name"] = json.dumps(
-                                        ti["identity"]["name"]
-                                    )
-
-                            identities_list.append(target_identity)
-                    else:
-                        identities_list.append(identity)
-
+            if "targetIdentities" in raw_event["globalIdentity"]:
+                identity["ti_operation_type"] = self.get_operation_type()
+                target_identity_list = raw_event["globalIdentity"]["targetIdentities"]
+                if len(target_identity_list) > 0:
+                    for ti in target_identity_list:
+                        target_identity = identity.copy()
+                        if self._get_event_timestamp():
+                            target_identity["ti_event_timestamp"] = self._get_event_timestamp()
+                        if "externalId" in ti:
+                            target_identity["ti_external_id"] = ti["externalId"]
+                        if "id" in ti:
+                            target_identity["ti_id"] = ti["id"]
+                        if "targetId" in ti:
+                            target_identity["ti_target_id"] = ti["targetId"]
+                        if "identity" in ti:
+                            target_identity["ti_attributes"] = json.dumps(ti["identity"])
+                            if "status" in ti["identity"]:
+                                target_identity["ti_identity_status"] = ti["identity"]["status"]
+                            if "name" in ti["identity"]:
+                                target_identity["ti_identity_name"] = json.dumps(
+                                    ti["identity"]["name"]
+                                )
+                        identities_list.append(target_identity)
                 else:
                     identities_list.append(identity)
-
             else:
-                if self.get_operation_type() == "DELETE" and identity["id"] != "":
-                    identities_list.append(identity)
-                    return identities_list
+                identities_list.append(identity)
 
-                self.logger.info("Skipping event - orphaned target identities")
+            return identities_list
 
         except KeyError as e:
             self.logger.error(

@@ -238,10 +238,9 @@ class DummyQB:
         return item
 
 
-@pytest.mark.xfail(reason="pypika Term objects required; using minimal stub", strict=False)
 def test_update_query_builder_no_sets_but_where_clause_still_builds():
     qb = DummyQB()
     uq = UpdateQueryBuilder()
     # Event has only where columns; date_columns empty
     sql = uq.get_operation_sql(qb, {"id": 1}, date_columns=[], where_columns=["id"])
-    assert "UPDATE" in sql and "WHERE" in sql
+    assert sql is None

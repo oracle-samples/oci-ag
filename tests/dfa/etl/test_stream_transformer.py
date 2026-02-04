@@ -157,17 +157,16 @@ class TestStreamTransformer(unittest.TestCase):
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "Row delete for identity delete request"))
 
-    def test_ownership_collection_delete(self):
+    def test_target_identity_delete(self):
         messages = self.read_file_content(
-            "tests/dfa/etl/test_data/stream/ownership_collection_delete.json"
+            "tests/dfa/etl/test_data/stream/target_identity_deleted.json"
         )
         self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
 
         self.transformer.transform_messages(messages)
         self.assertEqual(len(self.transformer._prepared_events), 1)
-        self.assertEqual(self.transformer._prepared_events[0]["event_object_type"], "OWNERSHIP_COLLECTION")
+        self.assertEqual(self.transformer._prepared_events[0]["event_object_type"], "IDENTITY")
         self.assertEqual(self.transformer._prepared_events[0]["operation_type"], "DELETE")
-        self.assertEqual(self.transformer._prepared_events[0]["data"][0]["id"], "b00c385f-6e64-433e-b9a7-66c9a42fdca9")
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
             "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
@@ -179,4 +178,62 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Row delete for ownership collection delete request"))
+            self.assertTrue(self.check_logs(logs.output, "Row delete for identity delete request"))
+
+    def test_ownership_collection_delete(self):
+        messages = self.read_file_content(
+            "tests/dfa/etl/test_data/stream/ownership_collection_delete.json"
+        )
+        self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
+
+        self.transformer.transform_messages(messages)
+        self.assertEqual(len(self.transformer._prepared_events), 1)
+        self.assertEqual(
+            self.transformer._prepared_events[0]["event_object_type"], "OWNERSHIP_COLLECTION"
+        )
+        self.assertEqual(self.transformer._prepared_events[0]["operation_type"], "DELETE")
+        self.assertEqual(
+            self.transformer._prepared_events[0]["data"][0]["id"],
+            "b00c385f-6e64-433e-b9a7-66c9a42fdca9",
+        )
+        self.assertEqual(
+            self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
+            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
+        )
+        self.assertEqual(
+            self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
+            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r639054",
+        )
+
+        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
+            self.transformer.load_data()
+            self.assertTrue(
+                self.check_logs(logs.output, "Row delete for ownership collection delete request")
+            )
+
+    def test_identity_unmatched_created(self):
+        messages = self.read_file_content(
+            "tests/dfa/etl/test_data/stream/identity_unmatched_created.json"
+        )
+        self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
+
+        self.transformer.transform_messages(messages)
+        self.assertEqual(len(self.transformer._prepared_events), 1)
+        self.assertEqual(self.transformer._prepared_events[0]["event_object_type"], "IDENTITY")
+        self.assertEqual(self.transformer._prepared_events[0]["operation_type"], "CREATE")
+        self.assertEqual(
+            self.transformer._prepared_events[0]["data"][0]["event_timestamp"],
+            "29-Jan-26 07:00:02.145097 PM",
+        )
+        self.assertEqual(
+            self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
+            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q",
+        )
+        self.assertEqual(
+            self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
+            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r53rrha",
+        )
+
+        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
+            self.transformer.load_data()
+            self.assertTrue(self.check_logs(logs.output, "1 identity events"))

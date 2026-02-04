@@ -3,8 +3,9 @@
 
 import json
 
-from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 from dfa.adw.tables.orchestrated_system import OrchestratedSystemStateTable
+from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
+
 
 class OrchestratedSystemEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
@@ -23,6 +24,9 @@ class OrchestratedSystemEventTransformer(BaseEventTransformer):
 
             if "id" in raw_event:
                 orchestrated_system["id"] = raw_event["id"]
+
+            if "externalId" in raw_event:
+                orchestrated_system["external_id"] = raw_event["externalId"]
 
             if "name" in raw_event:
                 orchestrated_system["name"] = raw_event["name"]

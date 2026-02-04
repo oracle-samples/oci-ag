@@ -3,8 +3,9 @@
 
 import json
 
-from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 from dfa.adw.tables.global_identity_collection import GlobalIdentityCollectionStateTable
+from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
+
 
 class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):

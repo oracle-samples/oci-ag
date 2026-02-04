@@ -52,7 +52,7 @@ class ApprovalWorkflowStateUpdateQueryBuilder(ApprovalWorkflowStateQueryBuilder)
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
         input_sizes = InsertManyQueryBuilder().get_input_sizes(
             ApprovalWorkflowStateTable().get_column_list_definition_for_table_ddl()
-            )
+        )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
 

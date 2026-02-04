@@ -73,7 +73,7 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
         )
         input_sizes = InsertManyQueryBuilder().get_input_sizes(
             PermissionAssignmentStateTable().get_column_list_definition_for_table_ddl()
-            )
+        )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(
             insert_statement, permission_assignment_adds, batcherrors=True
@@ -116,7 +116,7 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
 class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQueryBuilder):
     def execute_sql_for_events(self):
         for event in self.events:
-            if event['permission_id'] != "":
+            if event["permission_id"] != "":
                 delete_sql = DeleteQueryBuilder().get_operation_sql(
                     self,
                     event,
@@ -129,13 +129,13 @@ class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQuery
                 )
             else:
                 delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self,
-                event,
-                [
-                    "target_identity_id",
-                    "service_instance_id",
-                    "tenancy_id",
-                ],
+                    self,
+                    event,
+                    [
+                        "target_identity_id",
+                        "service_instance_id",
+                        "tenancy_id",
+                    ],
                 )
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for permission assignment delete request")

@@ -3,8 +3,9 @@
 
 import json
 
-from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 from dfa.adw.tables.role import RoleStateTable
+from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
+
 
 class RoleEventTransformer(BaseEventTransformer):
     def transform_raw_event(self, raw_event):
