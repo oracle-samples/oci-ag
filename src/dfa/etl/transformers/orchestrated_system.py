@@ -37,8 +37,14 @@ class OrchestratedSystemEventTransformer(BaseEventTransformer):
             if "state" in raw_event:
                 orchestrated_system["state"] = raw_event["state"]
 
+            if "schedule" in raw_event:
+                orchestrated_system["schedule"] = raw_event["schedule"]
+
             if "createdBy" in raw_event:
                 orchestrated_system["created_by"] = raw_event["createdBy"]
+
+            if "updatedBy" in raw_event:
+                orchestrated_system["updated_by"] = raw_event["updatedBy"]
 
             if "targetMode" in raw_event:
                 orchestrated_system["target_mode"] = raw_event["targetMode"]
