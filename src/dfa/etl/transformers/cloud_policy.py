@@ -1,13 +1,105 @@
 # Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
+# pylint: disable=import-outside-toplevel
 
 import json
+import re
 
 from dfa.adw.tables.cloud_policy import CloudPolicyStateTable
 from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 
 
 class CloudPolicyEventTransformer(BaseEventTransformer):
+
+    def _compute_permissive_score(
+        self, statement: str, verb: str, resource_types, location: str, attributes_json: str
+    ):
+        # pylint: disable=too-many-locals
+        # Action weight
+        v = (verb or "").lower()
+        if v == "manage":
+            action = 3
+        elif v == "use":
+            action = 2
+        elif v == "read":
+            action = 1
+        else:  # inspect or unknown
+            action = 0
+
+        # Resource breadth weight
+        breadth = 0
+        # Determine from explicit resource types list
+        rt_list = resource_types if isinstance(resource_types, list) else []
+        if any(str(rt).lower() == "all-resources" for rt in rt_list):
+            breadth = 2
+        elif any(str(rt).lower().endswith("-family") for rt in rt_list):
+            breadth = 1
+        else:
+            # fallback: parse statement string
+            s = (statement or "").lower()
+            if "all-resources" in s:
+                breadth = 2
+            elif "-family" in s:
+                breadth = 1
+
+        # Scope weight
+        scope = 0
+        loc = (location or "").lower()
+        st = (statement or "").lower()
+        if " in tenancy" in st or loc == "tenancy":
+            scope = 2
+        elif " in compartment" in st or (loc and loc != "tenancy"):
+            scope = 1
+
+        # Condition modifiers
+        modifiers = 0
+        try:
+            _ = json.loads(attributes_json) if attributes_json else {}
+        except Exception:
+            _ = {}
+        s = (statement or "").lower()
+        # Advanced policy features heuristics
+        has_all = " where all {" in s
+        if has_all:
+            modifiers += 1  # 'all' is stricter than 'any'
+        # operation-level filter reduces breadth
+        if "request.operation" in s:
+            modifiers += 1
+            # Heuristic: smaller operation sets are stricter
+            m = re.search(r"request\.operation\s*in\s*\{([^}]*)\}", s)
+            if m:
+                ops = [op.strip().strip("'\"") for op in m.group(1).split(",") if op.strip()]
+                if 0 < len(ops) <= 3:
+                    modifiers += 1
+        # tag-based conditions reduce scope/breadth
+        if any(
+            tok in s
+            for tok in [
+                "target.tag.",
+                "target.resource.tag.",
+                "request.user.tag.",
+                "request.principal.tag.",
+            ]
+        ):
+            modifiers += 1
+        # network source restriction reduces exposure
+        if "request.networksource" in s:
+            modifiers += 1
+        # direct target id hints at resource-level restriction
+        if any(tok in s for tok in ["target.id", "target.resource.id", "target.ocid"]):
+            # Slightly higher weight for explicit target id use
+            modifiers += 2
+
+        raw_score = action + breadth + scope - modifiers
+        # Clamp to 1..5 if any access; if everything zero, return 1 for minimal access, else min 5
+        if raw_score <= 0:
+            score = 1
+        else:
+            score = min(5, raw_score)
+
+        return score
+
+    # pylint: disable=too-many-locals
     def transform_raw_event(self, raw_event):
         base_policy_statement = CloudPolicyStateTable().get_default_row()
         policies = []
@@ -40,6 +132,8 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             if "location" in raw_event:
                 if "compartment" in raw_event["location"]:
                     base_policy_statement["location"] = raw_event["location"]["compartment"]
+                elif isinstance(raw_event["location"], str):
+                    base_policy_statement["location"] = raw_event["location"]
 
             if "name" in raw_event:
                 base_policy_statement["name"] = raw_event["name"]
@@ -72,6 +166,54 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
                 subject_set = raw_event["subjects"]
             else:
                 subject_set = set()
+
+            # Compute permissiveness for the base statement once
+            # It may be duplicated per resource/subject pair but same score
+            temp_attrs = base_policy_statement.get("attributes")
+            temp_loc = base_policy_statement.get("location", "")
+            temp_statement = base_policy_statement.get("statement", "")
+            temp_verb = base_policy_statement.get("verb", "")
+            temp_resource_types = (
+                raw_event.get("resourceTypes")
+                if isinstance(raw_event.get("resourceTypes"), list)
+                else []
+            )
+            score = self._compute_permissive_score(
+                temp_statement, temp_verb, temp_resource_types, temp_loc, temp_attrs
+            )
+            # Dynamic-group guardrail: require instance principal + compartment constraint in where clause
+            has_dynamic_group = False
+            if "subjects" in raw_event and isinstance(raw_event.get("subjects"), list):
+                for subj in raw_event["subjects"]:
+                    try:
+                        if str(subj.get("type", "")).lower() == "dynamic-group":
+                            has_dynamic_group = True
+                            break
+                    except Exception:
+                        continue
+            s_lower = (temp_statement or "").lower()
+            has_inst_type_clause = "request.principal.type" in s_lower and "instance" in s_lower
+            has_compartment_clause = "request.principal.compartment.id" in s_lower
+            if has_dynamic_group and not (has_inst_type_clause and has_compartment_clause):
+                score = 5
+            # If dynamic-group has the required guardrail but our generic condition parser
+            # didn't recognize it (no 'where all/any'), adjust overly-permissive score down by 1
+            if (
+                has_dynamic_group
+                and (has_inst_type_clause and has_compartment_clause)
+                and score == 5
+            ):
+                score = 4
+            # No environment-based OCID matching; guardrail relies on presence of both clauses only
+            # Embed score into attributes JSON
+            try:
+                attrs_obj = json.loads(temp_attrs) if temp_attrs else {}
+                if not isinstance(attrs_obj, dict):
+                    attrs_obj = {}
+            except Exception:
+                attrs_obj = {}
+            attrs_obj["permissive_score"] = score
+            base_policy_statement["attributes"] = json.dumps(attrs_obj)
 
             if resource_set and subject_set:
                 for resource in resource_set:

@@ -6,7 +6,7 @@ RUN mkdir -p /function/src
 WORKDIR /function
 ADD pyproject.toml /function/.
 ADD src /function/src
-RUN unlink /usr/bin/python3 && ln -s /usr/bin/python3.12 /usr/bin/python3
+RUN rm -f /usr/bin/python3 && ln -s /usr/bin/python3.12 /usr/bin/python
 RUN python --version
 RUN python -m pip install --upgrade build && \
     python -m build
@@ -20,7 +20,7 @@ RUN groupadd --system --gid 1001 dfa && \
 COPY --from=build-stage /function/dist /function/dist
 COPY --from=build-stage /function/src/handlers/dispatcher.py /function/.
 ADD constraints.txt /function/constraints.txt
-RUN unlink /usr/bin/python3 && ln -s /usr/bin/python3.12 /usr/bin/python3
+RUN rm -f /usr/bin/python3 && ln -s /usr/bin/python3.12 /usr/bin/python 
 RUN python --version
 RUN python -m pip install --no-cache-dir -c /function/constraints.txt /function/dist/dfa-0.1.0-py3-none-any.whl fdk
 
