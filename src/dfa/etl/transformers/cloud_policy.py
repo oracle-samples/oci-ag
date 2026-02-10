@@ -157,7 +157,7 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             base_policy_statement["operation_type"] = self.get_operation_type()
 
             if "resourceTypes" in raw_event:
-                base_policy_statement["resource_types"] = raw_event["resourceTypes"]
+                base_policy_statement["resource_type"] = raw_event["resourceTypes"]
 
             if "subjects" in raw_event and isinstance(raw_event.get("subjects"), list):
                 subject_set = raw_event["subjects"]
