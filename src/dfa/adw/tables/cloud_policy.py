@@ -46,6 +46,7 @@ class CloudPolicyStateTable(BaseStateTable, CloudPolicyTimeSeriesTable):
             "columns": [
                 "ID",
                 "POLICY_STATEMENT_ID",
+                "SUBJECT_ID",
                 "SERVICE_INSTANCE_ID",
                 "TENANCY_ID",
             ],
