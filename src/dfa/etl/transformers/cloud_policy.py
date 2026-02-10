@@ -12,7 +12,7 @@ from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 class CloudPolicyEventTransformer(BaseEventTransformer):
 
     def _compute_permissive_score(
-        self, statement: str, verb: str, resource_types, location: str, attributes_json: str
+        self, statement: str, verb: str, resource_types, attributes_json: str
     ):
         # pylint: disable=too-many-locals
         # Action weight
@@ -44,11 +44,10 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
 
         # Scope weight
         scope = 0
-        loc = (location or "").lower()
         st = (statement or "").lower()
-        if " in tenancy" in st or loc == "tenancy":
+        if " in tenancy" in st:
             scope = 2
-        elif " in compartment" in st or (loc and loc != "tenancy"):
+        elif " in compartment" in st:
             scope = 1
 
         # Condition modifiers
@@ -157,10 +156,8 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             base_policy_statement["event_object_type"] = self.get_event_object_type()
             base_policy_statement["operation_type"] = self.get_operation_type()
 
-            if "resourceTypes" in raw_event and isinstance(raw_event.get("resourceTypes"), list):
-                resource_set = raw_event["resourceTypes"]
-            else:
-                resource_set = set()
+            if "resourceTypes" in raw_event:
+                base_policy_statement["resource_types"] = raw_event["resourceTypes"]
 
             if "subjects" in raw_event and isinstance(raw_event.get("subjects"), list):
                 subject_set = raw_event["subjects"]
@@ -170,7 +167,6 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             # Compute permissiveness for the base statement once
             # It may be duplicated per resource/subject pair but same score
             temp_attrs = base_policy_statement.get("attributes")
-            temp_loc = base_policy_statement.get("location", "")
             temp_statement = base_policy_statement.get("statement", "")
             temp_verb = base_policy_statement.get("verb", "")
             temp_resource_types = (
@@ -179,7 +175,7 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
                 else []
             )
             score = self._compute_permissive_score(
-                temp_statement, temp_verb, temp_resource_types, temp_loc, temp_attrs
+                temp_statement, temp_verb, temp_resource_types, temp_attrs
             )
             # Dynamic-group guardrail: require instance principal + compartment constraint in where clause
             has_dynamic_group = False
@@ -215,21 +211,7 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             attrs_obj["permissive_score"] = score
             base_policy_statement["attributes"] = json.dumps(attrs_obj)
 
-            if resource_set and subject_set:
-                for resource in resource_set:
-                    for subject in subject_set:
-                        policy = base_policy_statement.copy()
-                        policy["resource_type"] = resource
-                        policy["subject_id"] = subject.get("id", "")
-                        policy["subject_name"] = subject.get("name", "")
-                        policy["subject_type"] = subject.get("type", "")
-                        policies.append(policy)
-            elif resource_set:
-                for resource in resource_set:
-                    policy = base_policy_statement.copy()
-                    policy["resource_type"] = resource
-                    policies.append(policy)
-            elif subject_set:
+            if subject_set:
                 for subject in subject_set:
                     policy = base_policy_statement.copy()
                     policy["subject_id"] = subject.get("id", "")
