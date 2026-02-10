@@ -115,19 +115,14 @@ class InsertManyQueryBuilder:
 
 
 class UpdateQueryBuilder:
-    def get_operation_sql(
-        self,
-        query_builder,
-        event,
-        date_columns,
-        where_columns,
-        upsert_flag: bool = False,
-    ):
+    def get_operation_sql(self, query_builder, event, date_columns, where_columns):
         update_sql: Any = None
+        where_columns = [col.lower() for col in where_columns]
+        date_columns = [col.lower() for col in date_columns]
         for column_name, column_value in event.items():
-            if column_name in where_columns:
+            if column_name.lower() in where_columns:
                 continue
-            if column_name in date_columns:
+            if column_name.lower() in date_columns:
                 continue
             if update_sql is None:
                 update_sql = Query.update(query_builder).set(column_name.upper(), column_value)
@@ -143,25 +138,20 @@ class UpdateQueryBuilder:
             )
 
         complete_update_stmt = update_sql.get_sql()
-        if upsert_flag:
-            complete_update_stmt = complete_update_stmt.replace("UPDATE", "UPSERT")
 
-        update_sql = complete_update_stmt
-        update_sql = AttibuteStatementHandler.prepare_attribute_column_for_insert_statement(
-            event, update_sql
-        )
-
-        return update_sql
+        return complete_update_stmt
 
 
 class UpdateManyQueryBuilder:
     def get_operation_sql(self, query_builder, events, date_columns, where_columns):
         event = events[0]
         update_sql: Any = None
+        where_columns = [col.lower() for col in where_columns]
+        date_columns = [col.lower() for col in date_columns]
         for column_name, _ in event.items():
-            if column_name in where_columns:
+            if column_name.lower() in where_columns:
                 continue
-            if column_name in date_columns:
+            if column_name.lower() in date_columns:
                 continue
             if update_sql is None:
                 update_sql = Query.update(query_builder).set(
