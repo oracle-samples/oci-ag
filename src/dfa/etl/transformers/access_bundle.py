@@ -163,20 +163,18 @@ class AccessBundleEventTransformer(BaseEventTransformer):
                     raw_event["accessGuardrailIds"]
                 )
 
+            if "permissionIds" in raw_event:
+                base_access_bundle["permission_ids"] = json.dumps(
+                    raw_event["permissionIds"]
+                )
+
             if "customAttributes" in raw_event:
                 base_access_bundle["attributes"] = json.dumps(raw_event["customAttributes"])
 
             base_access_bundle["event_object_type"] = self.get_event_object_type()
             base_access_bundle["operation_type"] = self.get_operation_type()
 
-            permission_ids_list = raw_event.get("permissionIds", [])
-            if permission_ids_list:
-                for permission_id in permission_ids_list:
-                    access_bundle_copy = base_access_bundle.copy()
-                    access_bundle_copy["permission_id"] = permission_id
-                    access_bundle_list.append(access_bundle_copy)
-            else:
-                access_bundle_list.append(base_access_bundle)
+            access_bundle_list.append(base_access_bundle)
 
         except KeyError as e:
             self.logger.error(
