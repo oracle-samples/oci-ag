@@ -25,7 +25,7 @@ class AccessBundleTimeSeriesTable(BaseTable):
         {"field_name":"TARGET_ID","column_name":"TARGET_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"TAGS","column_name":"TAGS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"ACCESS_BUNDLE_TYPE","column_name":"ACCESS_BUNDLE_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
-        {"field_name":"PERMISSION_ID","column_name":"PERMISSION_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
+        {"field_name":"PERMISSION_IDS","column_name":"PERMISSION_IDS","column_expression":null,"skip_column":false,"data_type":"CLOB","data_length":null,"data_format":null},
         {"field_name":"CREATED_BY","column_name":"CREATED_BY","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"CREATED_BY_DISPLAY_NAME","column_name":"CREATED_BY_DISPLAY_NAME","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
         {"field_name":"CREATED_BY_VALUE","column_name":"CREATED_BY_VALUE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
@@ -71,5 +71,5 @@ class AccessBundleStateTable(BaseStateTable, AccessBundleTimeSeriesTable):
     def get_unique_contraint_definition_details(self):
         return {
             "name": "DFA_UNQ_AB_ST_CONST",
-            "columns": ["ID", "PERMISSION_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            "columns": ["ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
         }

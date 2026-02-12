@@ -66,16 +66,16 @@ class TestFileTransformer(unittest.TestCase):
         )
 
         self.transformer.transform_data()
-        self.assertEqual(len(self.transformer._prepared_events), 9)
+        self.assertEqual(len(self.transformer._prepared_events), 5)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
         self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 9)
+        self.assertEqual(len(self.transformer._prepared_events), 5)
         self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "9 access bundle events"))
+            self.assertTrue(self.check_logs(logs.output, "5 access bundle events"))
 
     def test_access_guardrail(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/access_guardrail.jsonl")
