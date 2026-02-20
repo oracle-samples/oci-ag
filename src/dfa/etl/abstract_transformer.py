@@ -108,6 +108,7 @@ class AbstractTransformer(ABC):
                                 return cls_obj(
                                     self.get_event_object_type(),
                                     self.get_operation_type(),
+                                    self.is_timeseries,
                                 )
                     except Exception as e:
                         self.logger.error("Error finding %s: %s", class_name, e)
