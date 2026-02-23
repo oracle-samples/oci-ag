@@ -223,7 +223,7 @@ class TestFileTransformer(unittest.TestCase):
         mock_object = MagicMock()
         mock_object.data.content.decode.return_value = content
         self.mock_storage.download.return_value = mock_object
-    
+
         self.transformer.extract_data()
         self.assertEqual(len(self.transformer._raw_events), 2)
         self.assertEqual(self.transformer._event_object_type, "IDENTITY")
@@ -232,7 +232,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 2)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
-
 
     def test_permission_assignment(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/permission_assignment.jsonl")
