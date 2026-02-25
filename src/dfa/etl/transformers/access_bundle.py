@@ -164,9 +164,7 @@ class AccessBundleEventTransformer(BaseEventTransformer):
                 )
 
             if "permissionIds" in raw_event:
-                base_access_bundle["permission_ids"] = json.dumps(
-                    raw_event["permissionIds"]
-                )
+                base_access_bundle["permission_ids"] = json.dumps(raw_event["permissionIds"])
 
             if "customAttributes" in raw_event:
                 base_access_bundle["attributes"] = json.dumps(raw_event["customAttributes"])

@@ -12,13 +12,15 @@ class BaseEventTransformer(ABC):
     logger = Logger(__name__).get_logger()
     __event_object_type = None
     __operation_type = None
+    __is_timesteries = False
     _tenancy_id = None
     _service_instance_id = None
     _event_timestamp = None
 
-    def __init__(self, event_object_type, operation_type):
+    def __init__(self, event_object_type, operation_type, is_timeseries=False):
         self.__event_object_type = event_object_type
         self.__operation_type = operation_type
+        self.__is_timesteries = is_timeseries
 
     @abstractmethod
     def transform_raw_event(self, raw_event):
@@ -29,6 +31,9 @@ class BaseEventTransformer(ABC):
 
     def get_operation_type(self):
         return self.__operation_type
+
+    def is_timeseries(self):
+        return self.__is_timesteries
 
     def set_tenancy_id(self, tenancy_id):
         self._tenancy_id = tenancy_id

@@ -96,7 +96,11 @@ class IdentityEventTransformer(BaseEventTransformer):
                                 target_identity["ti_identity_name"] = json.dumps(
                                     ti["identity"]["name"]
                                 )
-                        identities_list.append(target_identity)
+                        if target_identity["ti_id"].startswith("targetId.identity"):
+                            if self.is_timeseries():
+                                identities_list.append(target_identity)
+                        else:
+                            identities_list.append(target_identity)
                 else:
                     identities_list.append(identity)
             else:
