@@ -94,6 +94,7 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
                 constraint_violating_rows,
                 [],
                 self.table_manager.get_unique_contraint_definition_details()["columns"],
+                self.table_manager.get_nullable_constraint_columns()
             )
 
             AdwConnection.get_cursor().setinputsizes(**input_sizes)

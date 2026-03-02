@@ -63,3 +63,6 @@ class PermissionAssignmentStateTable(BaseStateTable, PermissionAssignmentTimeSer
                 "TENANCY_ID",
             ],
         }
+
+    def get_nullable_constraint_columns(self):
+        return ["ACCESS_BUNDLE_ID"]
