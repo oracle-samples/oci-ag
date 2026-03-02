@@ -84,6 +84,9 @@ class RoleEventTransformer(BaseEventTransformer):
             if "ownerUIDs" in raw_event:
                 role["owner_uids"] = json.dumps(raw_event["ownerUIDs"])
 
+            if "tags" in raw_event:
+                role["tags"] = raw_event["tags"]
+
             if "customAttributes" in raw_event:
                 role["attributes"] = json.dumps(raw_event["customAttributes"])
 
