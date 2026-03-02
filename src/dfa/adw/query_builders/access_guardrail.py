@@ -59,13 +59,10 @@ class AccessGuardrailStateUpdateQueryBuilder(AccessGuardrailStateQueryBuilder):
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info("access guardrail create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d access guardrail creates failed for unique constraint violation - \
-                performing bulk access guardrail updates",
+                "%d access guardrail creates failed for unique constraint violation - performing bulkupdates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -81,7 +78,7 @@ class AccessGuardrailStateUpdateQueryBuilder(AccessGuardrailStateQueryBuilder):
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("access guardrail update failed - %s", batch_error.message)
+                self.logger.warning("access guardrail update failed - %s", batch_error.message)
 
         AdwConnection.commit()
 
@@ -98,7 +95,6 @@ class AccessGuardrailStateDeleteQueryBuilder(AccessGuardrailStateQueryBuilder):
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for access guardrail delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 

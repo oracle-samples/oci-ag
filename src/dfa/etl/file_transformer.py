@@ -65,7 +65,6 @@ class FileTransformer(AbstractTransformer):
                 self.logger.error("Failed to parse payload 'data' field: %s", e)
                 raw_data = None
             if isinstance(raw_data, dict):
-                self.logger.debug("we have a dict")
                 self._raw_events = [raw_data]
             elif isinstance(raw_data, list):
                 self._raw_events = raw_data
@@ -114,22 +113,13 @@ class FileTransformer(AbstractTransformer):
 
             self._prepared_events_df = pd.DataFrame(self._get_prepared_events())
 
-    def clean_data(self):
-        self.logger.info("Cleaning up data...")
-        transformer = self.transformer_factory()
-        self._prepared_events_df = transformer.clean_prepared_events(self._get_prepared_events_df())
-
     def chunk_prepared_events(self, chunk_size=None):
         if chunk_size is None:
             try:
                 chunk_size = int(os.getenv("DFA_BATCH_SIZE", "10000"))
             except ValueError:
                 chunk_size = 10000
-        self.logger.info(
-            "Splitting %d events into chunks of %d",
-            len(self._prepared_events),
-            chunk_size,
-        )
+
         chunks = []
         for i in range(0, len(self._prepared_events), chunk_size):
             chunks.append(self._prepared_events[i : i + chunk_size])
@@ -153,7 +143,6 @@ class FileTransformer(AbstractTransformer):
                     self.is_timeseries,
                 )
                 self.query_builder.execute_sql_for_events()
-            self.logger.info("We executed all of the queries")
         else:
             self.logger.info(
                 "No data to load for %s events for %s operation",

@@ -83,13 +83,10 @@ class IdentityStateUpdateQueryBuilder(IdentityStateQueryBuilder):
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info("identity create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d identity creates failed for unique constraint violation - \
-                performing bulk identity updates",
+                "%d identity creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -97,6 +94,7 @@ class IdentityStateUpdateQueryBuilder(IdentityStateQueryBuilder):
                 constraint_violating_rows,
                 [],
                 self.table_manager.get_unique_contraint_definition_details()["columns"],
+                self.table_manager.get_nullable_constraint_columns(),
             )
 
             AdwConnection.get_cursor().setinputsizes(**input_sizes)
@@ -105,7 +103,7 @@ class IdentityStateUpdateQueryBuilder(IdentityStateQueryBuilder):
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("identity update failed - %s", batch_error.message)
+                self.logger.warning("identity update failed - %s", batch_error.message)
 
         AdwConnection.commit()
 
@@ -134,5 +132,4 @@ class IdentityStateDeleteQueryBuilder(IdentityStateQueryBuilder):
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for identity delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()

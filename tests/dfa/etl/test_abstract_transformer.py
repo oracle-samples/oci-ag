@@ -19,9 +19,6 @@ class DummyTransformer(AbstractTransformer):
     def transform_data(self):
         return "transformed"
 
-    def clean_data(self):
-        return "cleaned"
-
     def load_data(self):
         return "loaded"
 

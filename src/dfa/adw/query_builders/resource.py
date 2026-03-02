@@ -56,13 +56,10 @@ class ResourceStateUpdateQueryBuilder(ResourceStateQueryBuilder):
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info("identity create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d resource creates failed for unique constraint violation - \
-                performing bulk resource updates",
+                "%d resource creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -78,7 +75,7 @@ class ResourceStateUpdateQueryBuilder(ResourceStateQueryBuilder):
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("resource update failed - %s", batch_error.message)
+                self.logger.warning("resource update failed - %s", batch_error.message)
 
         AdwConnection.commit()
 
@@ -95,7 +92,6 @@ class ResourceStateDeleteQueryBuilder(ResourceStateQueryBuilder):
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for group delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 

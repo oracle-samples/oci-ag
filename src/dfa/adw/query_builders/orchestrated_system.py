@@ -60,13 +60,10 @@ class OrchestratedSystemStateUpdateQueryBuilder(OrchestratedSystemStateQueryBuil
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info("orchestrated system create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d orchestrated system creates failed for unique constraint violation - \
-                performing bulk orchestrated system updates",
+                "%d orchestrated system creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
 

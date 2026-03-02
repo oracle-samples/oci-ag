@@ -56,13 +56,10 @@ class PolicyStateUpdateQueryBuilder(PolicyStateQueryBuilder):
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info("policy create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d policy creates failed for unique constraint violation - \
-                performing bulk policy updates",
+                "%d policy creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -78,7 +75,7 @@ class PolicyStateUpdateQueryBuilder(PolicyStateQueryBuilder):
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("policy update failed - %s", batch_error.message)
+                self.logger.warning("policy update failed - %s", batch_error.message)
 
         unique_id_timstamp_pairs = DeleteQueryBuilder().remove_duplicates(self.events)
         self.logger.info(
@@ -104,7 +101,6 @@ class PolicyStateDeleteQueryBuilder(PolicyStateQueryBuilder):
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for policy delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 

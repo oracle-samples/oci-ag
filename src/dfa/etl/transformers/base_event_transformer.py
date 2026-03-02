@@ -74,6 +74,3 @@ class BaseEventTransformer(ABC):
 
     def transform_stream_message(self, message):
         return self.transform_raw_event(self._access_message_value_data(message))
-
-    def clean_prepared_events(self, prepared_events_df):
-        return prepared_events_df

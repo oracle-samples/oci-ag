@@ -54,6 +54,9 @@ class IdentityStateTable(BaseStateTable, IdentityTimeSeriesTable):
             "columns": ["ID", "TI_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
         }
 
+    def get_nullable_constraint_columns(self):
+        return ["TI_ID"]
+
     def _after_create(self):
         super()._after_create()
         self.logger.info(
@@ -62,6 +65,6 @@ class IdentityStateTable(BaseStateTable, IdentityTimeSeriesTable):
 
         ti_id_index_ddl = f"""
             CREATE INDEX {self.get_schema()}.DFA_TI_ID_ST_CONST ON \
-            {self.get_schema()}.{self.get_table_name()} ("TI_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID")
+{self.get_schema()}.{self.get_table_name()} ("TI_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID")
         """
         AdwConnection.get_cursor().execute(ti_id_index_ddl)

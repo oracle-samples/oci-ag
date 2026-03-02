@@ -2,7 +2,6 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
 import os
-import time
 from abc import ABC
 
 import oci
@@ -128,19 +127,15 @@ class BaseObjectStorage(ABC):
         return retry_strategy_via_constructor
 
     def download(self, events_namespace, events_bucket_name, events_object_name):
-        download_start_time = time.perf_counter()
         event_object = self._get_client().get_object(
             namespace_name=events_namespace,
             bucket_name=events_bucket_name,
             object_name=events_object_name,
             retry_strategy=self.__get_retry_strategy(),
         )
-        download_time = time.perf_counter() - download_start_time
-        self.logger.info("Took %f seconds to download file from object storage", download_time)
         return event_object
 
     def upload_buffer(self, namespace, bucket_name, object_name, buffer):
-        upload_start_time = time.perf_counter()
         self._get_client().put_object(
             namespace_name=namespace,
             bucket_name=bucket_name,
@@ -148,11 +143,6 @@ class BaseObjectStorage(ABC):
             put_object_body=buffer,
             retry_strategy=self.__get_retry_strategy(),
         )
-        upload_time = time.perf_counter() - upload_start_time
-        self.logger.info(
-            "Took %f seconds to upload batched file to object storage bucket", upload_time
-        )
-
         return True
 
     def get_objects_by_prefix_and_search_string(

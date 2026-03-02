@@ -1,0 +1,762 @@
+statement,permissive_score
+"admit any-user of any-tenancy to { INSTANTIATE_APS_RESOURCE } in tenancy where all { request.principal.type='aps-rp-checker', request.principal.calling-flock.id = '5fa90c22-e242-49b9-9549-891be22b67a0' }",5
+"Admit any-user of any-tenancy to { SHEPHERD_FLOCK_APPLY_CREATE } in tenancy where all {request.principal.type='shepherd-rp-checker', target.resource.id='ocid1.flock.oc1..aaaaaaaa67c3h425ieclbdpmp2wjdsbsrjehq5zf3aan3ti7mbjmjsyubwmq'}",5
+"Admit any-user of any-tenancy to { SHEPHERD_FLOCK_APPLY_CREATE } in tenancy where all {request.principal.type='shepherd-rp-checker', target.resource.id='ocid1.flock.oc1..aaaaaaaaec6deqqjn4ilzjnewf3aozlyzczqktkq3s4or4e6uzznaz45o2oq'}",5
+"Admit any-user of any-tenancy to {MANAGE_CERTIFICATE} in tenancy where all { request.principal.type='flock', request.principal.id in ('ocid1.flock.oc1..aaaaaaaafmhlywl5cp5dwt2ipp4hbhbq6k25iodwqsnqls6aruxgvbgyuwma', 'ocid1.flock.oc1..aaaaaaaaelvv6n3truzja7be47y5qqsj5tcrhquci6reguz6o37fk3k7vhja') }",4
+"Admit any-user of any-tenancy to {ODO_SYSTEM_ADMIN, ODO_MANAGE_APPLICATION, ODO_SYSTEM_MANAGE} in tenancy where all {request.principal.type='flock'}",5
+"Admit any-user of any-tenancy to {SHEPHERD_FLOCK_APPLY_CREATE} in tenancy where all { target.resource.id in ( 'ocid1.flock.oc1..aaaaaaaa5e4punntogktdnnag44fwtclweifpmclaocgypwccqmyc7ctgzha' ), request.principal.type='shepherd-rp-checker' }",5
+"Admit any-user of any-tenancy to {SHEPHERD_FLOCK_APPLY_CREATE} in tenancy where all { target.resource.id in ( 'ocid1.flock.oc1..aaaaaaaaelvv6n3truzja7be47y5qqsj5tcrhquci6reguz6o37fk3k7vhja' ), request.principal.type='shepherd-rp-checker' }",5
+"Admit any-user of any-tenancy to manage all-resources in tenancy where all { request.principal.id in ( 'ocid1.flock.oc1..aaaaaaaaelvv6n3truzja7be47y5qqsj5tcrhquci6reguz6o37fk3k7vhja' ), request.principal.type='flock' }",4
+"admit any-user of tenancy APS_TENANCY to { INSTANTIATE_APS_RESOURCE } in tenancy where all { request.principal.type='aps-odo-rp-checker',  any {request.principal.calling-flock.projectName = 'corp-idcs-clp', target.resource.calling-claimingTenancy.id = 'ocid1.tenancy.oc1..aaaaaaaatdylvcgv2r6xxplnkemowvxvihlutixhvvynl4d2t6kpbp4s6ygq'} }",5
+Admit dynamic-group OIT-SHAREDMS-FSO-CrossTenancy of tenancy devapp to read metrics in tenancy,4
+Admit dynamic-group SourceAdmins of tenancy SourceTenancy to manage object-family in compartment data-enablement-test,5
+Admit dynamic-group SourceAdmins of tenancy SourceTenancy to use stream-push in compartment data-enablement-test,4
+Admit dynamic-group test-service of tenancy gitcdev to manage ag:cs-instance in tenancy,5
+Admit dynamic-group test-service of tenancy gitcdev to manage logging-family in tenancy,5
+Admit group AdvancedGovernance of tenancy SourceTenancy to manage object-family in tenancy,5
+admit group clp_log_viewers of tenancy boat to READ LOGS in compartment idcs-clp-us-sanjose-idcs-1,4
+"admit group CorpNet-Network-Admins of tenancy corpnet to manage drgs in tenancy where any {request.permission != 'DRG_CREATE', request.permission != 'DRG_DELETE'}",5
+admit group CorpNet-Network-Admins of tenancy corpnet to manage remote-peering-connections in tenancy where any {request.permission = 'REMOTE_PEERING_CONNECTION_CONNECT_TO'},5
+"admit group CorpNet-Network-Admins of tenancy corpnet to manage route-tables in tenancy where any {request.permission != 'ROUTE_TABLE_CREATE', request.permission != 'ROUTE_TABLE_DELETE'}",5
+"admit group CorpNet-Network-Admins of tenancy corpnet to manage vcns in tenancy where any {request.permission != 'VCN_CREATE', request.permission != 'VCN_DELETE'}",5
+admit group CorpNet-Network-Admins of tenancy corpnet to read compartments in tenancy,4
+admit group CorpNet-Network-Admins of tenancy corpnet to read tenancies in tenancy,4
+admit group CorpNet-Network-Admins of tenancy corpnet to read virtual-network-family in tenancy,5
+"admit group Corporate_Identity of tenancy boat to {FLOCK_CREATE, FLOCK_DELETE, FLOCK_READ, FLOCK_UPDATE} in compartment DSEE",4
+admit group Corporate_Identity of tenancy boat to {FLOCK_READ} in compartment DSEE,4
+"admit group Corporate_Identity of tenancy boat to {PHONEBOOK_SERVICE_CREATE, PHONEBOOK_SERVICE_UPDATE, PHONEBOOK_SERVICE_DELETE} in compartment DSEE",4
+admit group Corporate_Identity of tenancy boat to {SECURITYCENTRAL_FINDING_UPDATE} in compartment OIM,4
+"admit group Corporate_Identity of tenancy boat to {SECURITYCENTRAL_TASK_READ, SECURITYCENTRAL_FINDING_READ, SECURITYCENTRAL_TEAM_CREATE, SECURITYCENTRAL_TEAM_READ, SECURITYCENTRAL_TEAM_UPDATE} in compartment OIM",4
+admit group Corporate_Identity of tenancy boat to manage patch-family in compartment id ocid1.compartment.oc1..aaaaaaaas7uiubshvt73fzanimuvrk2x35jp3e4u6sm2kz6a3j4f53uoqfbq,5
+"admit group Corporate_Identity-general of tenancy boat to {FLOCK_CREATE, FLOCK_DELETE, FLOCK_READ, FLOCK_UPDATE} in compartment DSEE",4
+admit group Corporate_Identity-general of tenancy boat to {FLOCK_READ} in compartment id ocid1.compartment.oc1..aaaaaaaas7uiubshvt73fzanimuvrk2x35jp3e4u6sm2kz6a3j4f53uoqfbq,4
+"admit group Corporate_Identity-general of tenancy boat to {PHONEBOOK_SERVICE_CREATE, PHONEBOOK_SERVICE_UPDATE, PHONEBOOK_SERVICE_DELETE} in compartment DSEE",4
+admit group Corporate_Identity-general of tenancy boat to {SECURITYCENTRAL_FINDING_UPDATE} in compartment OIM,4
+"admit group Corporate_Identity-general of tenancy boat to {SECURITYCENTRAL_TASK_READ, SECURITYCENTRAL_FINDING_READ, SECURITYCENTRAL_TEAM_CREATE, SECURITYCENTRAL_TEAM_READ, SECURITYCENTRAL_TEAM_UPDATE} in compartment OIM",4
+admit group Corporate_Identity-general of tenancy boat to read patch-family in compartment id ocid1.compartment.oc1..aaaaaaaas7uiubshvt73fzanimuvrk2x35jp3e4u6sm2kz6a3j4f53uoqfbq,4
+Admit group dfa_internal_developers of tenancy dfa_gitcdev to manage devops-project in compartment id  ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,5
+Admit group dfa_internal_developers of tenancy dfa_gitcdev to manage devops-repository in compartment id  ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,5
+admit group ent_corpidm_secrets_viewers of tenancy boat to read secret-family in compartment IDM-Vaults,4
+admit group ent_identity of tenancy boat to manage all-resources in tenancy where request.principal.id = 'ocid1.user.oc1..aaaaaaaa6p7lpbwbxnoyinwbeiwafkcgng3nnmsmuk77jy66y374htuvramq',4
+admit group ent_prodsi-admin of tenancy boat to manage all-resources in tenancy where target.compartment.name = IDM-Vaults,5
+"admit group ent_testboatidm of tenancy boat to {FLOCK_READ, FLOCK_UPDATE, FLOCK_CREATE, FLOCK_DELETE} in tenancy",5
+admit group ent_testboatidm of tenancy boat to manage all-resources in tenancy,5
+admit group oracorpidentitystage-admin of tenancy boat to manage all-resources in tenancy,5
+admit group oracorpidentitystage-admin of tenancy boat to manage all-resources in tenancy where target.compartment.name != IDM-Vaults,5
+admit group oracorpidentitystage-resourceviewer of tenancy boat to read all-resources in tenancy,5
+admit group oracorpidentitystage-resourceviewer of tenancy boat to read all-resources in tenancy where target.compartment.name != IDM-Vaults,5
+Admit group RequestorGrp of tenancy Requestor to associate local-peering-gateways in tenancy Requestor with local-peering-gateways in compartment Networks-JumpVCN,4
+Admit group RequestorGrp of tenancy Requestor to manage local-peering-to in compartment Networks-JumpVCN,5
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy,5
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia2njaqdofnzmue75mxxqoel4o5vzr24g3i3rvjnpfgjoa'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia4mtywoxhpcu2qzcxlcla32vt72c3zuuiqs2b2lonsmya'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiagaruddrvwdj45cxbrqjdxyyijrylhen2cyojp4va27qq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiai7a25ili7bseqncxqfkdvqfujujiju5qiflraneg57sq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiajsesr67tepxnzqn3qqfhvhe34bcn2ollsehnguwanbqa'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaoc74a65uubm234iapyysd65tqixsnklzocqmatowflbq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiau3cccht45csa3ft2axakyc5krmiltsjbrtrnsnpgux2q'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiax5zfaryw34s3l763zzn7lzott4cvv2d4bqb6lmzhqmiq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaysnexpcrkle7wtkffgsnlso7yzg2es3mhl2xvhdhosmq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.oc1.ap-hyderabad-1.amaaaaaazcwn2lqaugo2rr35nvyzlrzx3qlkahitgyg5engqs7pilipmcyza'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.oc1.eu-madrid-1.amaaaaaahk5nlkyawlywctzb6yetsdbyku4zyphqo6d7kf6caknvfiqrfx5a'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.oc1.phx.amaaaaaawvcnegyawjjwrhy2f6imvzcry2kspjzxqzt3nimhlq5cndvevtwq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.oc1.uk-london-1.amaaaaaahk5nlkya54tbhiu2v3vyxupaynufvk7l4wr5yi6ineuvy7tbtyra'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.oc1.us-abilene-1.amaaaaaa6dbdngiayhfth4wj2hv7e62fr25lilqmn75eedwdkilnyusxcnta'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.agcsgovernanceinstance.oc1.us-desmoines-1.amaaaaaapwe32sqaa2q2iswunrnoge7gzjxhfgi4wg3xrkihy5pkcnbvyrmq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiabb3njf5nhuj7oq5y3jv7xpylg2xqpuou6befhhvbcspa'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiaifkgmp5r4e3e6u2vsmpomz2hwywo7maxrwy6zjr2wamq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-OCI-REQUESTING to use agcs-instance in tenancy where all {request.principal.id='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiazsx3qbxj3iuvj3noqqktiv66k273nuhkrrkxlculguxa'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-TENANCY to use agcs-instance in tenancy where all {request.principal.id='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiae3ywrs4yb3ejtsbuqfrq244yl3p43iafhplxpcxnehqq'},4
+admit resource agcsgovernanceinstance agcs-rp of tenancy AG-TENANCY to use agcs-instance in tenancy where all {request.principal.id='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiaukklbdrujhvlq5ybbvfj4tqqctsqgn62juf6pygejyda'},4
+Allow  dynamic-group 'Default-data-enablement'/'ri4de-devops' to manage repos in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+"Allow any-user to { ODO_MANAGE_APPLICATION } in compartment id ocid1.compartment.oc1..aaaaaaaape4plktwtvkjg7cfv7ye7wi7ucicbh4pfprddqckxi7sdowhaifa where all { request.principal.type='flock', request.principal.flock.projectName='poes-flocks-prod', request.principal.id='ocid1.flock.oc1..aaaaaaaagaccad57jdpwzkjkukde5cvvdpdzjl45jazo4jv7xfckicfjmduq' }",3
+"Allow any-user to { ODO_MANAGE_APPLICATION } in compartment id ocid1.compartment.oc1..aaaaaaaaxsukwnxgux5vup7vq5cx7dlxr7mp2up6y67ara5hxe56hzxexaka where all { request.principal.type='flock', request.principal.flock.projectName='poes-flocks-prod', request.principal.id='ocid1.flock.oc1..aaaaaaaagaccad57jdpwzkjkukde5cvvdpdzjl45jazo4jv7xfckicfjmduq' }",3
+"allow any-user to {LOG_ANALYTICS_LOG_GROUP_UPLOAD_LOGS}  in compartment id ocid1.compartment.oc1..aaaaaaaazgwpmerrsce6gxx4gnmgulz7irfjhzmsflpmku2h6oznndo5dyzq where all {request.principal.type='serviceconnector',  target.loganalytics-log-group.id='ocid1.loganalyticsloggroup.oc1.iad.amaaaaaaebkbezqadepha4d72qrsa7aoh7oxmu4vlw3egv5mdf76fctg7zbq', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaazgwpmerrsce6gxx4gnmgulz7irfjhzmsflpmku2h6oznndo5dyzq'}",4
+"allow any-user to {LOG_ANALYTICS_LOG_GROUP_UPLOAD_LOGS} in compartment id ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q where all {request.principal.type='serviceconnector', target.loganalytics-log-group.id='ocid1.loganalyticsloggroup.oc1.iad.amaaaaaaebkbezqams2mtwkopzhtvupu3rdsdhawvtkbxwef3dnx6kf4fewa', request.principal.compartment.id='ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q'}",4
+"allow any-user to {LOG_ANALYTICS_LOG_GROUP_UPLOAD_LOGS} in compartment id ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q where all {request.principal.type='serviceconnector', target.loganalytics-log-group.id='ocid1.loganalyticsloggroup.oc1.phx.amaaaaaaebkbezqai2jkwn6n4xy4sn4iylc6u6co7iywjqmqg57rnxqzofjq', request.principal.compartment.id='ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q'}",4
+"Allow any-user to {MANAGE_CERTIFICATE} in tenancy where all { request.principal.type='flock', request.principal.id in ('ocid1.flock.oc1..aaaaaaaafmhlywl5cp5dwt2ipp4hbhbq6k25iodwqsnqls6aruxgvbgyuwma', 'ocid1.flock.oc1..aaaaaaaaelvv6n3truzja7be47y5qqsj5tcrhquci6reguz6o37fk3k7vhja') }",4
+"Allow any-user to {STREAM_READ, STREAM_CONSUME} in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza where all {request.principal.type='serviceconnector', target.stream.id='ocid1.stream.oc1.iad.amaaaaaag3et56yagi7an42o3qczjjclr6itp6rcin5mxjpwzx5t7syjt2ma', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza'}",4
+"allow any-user to {STREAM_READ, STREAM_CONSUME} in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where all {request.principal.type='serviceconnector', target.stream.id='ocid1.stream.oc1.iad.amaaaaaaebkbezqau44jtxiljqvr5epx6az24iqwlpnni6555hg4rfuv3aba', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q'}",4
+"Allow any-user to {STREAM_READ, STREAM_CONSUME} in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where all {request.principal.type='serviceconnector', target.stream.id='ocid1.stream.oc1.iad.amaaaaaaebkbezqau44jtxiljqvr5epx6az24iqwlpnni6555hg4rfuv3aba', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q'}",4
+"Allow any-user to {STREAM_READ, STREAM_CONSUME} in compartment OAG-Data-Feed-AGHCMTestSI-compartment where all {request.principal.type='serviceconnector', target.stream.id='ocid1.stream.oc1.iad.amaaaaaag3et56yaou2z3dmxg2kc7ygbagi7g3fzlcmpeoucv2rnxbwogaeq', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaawnifwhtun2bwsaad3fq6r5nv7brryg4bcqphvtm6wzftbvgzm2fq'}",4
+allow any-user to inspect compartments in tenancy where all { request.principal.type = 'vnpa-service' },4
+allow any-user to manage all-resources in compartment managedcompartmentforpaas where request.instance.compartment.id = 'ocid1.compartment.oc1..aaaaaaaaohdaz6jbxp65lft6j5upbhirpkho3lqanb63eoemz4kdmo6vefla',5
+allow any-user to manage all-resources in compartment managedcompartmentforpaas where request.user.name = /__PSM*/,5
+"Allow any-user to manage all-resources in tenancy where all { request.principal.id in ( 'ocid1.flock.oc1..aaaaaaaa5e4punntogktdnnag44fwtclweifpmclaocgypwccqmyc7ctgzha' ), request.principal.type='flock' }",4
+"Allow any-user to manage all-resources in tenancy where all { request.principal.id in ( 'ocid1.flock.oc1..aaaaaaaaelvv6n3truzja7be47y5qqsj5tcrhquci6reguz6o37fk3k7vhja' ), request.principal.type='flock' }",4
+"Allow any-user to manage all-resources in tenancy where all {request.principal.id='ocid1.flock.oc1..aaaaaaaa67c3h425ieclbdpmp2wjdsbsrjehq5zf3aan3ti7mbjmjsyubwmq',request.principal.type='flock'}",4
+"Allow any-user to manage all-resources in tenancy where all {request.principal.id='ocid1.flock.oc1..aaaaaaaaec6deqqjn4ilzjnewf3aozlyzczqktkq3s4or4e6uzznaz45o2oq',request.principal.type='flock'}",4
+allow any-user to manage all-resources in tenancy where request.domain.id =  'ocid1.domain.oc1..aaaaaaaalek3v2cxf3emrffh5y57vmaphle4ceo6neia2rx7fmgq77l4dtkq',5
+allow any-user to manage all-resources in tenancy where request.domain.id =  'ocid1.domain.oc1..aaaaaaaapdcqfh5ccrkqpj6higofn34epqt2qt6hjzu3gutzn3bvvisdxjaq',5
+allow any-user to manage all-resources in tenancy where request.domain.id =  'ocid1.domain.oc1..aaaaaaaasjdslwqqaisdrm3onva7rvr4umuto7fawkf6kmy5y4nw6zw3hhuq',5
+allow any-user to manage all-resources in tenancy where request.domain.id = 'ocid1.domain.oc1..aaaaaaaaificqhkfemt7dnlakios3dwaht645hjxodiwdyndy7chcujzplqq',5
+allow any-user to manage all-resources in tenancy where request.domain.id = 'ocid1.domain.oc1..aaaaaaaalek3v2cxf3emrffh5y57vmaphle4ceo6neia2rx7fmgq77l4dtkq',5
+allow any-user to manage all-resources in tenancy where request.domain.id = 'ocid1.domain.oc1..aaaaaaaarc5xcvde4ji5mhdgybfovzhgi7vkolbmh6djjofxnmvgaig7l5qa',5
+"allow any-user to manage object-family in compartment idcs-clp-assets-us-sanjose-idcs-1 where all { request.principal.type = 'artifactpushjob', request.principal.calling-flock.id = '5fa90c22-e242-49b9-9549-891be22b67a0', target.bucket.name='UIStaticAssets', any {request.permission='OBJECT_CREATE', request.permission='OBJECT_INSPECT', request.permission='OBJECT_WRITE', request.permission='OBJECT_OVERWRITE', request.permission='OBJECT_DELETE', request.permission='BUCKET_READ'} }",5
+"allow any-user to manage virtual-network-family in compartment managedcompartmentforpaas where all { target.vcn.display-name != /mgmt-vcn*/, request.operation != 'CreateVcn' }",5
+ALLOW any-user to manage volume-attachments in TENANCY where request.principal.type = 'cluster',5
+ALLOW any-user to manage volumes in TENANCY where request.principal.type = 'cluster',5
+allow any-user to read all-resources in compartment managedcompartmentforpaas,4
+allow any-user to read instances in tenancy where all { request.principal.type = 'vnpa-service' },4
+allow any-user to read load-balancers in tenancy where all { request.principal.type = 'vnpa-service' },4
+allow any-user to read network-security-group in tenancy where all { request.principal.type = 'vnpa-service' },4
+"allow any-user to read object-family in compartment idcs-clp-assets-us-sanjose-idcs-1 where all { request.principal.type = 'artifactpushjob', request.principal.calling-flock.id = '5fa90c22-e242-49b9-9549-891be22b67a0', target.bucket.name = 'UIStaticAssets' }",4
+"allow any-user to read objectstorage-namespaces in tenancy where all { request.principal.type = 'artifactpushjob', request.principal.calling-flock.id = '5fa90c22-e242-49b9-9549-891be22b67a0' }",4
+allow any-user to read virtual-network-family in tenancy where all { request.principal.type = 'vnpa-service' },4
+allow any-user to use buckets in compartment managedcompartmentforpaas where request.instance.compartment.id = 'ocid1.compartment.oc1..aaaaaaaa3vn26bkwu6npjmvewnpritsm4oe4mkdqqwn3swsxbbhsrdasm4na',4
+allow any-user to use buckets in compartment managedcompartmentforpaas where request.instance.compartment.id = 'ocid1.compartment.oc1..aaaaaaaaohdaz6jbxp65lft6j5upbhirpkho3lqanb63eoemz4kdmo6vefla',4
+"allow any-user to use fn-function in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza'}",4
+"Allow any-user to use fn-function in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza'}",4
+"allow any-user to use fn-function in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q'}",4
+"Allow any-user to use fn-function in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q'}",4
+"Allow any-user to use fn-function in compartment OAG-Data-Feed-AGHCMTestSI-compartment where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaawnifwhtun2bwsaad3fq6r5nv7brryg4bcqphvtm6wzftbvgzm2fq'}",4
+"allow any-user to use fn-invocation in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza where all {request.principal.type= 'serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza'}",4
+"Allow any-user to use fn-invocation in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza'}",4
+"allow any-user to use fn-invocation in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where all {request.principal.type= 'serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q'}",4
+"Allow any-user to use fn-invocation in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q'}",4
+"Allow any-user to use fn-invocation in compartment id ocid1.compartment.oc1..aaaaaaaawnifwhtun2bwsaad3fq6r5nv7brryg4bcqphvtm6wzftbvgzm2fq where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaawnifwhtun2bwsaad3fq6r5nv7brryg4bcqphvtm6wzftbvgzm2fq'}",4
+allow any-user to use load-balancers in compartment id ocid1.compartment.oc1..aaaaaaaape4plktwtvkjg7cfv7ye7wi7ucicbh4pfprddqckxi7sdowhaifa where All {request.principal.type='odo-app'},4
+allow any-user to use objects in compartment managedcompartmentforpaas where request.instance.compartment.id = 'ocid1.compartment.oc1..aaaaaaaa3vn26bkwu6npjmvewnpritsm4oe4mkdqqwn3swsxbbhsrdasm4na',4
+allow any-user to use objects in compartment managedcompartmentforpaas where request.instance.compartment.id = 'ocid1.compartment.oc1..aaaaaaaaohdaz6jbxp65lft6j5upbhirpkho3lqanb63eoemz4kdmo6vefla',4
+Allow dynamic-group 'data-enablement-test-cr'/'data_enablement_writer_group_cr' to manage autonomous-databases in compartment data-enablement-test,4
+Allow dynamic-group 'Default-data-enablement'/'dfa_functions' to manage autonomous-database-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'dfa-functions' to manage buckets in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'dfa-functions' to manage objects in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'dfa-functions' to manage secret-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,5
+Allow dynamic-group 'Default-data-enablement'/'dfa-functions' to manage vaults in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'dfa-functions' to use keys in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'Default-data-enablement'/'ri4de_state_handlers' to use keys in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'Default-data-enablement'/'ri4de_state_handlers' to use secret-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de_state_handlers' to use vaults in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'Default-data-enablement'/'ri4de-devops' to manage devops-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de-devops' to manage fn-function in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de-devops' to manage repos in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de-devops' to read fn-app in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,2
+Allow dynamic-group 'Default-data-enablement'/'ri4de-devops' to read secret-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'Default-data-enablement'/'ri4de-devops' to use fn-invocation in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'Default-data-enablement'/'ri4de-dry-run-functions'  to manage functions-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de-dry-run-functions' to manage autonomous-databases in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de-dry-run-functions' to manage buckets in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de-dry-run-functions' to manage objects in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de-dry-run-functions' to manage secret-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,5
+Allow dynamic-group 'Default-data-enablement'/'ri4de-dry-run-functions' to manage vaults in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'Default-data-enablement'/'ri4de-dry-run-functions' to use keys in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'Default'/'DataScienceResources' to manage buckets in compartment OAG-Data-Feed,4
+Allow dynamic-group 'Default'/'DataScienceResources' to manage buckets in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage data-science-family in compartment OAG-Data-Feed,4
+Allow dynamic-group 'Default'/'DataScienceResources' to manage data-science-family in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage keys in compartment OAG-Data-Feed,4
+Allow dynamic-group 'Default'/'DataScienceResources' to manage keys in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage log-content in compartment OAG-Data-Feed,4
+Allow dynamic-group 'Default'/'DataScienceResources' to manage log-content in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage log-groups in compartment OAG-Data-Feed,4
+Allow dynamic-group 'Default'/'DataScienceResources' to manage log-groups in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage objects in compartment OAG-Data-Feed,4
+Allow dynamic-group 'Default'/'DataScienceResources' to manage objects in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage secret-family in compartment OAG-Data-Feed,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage secret-family in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage vaults in compartment OAG-Data-Feed,4
+Allow dynamic-group 'Default'/'DataScienceResources' to manage vaults in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage virtual-network-family in compartment OAG-Data-Feed,5
+Allow dynamic-group 'Default'/'DataScienceResources' to manage virtual-network-family in tenancy,5
+Allow dynamic-group 'Default'/'DataScienceResources' to read secret-bundles in compartment OAG-Data-Feed,2
+Allow dynamic-group 'Default'/'DataScienceResources' to read secret-bundles in tenancy,3
+"Allow dynamic-group 'Default'/'dfa_test2_adw' to manage objects in tenancy where any {request.permission='OBJECT_CREATE', request.permission='OBJECT_INSPECT'}",5
+Allow dynamic-group 'Default'/'dfa_test2_adw' to read buckets in tenancy,3
+Allow dynamic-group 'Default'/'grc_dynamic_group' to manage functions-family in tenancy,5
+Allow dynamic-group 'Default'/'grc_dynamic_group' to manage logging-family in tenancy,5
+Allow dynamic-group 'Default'/'grc_dynamic_group' to manage repos in tenancy,5
+Allow dynamic-group 'Default'/'grc_dynamic_group' to read metrics in tenancy,3
+Allow dynamic-group 'Default'/'grc_dynamic_group' to read objectstorage-namespaces in tenancy,3
+Allow dynamic-group 'Default'/'grc_dynamic_group' to read vaults in tenancy,3
+Allow dynamic-group 'Default'/'grc_dynamic_group' to use apm-domains in tenancy,4
+Allow dynamic-group 'Default'/'grc_dynamic_group' to use cloud-shell in tenancy,4
+Allow dynamic-group 'Default'/'grc_dynamic_group' to use keys in tenancy,4
+Allow dynamic-group 'Default'/'grc_dynamic_group' to use virtual-network-family in tenancy,5
+Allow dynamic-group 'dfa_adw' to use object-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'dfa_functions' to manage autonomous-databases in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where target.workloadType = 'DW',4
+Allow dynamic-group 'dfa_functions' to manage function-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'dfa_functions' to manage ons-topics in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'dfa_functions' to manage secret-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,5
+Allow dynamic-group 'dfa_functions' to use keys in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'dfa_functions' to use vaults in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'dfa_test2_adw' to use object-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'dfa_test2_functions' to manage autonomous-databases in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where target.workloadType = 'DW',4
+Allow dynamic-group 'dfa_test2_functions' to manage function-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'dfa_test2_functions' to manage ons-topics in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group 'dfa_test2_functions' to manage secret-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,5
+Allow dynamic-group 'dfa_test2_functions' to use keys in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group 'dfa_test2_functions' to use vaults in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,3
+Allow dynamic-group All-Instances-in-Test to {SECRET-SERVICE-READ-SECRETS} in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,3
+Allow dynamic-group All-Instances-in-Test to inspect compartments in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,1
+Allow dynamic-group All-Instances-in-Test to manage cluster-node-pools in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,4
+Allow dynamic-group All-Instances-in-Test to manage connect-harness in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,4
+Allow dynamic-group All-Instances-in-Test to manage instance-family in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,4
+Allow dynamic-group All-Instances-in-Test to manage streampools in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,4
+Allow dynamic-group All-Instances-in-Test to manage streams in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,4
+Allow dynamic-group All-Instances-in-Test to read virtual-network-family in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,3
+Allow dynamic-group All-Instances-in-Test to use subnets in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,3
+Allow dynamic-group All-Instances-in-Test to use vnics in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,3
+Allow dynamic-group automation_servers  to manage volume-family in tenancy,5
+Allow dynamic-group automation_servers to inspect compartments in tenancy,2
+Allow dynamic-group automation_servers to manage buckets in tenancy,5
+Allow dynamic-group automation_servers to manage instance-family in compartment OS_Images,4
+Allow dynamic-group automation_servers to manage instance-family in tenancy,5
+Allow dynamic-group automation_servers to manage objects in tenancy,5
+Allow dynamic-group automation_servers to manage osms-errata in tenancy,5
+Allow dynamic-group automation_servers to manage osms-managed-instance-groups in tenancy,5
+Allow dynamic-group automation_servers to manage osms-managed-instances in tenancy,5
+Allow dynamic-group automation_servers to manage osms-scheduled-jobs in tenancy,5
+Allow dynamic-group automation_servers to manage osms-software-sources in tenancy,5
+Allow dynamic-group automation_servers to manage osms-work-requests in tenancy,5
+Allow dynamic-group automation_servers to manage volume-backups in tenancy,5
+Allow dynamic-group automation_servers to read app-catalog-listing in tenancy,3
+Allow dynamic-group automation_servers to read instance in tenancy,3
+Allow dynamic-group automation_servers to read instance-images in tenancy,3
+Allow dynamic-group automation_servers to read osms-software-sources in tenancy,3
+Allow dynamic-group automation_servers to read virtual-network-family in tenancy,4
+Allow dynamic-group automation_servers to use virtual-network-family in compartment Networks,4
+Allow dynamic-group automation_servers to use virtual-network-family in compartment OS_Images,4
+Allow dynamic-group automation_servers to use volume-family in compartment OS_Images,3
+Allow dynamic-group Default-data-enablement/sc_script_test_dfa_functions to manage autonomous-databases in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group Default-data-enablement/sc_script_test_dfa_functions to manage object-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group Default-data-enablement/sc_script_test_dfa_functions to manage secret-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,5
+Allow dynamic-group Default-data-enablement/sc_script_test_dfa_functions to manage vaults in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow dynamic-group dev_compartment_instances to manage osms-events in compartment Dev,4
+Allow dynamic-group dev_compartment_instances to read instance-family in compartment Dev,2
+Allow dynamic-group dev_compartment_instances to use osms-managed-instances in compartment Dev,3
+Allow dynamic-group grc_dynamic_group to read secret-family in tenancy,4
+Allow dynamic-group Griffin-DynamicGroup to manage database-family in compartment Database,4
+Allow dynamic-group Griffin-DynamicGroup to manage instance-family in compartment OIM,4
+Allow dynamic-group Griffin-DynamicGroup to manage log-content in compartment Database,4
+Allow dynamic-group Griffin-DynamicGroup to manage log-content in compartment OIM,4
+Allow dynamic-group Griffin-DynamicGroup to read database-family in compartment Database,2
+Allow dynamic-group Griffin-DynamicGroup to read instance-family in compartment OIM,2
+"Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaayqlogv2mf56wdxkpnxlutfbvrqg5qlpnxcvaakafdorbirntnhdq to {SECRET_REPLICATE, SECRET_CREATE, SECRET_REPLICATE_CONFIGURE, VAULT_CREATE_SECRET, KEY_ENCRYPT, KEY_DECRYPT} in tenancy",4
+Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaayqlogv2mf56wdxkpnxlutfbvrqg5qlpnxcvaakafdorbirntnhdq to manage keys in tenancy,5
+Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaayqlogv2mf56wdxkpnxlutfbvrqg5qlpnxcvaakafdorbirntnhdq to manage secret-replication in tenancy,5
+Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaayqlogv2mf56wdxkpnxlutfbvrqg5qlpnxcvaakafdorbirntnhdq to manage secrets in tenancy,5
+Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaayqlogv2mf56wdxkpnxlutfbvrqg5qlpnxcvaakafdorbirntnhdq to manage tag-namespaces in tenancy,5
+Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaayqlogv2mf56wdxkpnxlutfbvrqg5qlpnxcvaakafdorbirntnhdq to manage vaults in tenancy,5
+Allow dynamic-group idcs-clp-assets-exec-service-dynamic-group to manage object-family in tenancy,5
+allow dynamic-group idcs-clp-instances to read keys in compartment id ocid1.compartment.oc1..aaaaaaaape4plktwtvkjg7cfv7ye7wi7ucicbh4pfprddqckxi7sdowhaifa,2
+allow dynamic-group idcs-clp-instances to read objects in compartment id ocid1.compartment.oc1..aaaaaaaaodt6egqpdhzhu57kn6vv7rkqf7tz74vme6alnrz3cb3h7quubkia,2
+allow dynamic-group idcs-clp-instances to read secret-family in compartment id ocid1.compartment.oc1..aaaaaaaape4plktwtvkjg7cfv7ye7wi7ucicbh4pfprddqckxi7sdowhaifa,3
+allow dynamic-group idcs-clp-instances to read vaults in compartment id ocid1.compartment.oc1..aaaaaaaape4plktwtvkjg7cfv7ye7wi7ucicbh4pfprddqckxi7sdowhaifa,2
+allow dynamic-group idcs-clp-instances to use logs in compartment id ocid1.compartment.oc1..aaaaaaaape4plktwtvkjg7cfv7ye7wi7ucicbh4pfprddqckxi7sdowhaifa,3
+allow dynamic-group LA_ScheduledTasks_Dynamic_Grp to {LOG_ANALYTICS_QUERY_VIEW} in tenancy,4
+allow dynamic-group LA_ScheduledTasks_Dynamic_Grp to {LOG_ANALYTICS_QUERYJOB_WORK_REQUEST_READ} in tenancy,4
+allow dynamic-group LA_ScheduledTasks_Dynamic_Grp to read compartments in tenancy,3
+allow dynamic-group LA_ScheduledTasks_Dynamic_Grp to READ loganalytics-log-group in tenancy,3
+allow dynamic-group LA_ScheduledTasks_Dynamic_Grp to read management-saved-search in tenancy,3
+allow dynamic-group LA_ScheduledTasks_Dynamic_Grp to use metrics in tenancy,4
+Allow dynamic-group linux-patching to manage osms-errata in tenancy,5
+Allow dynamic-group linux-patching to manage osms-managed-instance-groups in tenancy,5
+Allow dynamic-group linux-patching to manage osms-managed-instances in tenancy,5
+Allow dynamic-group linux-patching to manage osms-scheduled-jobs in tenancy,5
+Allow dynamic-group linux-patching to manage osms-software-sources in tenancy,5
+Allow dynamic-group linux-patching to manage osms-work-requests in tenancy,5
+Allow dynamic-group linux-patching to read instance-family in tenancy,3
+Allow dynamic-group linux-patching to use instance-family in tenancy,4
+Allow dynamic-group OAG-Data-Feed-AGHCMTestSI-Domain/dfa_functions to manage autonomous-databases in compartment OAG-Data-Feed-AGHCMTestSI-compartment,4
+Allow dynamic-group OAG-Data-Feed-AGHCMTestSI-Domain/dfa_functions to manage object-family in compartment OAG-Data-Feed-AGHCMTestSI-compartment,4
+Allow dynamic-group OAG-Data-Feed-AGHCMTestSI-Domain/dfa_functions to manage secret-family in compartment OAG-Data-Feed-AGHCMTestSI-compartment,5
+Allow dynamic-group OAG-Data-Feed-AGHCMTestSI-Domain/dfa_functions to manage vaults in compartment OAG-Data-Feed-AGHCMTestSI-compartment,4
+Allow dynamic-group OAG-Data-Feed-AGHCMTestSI-Domain/dfa_functions to use keys in compartment OAG-Data-Feed-AGHCMTestSI-compartment,3
+Allow dynamic-group OAG-DataFeed/adw_dynamic_group to manage object-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_devops to manage devops-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_devops to manage fn-function in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_devops to manage repos in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_devops to read fn-app in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,2
+Allow dynamic-group OAG-DataFeed/dfa_devops to read secret-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,3
+Allow dynamic-group OAG-DataFeed/dfa_devops to use fn-invocation in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,3
+Allow dynamic-group OAG-DataFeed/dfa_functions to manage autonomous-databases in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_functions to manage functions-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_functions to manage keys in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_functions to manage object-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_functions to manage ons-topics in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OAG-DataFeed/dfa_functions to manage secret-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,5
+Allow dynamic-group OAG-DataFeed/dfa_functions to manage vaults in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow dynamic-group OID-Backup-Group to manage object-family in compartment OID Where target.bucket.name = 'oid-backups',4
+Allow dynamic-group OKE manage subnets in compartment Networks,
+Allow dynamic-group OKE to inspect compartments in tenancy,2
+Allow dynamic-group OKE to manage cluster-family in tenancy,5
+Allow dynamic-group OKE to manage instance-family in compartment OKE,4
+Allow dynamic-group OKE to read virtual-network-family in tenancy,4
+Allow dynamic-group OKE to use virtual-network-family in compartment Networks,4
+Allow dynamic-group OKE to use virtual-network-family in compartment OKE,4
+Allow dynamic-group OKE to use vnics in compartment Networks,3
+allow group  Identity/IDCS_administrators to manage analytics-instances in compartment OAC,4
+allow group  Identity/IDCS_administrators to manage analytics-instances in tenancy,5
+allow group  oracorpidentitystage-admin to manage analytics-instances in compartment OAC,4
+allow group  oracorpidentitystage-admin to manage analytics-instances in tenancy,5
+Allow group 'AGTestDomain'/'Domain_Administrators' to manage repos in compartment OAG-Data-Feed,4
+Allow group 'AGTestDomain'/'Domain_Administrators' to manage repos in compartment OAG-Data-Feed-AGHCMTestSI-compartment,4
+Allow group 'Alpha'/'Alpha_Group' to manage file-systems in tenancy,5
+Allow group 'Alpha'/'data_enablement_writer_group' to manage object-family in compartment data-enablement-test,4
+Allow group 'Alpha'/'data_enablement_writer_group' to manage vaults in compartment data-enablement-test where target.vault.name = 'ri4de-vault',4
+Allow group 'Alpha'/'data_enablement_writer_group' to use stream-push in compartment data-enablement-test,3
+Allow group 'Beta'/'FF_User' to manage objects in tenancy,5
+Allow group 'data-enablement-test-cr'/'data_enablement_writer_group_cr' to manage object-family in compartment data-enablement-test,4
+Allow group 'data-enablement-test-cr'/'data_enablement_writer_group_cr' to manage vaults in compartment data-enablement-test where target.vault.name = 'ri4de-vault',4
+Allow group 'data-enablement-test-cr'/'data_enablement_writer_group_cr' to use stream-push in compartment data-enablement-test,3
+Allow group 'Default-data-enablement'/'data_enablement_writer_group' to manage object-family in compartment data-enablement-test,4
+Allow group 'Default-data-enablement'/'data_enablement_writer_group' to manage stream-family in compartment data-enablement-test,4
+Allow group 'Default'/'Administrators' to manage functions-family in compartment access-gov-test-c1,4
+Allow group 'Default'/'Administrators' to manage logging-family in compartment access-gov-test-c1,4
+Allow group 'Default'/'Administrators' to manage repos in compartment access-gov-test-c1,4
+Allow group 'Default'/'Administrators' to read metrics in compartment access-gov-test-c1,2
+Allow group 'Default'/'Administrators' to read objectstorage-namespaces in tenancy,3
+Allow group 'Default'/'Administrators' to read vaults in compartment access-gov-test-c1,2
+Allow group 'Default'/'Administrators' to use apm-domains in compartment access-gov-test-c1,3
+Allow group 'Default'/'Administrators' to use cloud-shell in tenancy,4
+Allow group 'Default'/'Administrators' to use keys in compartment access-gov-test-c1,3
+Allow group 'Default'/'Administrators' to use virtual-network-family in compartment access-gov-test-c1,4
+Allow group 'Default'/'buckgroup' to manage buckets in tenancy,5
+"Allow group 'Default'/'buckgroup' to manage object-family in tenancy where all { target.bucket.name = 'buck_test' , any {target.object.name='*/a/t.csv' } }",5
+Allow group 'Default'/'buckgroup' to read objects in tenancy,3
+Allow group 'Default'/'buckgroup' to read policies in tenancy,3
+Allow group 'Default'/'DataFeed_writer_access_group' to manage object-family in compartment DataFeed where target.bucket.name = 'DataFeed',4
+Allow group 'Default'/'DataFeed_writer_access_group' to use stream-push in compartment DataFeed where target.stream.id  = 'ocid1.stream.oc1.iad.amaaaaaaebkbezqaoq7q3hrxscxt2hrmjuuribm2a5vgtjg6cs45n5dpujrq',3
+Allow group 'Default'/'GRC_ACCESS_GROUP' to manage functions-family in tenancy,5
+Allow group 'Default'/'GRC_ACCESS_GROUP' to manage logging-family in tenancy,5
+Allow group 'Default'/'GRC_ACCESS_GROUP' to manage repos in tenancy,5
+Allow group 'Default'/'GRC_ACCESS_GROUP' to read metrics in tenancy,3
+Allow group 'Default'/'GRC_ACCESS_GROUP' to read objectstorage-namespaces in tenancy,3
+Allow group 'Default'/'GRC_ACCESS_GROUP' to read vaults in tenancy,3
+Allow group 'Default'/'GRC_ACCESS_GROUP' to use apm-domains in tenancy,4
+Allow group 'Default'/'GRC_ACCESS_GROUP' to use cloud-shell in tenancy,4
+Allow group 'Default'/'GRC_ACCESS_GROUP' to use keys in tenancy,4
+Allow group 'Default'/'GRC_ACCESS_GROUP' to use virtual-network-family in tenancy,5
+Allow group 'Default'/'kn_user_group' to read log-content in tenancy,3
+Allow group 'Default'/'knp-email-group' to manage credentials in tenancy where target.credential.type = 'smtp',5
+Allow group 'Default'/'knp-email-group' to manage email-family in tenancy,5
+Allow group 'Default'/'knp-email-group' to manage log-groups in tenancy,5
+Allow group 'Default'/'knp-email-group' to manage suppressions in tenancy,5
+Allow group 'Default'/'knp-email-group' to read log-content in tenancy,3
+Allow group 'Default'/'ocifn_grpmar1' to manage functions-family in compartment ocifn_compartmentmar24,4
+Allow group 'Default'/'ocifn_grpmar1' to manage functions-family in tenancy,5
+Allow group 'Default'/'ocifn_grpmar1' to manage logging-family in compartment ocifn_compartmentmar24,4
+Allow group 'Default'/'ocifn_grpmar1' to manage logging-family in tenancy,5
+Allow group 'Default'/'ocifn_grpmar1' to manage repos in compartment ocifn_compartmentmar24,4
+Allow group 'Default'/'ocifn_grpmar1' to manage repos in tenancy,5
+Allow group 'Default'/'ocifn_grpmar1' to read metrics in compartment ocifn_compartmentmar24,2
+Allow group 'Default'/'ocifn_grpmar1' to read metrics in tenancy,3
+Allow group 'Default'/'ocifn_grpmar1' to read objectstorage-namespaces in tenancy,3
+Allow group 'Default'/'ocifn_grpmar1' to read vaults in compartment ocifn_compartmentmar24,2
+Allow group 'Default'/'ocifn_grpmar1' to read vaults in tenancy,3
+Allow group 'Default'/'ocifn_grpmar1' to use apm-domains in compartment ocifn_compartmentmar24,3
+Allow group 'Default'/'ocifn_grpmar1' to use apm-domains in tenancy,4
+Allow group 'Default'/'ocifn_grpmar1' to use cloud-shell in tenancy,4
+Allow group 'Default'/'ocifn_grpmar1' to use keys in compartment ocifn_compartmentmar24,3
+Allow group 'Default'/'ocifn_grpmar1' to use keys in tenancy,4
+Allow group 'Default'/'ocifn_grpmar1' to use virtual-network-family in compartment ocifn_compartmentmar24,4
+Allow group 'Default'/'ocifn_grpmar1' to use virtual-network-family in tenancy,5
+Allow group 'Default'/'test_group' to manage users in tenancy,5
+Allow group 'Default'/'usage_user_group' to inspect all-resources in tenancy,4
+Allow group 'OAG-Data-Feed-AGHCMTestSI-Domain'/'writer_access_group' to manage object-family in compartment OAG-Data-Feed-AGHCMTestSI-compartment where target.bucket.name = 'OAG-Data-Feed-AGHCMTestSI-Bucket',4
+Allow group 'OAG-Data-Feed-AGHCMTestSI-Domain'/'writer_access_group' to use stream-push in compartment OAG-Data-Feed-AGHCMTestSI-compartment where target.stream.id = 'ocid1.stream.oc1.iad.amaaaaaag3et56yaou2z3dmxg2kc7ygbagi7g3fzlcmpeoucv2rnxbwogaeq',3
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to inspect streams in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,1
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage analytics-instances in compartment OAG-Data-Feed,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage buckets in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage devops-project in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage devops-pull-request in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage devops-repository in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage function-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage keys in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage logging-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage ons-topics in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage repos in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage secret-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,5
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage stream-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage vaults in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,4
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to manage virtual-network-family in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,5
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to read metrics in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,2
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to read objectstorage-namespaces in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,2
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to use apm-domains in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,3
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to use cloud-shell in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,3
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to use cloudevents-rules in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,3
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to use stream-pull in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,3
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to use stream-push in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,3
+Allow group 'OAG-Data-Feed'/'DFA_Admin_Users' to use tag-namespaces in compartment id ocid1.compartment.oc1..aaaaaaaagngfpa6uwcvfgwiuibqohlyslvszfkk7iizigzsg4pp5sqrhgeza,3
+Allow group 'OAG-DataFeed'/'writer_access_group' to manage object-family in compartment OAG-Data-Feed where target.bucket.name = 'OAG-DataFeed-Bucket',4
+Allow group 'OAG-DataFeed'/'writer_access_group' to use stream-push in compartment OAG-Data-Feed where target.stream.id = 'ocid1.stream.oc1.iad.amaaaaaag3et56yagi7an42o3qczjjclr6itp6rcin5mxjpwzx5t7syjt2ma',3
+Allow group ActiveDirectory-Compartment-Admins to manage all-resources in compartment TestServiceCmptmt,5
+Allow group Administrators to manage all-resources in tenancy,5
+ALLOW GROUP Administrators to manage all-resources IN TENANCY,5
+allow group Administrators to manage backup-policies in compartment ManagedCompartmentForPaaS,4
+allow group Administrators to manage backup-policy-assignments in compartment ManagedCompartmentForPaaS,4
+allow group Administrators to manage boot-volume-backups in compartment ManagedCompartmentForPaaS,4
+allow group Administrators to manage instance-console-connection in compartment ManagedCompartmentForPaaS,4
+allow group Administrators to manage volume-backups in compartment ManagedCompartmentForPaaS,4
+"Allow group Administrators to manage volumes in compartment ManagedCompartmentForPaaS where any {request.operation='CreateVolumeBackup',request.operation='DeleteVolumeBackup',request.operation='CreateBootVolumeBackup',request.operation='DeleteBootVolumeBackup'}",4
+"Allow group Administrators to manage volumes in compartment ManagedCompartmentForPaaS where any {request.operation='CreateVolumeBackupPolicyAssignment', request.operation='DeleteVolumeBackupPolicyAssignment'}",4
+allow group Administrators to use loganalytics-scheduled-task in tenancy,4
+"Allow group ADMPROD1-WHATWAD to inspect objects in compartment FlatFile where all{target.bucket.name in ('OHAI-AUTHN-DOMAIN','OHAI-AUTHN-NET','OHAI-AUTHN-RHO-USA','OHAI-AUTHN-RHO-USA-2','OHAI-AUTHN-RHO-USA-3','OHAI-AUTHN-RHO-USA-4','OHAI-AUTHN-OCI-USA','OHAI-AUTHN-RHO-Canada','OHAI-AUTHN-RHO-France','OHAI-AUTHN-RHO-UK','OHAI-AUTHN-RHO-OLY','OHAI-AUTHN-RHO-EMEA2','OHAI-AUTHN-RHO-CERNCEA','OHAI-AUTHN-RHO-Germany','OHAI-AUTHN-SPHERE','OHAI-AUTHN-MFA'),request.networkSource.id='ocid1.identitynetworksource.oc1..aaaaaaaanm65ccfwt7hj47wdbecvlaaoh75jdovxom747fhu6y2vg5xip7ka'}",1
+Allow group ag-test-sanjose/Domain_Administrators to manage agcs-instance in tenancy,5
+Allow group ag-test-sanjose/Domain_Administrators to read objectstorage-namespace in tenancy,3
+Allow group ag-test-toronto/Domain_Administrators to manage agcs-instance in compartment agcs-test,4
+Allow group ag-test-toronto/Domain_Administrators to read objectstorage-namespace in tenancy,3
+Allow group agcs_agent_users to manage objects in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja,4
+Allow group agcs_agent_users to manage objects in compartment id ocid1.compartment.oc1..aaaaaaaaiwgtvuzhqlueevhcjm7las5g4t7mrtflvbvgrdvxmvrwprovrmja where target.bucket.name=/agent-*/,4
+ALLOW GROUP agcs_group to manage domains IN TENANCY,5
+ALLOW GROUP agcs_group to manage policies in compartment agcs-test,4
+ALLOW GROUP agcs_group to manage policies IN TENANCY,5
+ALLOW GROUP agcs_group to read all-resources in compartment agcs-test,4
+ALLOW GROUP agcs_group to read all-resources IN TENANCY,5
+ALLOW GROUP agcsDomain-Abilene/Domain_Administrators to manage all-resources IN TENANCY,5
+ALLOW GROUP agcsDomain-Kulai/Domain_Administrators to manage all-resources IN TENANCY,5
+ALLOW GROUP agcsDomain-Phoenix-SaltLake/Domain_Administrators to manage all-resources IN TENANCY,5
+ALLOW GROUP agcsDomain-Phoenix-Test1/Domain_Administrators to manage all-resources IN TENANCY,5
+ALLOW GROUP agcsDomain-us-ashburn-1-20251006220852/Domain_Administrators to manage all-resources IN TENANCY,5
+Allow group AGOHAI/IDCS_Administrators to manage all-resources in compartment OAG_OHAI,5
+Allow group AGOHAI/IDCS_Administrators to read objectstorage-namespace in tenancy,3
+allow group AGTestDomain/Domain_Administrators to use resource-availability in tenancy,4
+Allow group AGTestDomain/IDCS_Administrators to manage all-resources in compartment OAG,5
+Allow group AGTestDomain/IDCS_Administrators to read objectstorage-namespace in tenancy,3
+Allow GROUP Alpha/test-alpha-only-agcs-group to inspect domains in TENANCY,2
+Allow GROUP Alpha/test-alpha-only-agcs-group to manage domains IN TENANCY where target.resource.domain.name = 'Alpha',5
+"ALLOW GROUP Alpha/test-alpha-only-agcs-group to manage policies IN TENANCY where any {request.permission='POLICY_UPDATE', request.permission='POLICY_READ', request.permission='POLICY_DELETE',target.policy.name != 'Tenant Admin Policy'}",5
+ALLOW GROUP Alpha/test-alpha-only-agcs-group to read all-resources IN TENANCY,5
+Allow GROUP Alpha/test-alpha-only-agcs-group to read audit-events IN TENANCY,3
+Allow group analyzerGrp to manage functions-family in compartment access-gov-test-c1,4
+Allow group analyzerGrp to manage redis-family in compartment access-gov-test-c1,4
+Allow group analyzerGrp to manage virtual-network-family in compartment access-gov-test-c1,5
+Allow group analyzerGrp to use all-resources in tenancy,5
+Allow group Auto_OCIGroup to read objects in tenancy,3
+"Allow group db_connection_group to use autonomous-database in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q where all {request.principal.type='serviceconnector', request.principal.compartment.id='ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q'}",3
+Allow group Default/Administrators to manage all-resources in compartment ag-compartment,5
+Allow group Default/Administrators to manage database-family in tenancy,5
+Allow group Default/Administrators to manage volume-family in tenancy,5
+ALLOW GROUP Default/agcs_group to inspect all-resources IN TENANCY,4
+Allow GROUP Default/agcs_group to manage domains IN TENANCY,5
+"ALLOW GROUP Default/agcs_group to manage policies IN TENANCY where any {request.permission='POLICY_UPDATE' ,request.permission='POLICY_READ', request.permission='POLICY_DELETE',target.policy.name != 'Tenant Admin Policy'}",5
+Allow GROUP Default/agcs_group to read audit-events IN TENANCY,3
+ALLOW GROUP Default/agcs_group_21_01 to inspect all-resources IN TENANCY,4
+Allow GROUP Default/agcs_group_21_01 to manage domains IN TENANCY,5
+"ALLOW GROUP Default/agcs_group_21_01 to manage policies IN TENANCY where any {request.permission='POLICY_UPDATE' ,request.permission='POLICY_READ', request.permission='POLICY_DELETE',target.policy.name != 'Tenant Admin Policy'}",5
+Allow GROUP Default/agcs_group_21_01 to read audit-events IN TENANCY,3
+ALLOW GROUP Default/agcs_group_ac to inspect all-resources IN TENANCY,4
+Allow GROUP Default/agcs_group_ac to read domains IN TENANCY,3
+ALLOW GROUP Default/agcs_group_ac to read policies IN TENANCY,3
+ALLOW GROUP Default/agcs_group_asd to inspect all-resources IN TENANCY,4
+Allow GROUP Default/agcs_group_asd to read domains IN TENANCY,3
+ALLOW GROUP Default/agcs_group_asd to read policies IN TENANCY,3
+ALLOW GROUP Default/agcs_group_dec_demo to inspect all-resources IN COMPARTMENT ag-qa,3
+ALLOW GROUP Default/agcs_group_dec_demo to inspect all-resources IN COMPARTMENT agcs-db-test,3
+ALLOW GROUP Default/agcs_group_dec_demo to inspect all-resources IN COMPARTMENT AGUA,3
+ALLOW GROUP Default/agcs_group_dec_demo to inspect all-resources IN TENANCY,4
+Allow GROUP Default/agcs_group_dec_demo to manage domains IN TENANCY,5
+"ALLOW GROUP Default/agcs_group_dec_demo to manage policies IN TENANCY where all  {request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+Allow GROUP Default/agcs_group_dec_demo to read audit-events IN TENANCY,3
+ALLOW GROUP Default/agcs_group_fjksf to inspect all-resources IN TENANCY,4
+Allow GROUP Default/agcs_group_fjksf to read domains IN TENANCY,3
+ALLOW GROUP Default/agcs_group_fjksf to read policies IN TENANCY,3
+ALLOW GROUP Default/agcs_group_w_users to inspect all-resources IN TENANCY,4
+Allow GROUP Default/agcs_group_w_users to manage domains IN TENANCY,5
+"ALLOW GROUP Default/agcs_group_w_users to manage policies IN TENANCY where any {request.permission='POLICY_UPDATE' ,request.permission='POLICY_READ', request.permission='POLICY_DELETE',target.policy.name != 'Tenant Admin Policy'}",5
+Allow GROUP Default/agcs_group_w_users to manage users IN TENANCY,5
+Allow GROUP Default/agcs_group_w_users to read audit-events IN TENANCY,3
+ALLOW GROUP Default/agcs_group_wo_domains to inspect all-resources IN TENANCY,4
+"ALLOW GROUP Default/agcs_group_wo_domains to manage policies IN TENANCY where any {request.permission='POLICY_UPDATE' ,request.permission='POLICY_READ', request.permission='POLICY_DELETE',target.policy.name != 'Tenant Admin Policy'}",5
+Allow GROUP Default/agcs_group_wo_domains to manage users IN TENANCY,5
+Allow GROUP Default/agcs_group_wo_domains to read audit-events IN TENANCY,3
+allow group default/Group-Tokyo-Oct16 to inspect all-resources in tenancy,4
+Allow group FlatFileMgr to manage objects in tenancy,5
+Allow group identity/'AGCS Administrator' to manage agcs-instance in compartment OAG,4
+Allow group identity/'AGCS Administrator' to read objectstorage-namespace in tenancy,3
+"Allow group identity/ADMPROD1-WHATWAD to inspect objects in compartment OHAI_AD_WHATW where all{target.bucket.name in ('OHAI-TEST-BUCKET','OHAI-AUTHN-DOMAIN','OHAI-AUTHN-NET','OHAI-AUTHN-RHO-USA','OHAI-AUTHN-RHO-USA-2','OHAI-AUTHN-RHO-USA-3','OHAI-AUTHN-RHO-USA-4','OHAI-AUTHN-OCI-USA','OHAI-AUTHN-RHO-Canada','OHAI-AUTHN-RHO-France','OHAI-AUTHN-RHO-UK','OHAI-AUTHN-RHO-OLY','OHAI-AUTHN-RHO-EMEA2','OHAI-AUTHN-RHO-CERNCEA','OHAI-AUTHN-RHO-Germany','OHAI-AUTHN-SPHERE','OHAI-AUTHN-MFA'),request.networkSource.id='ocid1.identitynetworksource.oc1..aaaaaaaapsmh5ghkw5ak6yyt4yrozlio6uxsdxbizp33xgqhbkq6ui4pwnjq'}",1
+"Allow group identity/ADMPROD1-WHATWAD to manage objects in compartment OHAI_AD_WHATW where all{target.bucket.name in ('OHAI-AUTHN-DOMAIN','OHAI-AUTHN-NET','OHAI-AUTHN-RHO-USA','OHAI-AUTHN-RHO-USA-2','OHAI-AUTHN-RHO-USA-3','OHAI-AUTHN-RHO-USA-4','OHAI-AUTHN-OCI-USA','OHAI-AUTHN-RHO-Canada','OHAI-AUTHN-RHO-France','OHAI-AUTHN-RHO-UK','OHAI-AUTHN-RHO-OLY','OHAI-AUTHN-RHO-EMEA2','OHAI-AUTHN-RHO-CERNCEA','OHAI-AUTHN-RHO-Germany','OHAI-AUTHN-SPHERE','OHAI-AUTHN-MFA'),request.networkSource.id='ocid1.identitynetworksource.oc1..aaaaaaaapsmh5ghkw5ak6yyt4yrozlio6uxsdxbizp33xgqhbkq6ui4pwnjq'}",4
+"allow group identity/ADMPROD1-WHATWAD to manage objects in compartment OHAI_AD_WHATW where all{target.bucket.name='OHAI-TEST-BUCKET',request.networkSource.id='ocid1.identitynetworksource.oc1..aaaaaaaapsmh5ghkw5ak6yyt4yrozlio6uxsdxbizp33xgqhbkq6ui4pwnjq',any{target.object.name='OHAI_AG_WHATW/OHAI-TEST-BUCKET-OS/inbox/IDENTITY/*',target.object.name='OHAI_AG_WHATW/OHAI-TEST-BUCKET-OS/inbox/PERMISSION/*',target.object.name='OHAI_AG_WHATW/OHAI-TEST-BUCKET-OS/inbox/TARGETACCOUNT/*'}}",5
+"Allow group identity/ADMPROD1-WHATWAG to inspect objects in compartment OHAI_AD_WHATW where all{target.bucket.name in ('OHAI-TEST-BUCKET','OHAI-AUTHN-DOMAIN','OHAI-AUTHN-NET','OHAI-AUTHN-RHO-USA','OHAI-AUTHN-RHO-USA-2','OHAI-AUTHN-RHO-USA-3','OHAI-AUTHN-RHO-USA-4','OHAI-AUTHN-OCI-USA','OHAI-AUTHN-RHO-Canada','OHAI-AUTHN-RHO-France','OHAI-AUTHN-RHO-UK','OHAI-AUTHN-RHO-OLY','OHAI-AUTHN-RHO-EMEA2','OHAI-AUTHN-RHO-CERNCEA','OHAI-AUTHN-RHO-Germany','OHAI-AUTHN-SPHERE','OHAI-AUTHN-MFA'),request.networkSource.id='ocid1.identitynetworksource.oc1..aaaaaaaapsmh5ghkw5ak6yyt4yrozlio6uxsdxbizp33xgqhbkq6ui4pwnjq'}",1
+"Allow group identity/ADMPROD1-WHATWAG to manage objects in compartment OHAI_AD_WHATW where all{target.bucket.name in ('OHAI-TEST-BUCKET','OHAI-AUTHN-DOMAIN','OHAI-AUTHN-NET','OHAI-AUTHN-RHO-USA','OHAI-AUTHN-RHO-USA-2','OHAI-AUTHN-RHO-USA-3','OHAI-AUTHN-RHO-USA-4','OHAI-AUTHN-OCI-USA','OHAI-AUTHN-RHO-Canada','OHAI-AUTHN-RHO-France','OHAI-AUTHN-RHO-UK','OHAI-AUTHN-RHO-OLY','OHAI-AUTHN-RHO-EMEA2','OHAI-AUTHN-RHO-CERNCEA','OHAI-AUTHN-RHO-Germany','OHAI-AUTHN-SPHERE','OHAI-AUTHN-MFA'),request.networkSource.id='ocid1.identitynetworksource.oc1..aaaaaaaapsmh5ghkw5ak6yyt4yrozlio6uxsdxbizp33xgqhbkq6ui4pwnjq'}",4
+Allow group identity/AG_Email_Delivery to manage credentials in compartment OAG where target.credential.type = smtp,4
+Allow group identity/AG_Email_Delivery to manage email-family in compartment OAG,4
+Allow group identity/AG_Email_Delivery to manage log-groups in compartment OAG,4
+Allow group identity/AG_Email_Delivery to manage suppressions in tenancy,5
+Allow group identity/AG_Email_Delivery to read log-content in compartment OAG,2
+Allow group identity/IDCS_Administrators to manage agcs-instance in tenancy,5
+Allow group identity/IDCS_Administrators to read objectstorage-namespace in tenancy,3
+Allow group identity/OHAI_AD_WHATW_ADMINS to manage buckets in compartment OHAI_AD_WHATW where request.networkSource.id='ocid1.identitynetworksource.oc1..aaaaaaaapsmh5ghkw5ak6yyt4yrozlio6uxsdxbizp33xgqhbkq6ui4pwnjq',4
+Allow group identity/OHAI_AD_WHATW_ADMINS to manage objects in compartment OHAI_AD_WHATW where request.networkSource.id='ocid1.identitynetworksource.oc1..aaaaaaaapsmh5ghkw5ak6yyt4yrozlio6uxsdxbizp33xgqhbkq6ui4pwnjq',4
+Allow group ITS_EWB_OCI_GROUP1 to manage buckets in compartment it_ewb_auto_compartment,4
+Allow group knp-test-1/Domain_Administrators to manage agcs-instance in tenancy,5
+Allow group knp-test-1/Domain_Administrators to read objectstorage-namespace in tenancy,3
+Allow group NonAdmin to inspect all-resources IN TENANCY,4
+ALLOW GROUP OCIMembGroup to read all-resources IN compartment OCIMembTest,4
+Allow group oke-registry-admins to manage repos in tenancy,5
+Allow group oke-registry-readonly to read repos in tenancy,3
+ALLOW GROUP phoenixDomain/Domain_Administrators to manage all-resources IN TENANCY,5
+Allow group secrets-dr-group to manage tag-namespaces in tenancy,5
+Allow group smtp-approved-senders to manage approved-senders in tenancy,5
+Allow group smtp-approved-senders to manage suppressions in tenancy,5
+"allow group storage_admins to {ROUTE_TABLE_ATTACH,  ROUTE_TABLE_DETACH	} in tenancy",4
+allow group storage_admins to inspect leaf-certificate-family in tenancy,2
+allow group storage_admins to manage object-family in tenancy,5
+allow group storage_admins to manage volume-family in tenancy,5
+allow group storage_admins to read certificate-authority-family in tenancy,3
+allow group tf_groups to manage all-resources in compartment tf_compart_123,5
+allow group tf_groups to manage compartments in tenancy,5
+Allow group tf_groups to manage instance-family in tenancy,5
+allow group tf_groups to read all-resources in tenancy,5
+Allow group Viewers to read all-resources in tenancy,5
+Allow group VisibilityPOC/Domain_Administrators to manage all-resources in compartment OperatorVisibilityPOC,5
+Allow group VisibilityPOC/Domain_Administrators to read objectstorage-namespace in tenancy,3
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid = 'ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaaeta3yf37fapkwbc3gth4uakuanzkkhxsrbeqtkbnjzq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia2njaqdofnzmue75mxxqoel4o5vzr24g3i3rvjnpfgjoa'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia4mtywoxhpcu2qzcxlcla32vt72c3zuuiqs2b2lonsmya'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiagaruddrvwdj45cxbrqjdxyyijrylhen2cyojp4va27qq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiai7a25ili7bseqncxqfkdvqfujujiju5qiflraneg57sq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiajsesr67tepxnzqn3qqfhvhe34bcn2ollsehnguwanbqa'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaoc74a65uubm234iapyysd65tqixsnklzocqmatowflbq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiau3cccht45csa3ft2axakyc5krmiltsjbrtrnsnpgux2q'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiax5zfaryw34s3l763zzn7lzott4cvv2d4bqb6lmzhqmiq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaysnexpcrkle7wtkffgsnlso7yzg2es3mhl2xvhdhosmq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-hyderabad-1.amaaaaaazcwn2lqaugo2rr35nvyzlrzx3qlkahitgyg5engqs7pilipmcyza'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-mumbai-1.amaaaaaazcwn2lqaxyocokmptosrw4kwr6m62p7wzttwibxzil3oi5uadv2q'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.eu-madrid-1.amaaaaaahk5nlkyawlywctzb6yetsdbyku4zyphqo6d7kf6caknvfiqrfx5a'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r53rrha'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqab2fe3sh4hoevkxybvcda4icaidm6r5pbk44onkh6rwsa'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqabvtmjwybvzrowg4jqqavjmi4zxelxsrgkevv2hmd6bma'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamei7jxol22nu63glv3bphszpca2dw34ejk2ojwjzgdta'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamo7skuyjl55vauy3dxh4f7dx5lc5mbut627yymylkk7q'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqapknkjim5jg33xzvt6idugarxezqmcmlmqnasrs3hnzbq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqausedelhfjjyvyeg65rzo3lpkmr6fumawhlpw7m5najga'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqauuzpuhayxboqr3co7rlhpnopjaohixolupra5bmdlbpa'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaznsrawruaovcypaj6rjwu4exfxdnlaypvizugt6ii5pq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaag3et56yalgk4yedizllvgc26qdrfcrxed53zxtr475z2g4lm5doa'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.phx.amaaaaaawvcnegyawjjwrhy2f6imvzcry2kspjzxqzt3nimhlq5cndvevtwq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.uk-london-1.amaaaaaahk5nlkya54tbhiu2v3vyxupaynufvk7l4wr5yi6ineuvy7tbtyra'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-abilene-1.amaaaaaa6dbdngiayhfth4wj2hv7e62fr25lilqmn75eedwdkilnyusxcnta'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-desmoines-1.amaaaaaapwe32sqaa2q2iswunrnoge7gzjxhfgi4wg3xrkihy5pkcnbvyrmq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiabb3njf5nhuj7oq5y3jv7xpylg2xqpuou6befhhvbcspa'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiaifkgmp5r4e3e6u2vsmpomz2hwywo7maxrwy6zjr2wamq'},4
+allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiazsx3qbxj3iuvj3noqqktiv66k273nuhkrrkxlculguxa'},4
+"allow resource agcsgovernanceinstance agcs-rp to inspect all-resources in tenancy where all {target.resource.compartment.tag.oracleinternalreserved.owneremail = '*',request.operation != 'GetObject', request.operation != 'GetConsoleHistory', request.operation!='GetSecretBundle', request.operation!='GetSecretBundleByName'}",5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid = 'ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaaeta3yf37fapkwbc3gth4uakuanzkkhxsrbeqtkbnjzq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia2njaqdofnzmue75mxxqoel4o5vzr24g3i3rvjnpfgjoa'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia4mtywoxhpcu2qzcxlcla32vt72c3zuuiqs2b2lonsmya'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiagaruddrvwdj45cxbrqjdxyyijrylhen2cyojp4va27qq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiai7a25ili7bseqncxqfkdvqfujujiju5qiflraneg57sq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiajsesr67tepxnzqn3qqfhvhe34bcn2ollsehnguwanbqa'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaoc74a65uubm234iapyysd65tqixsnklzocqmatowflbq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiau3cccht45csa3ft2axakyc5krmiltsjbrtrnsnpgux2q'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiax5zfaryw34s3l763zzn7lzott4cvv2d4bqb6lmzhqmiq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaysnexpcrkle7wtkffgsnlso7yzg2es3mhl2xvhdhosmq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-hyderabad-1.amaaaaaazcwn2lqaugo2rr35nvyzlrzx3qlkahitgyg5engqs7pilipmcyza'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.eu-madrid-1.amaaaaaahk5nlkyawlywctzb6yetsdbyku4zyphqo6d7kf6caknvfiqrfx5a'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r53rrha'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqab2fe3sh4hoevkxybvcda4icaidm6r5pbk44onkh6rwsa'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqabvtmjwybvzrowg4jqqavjmi4zxelxsrgkevv2hmd6bma'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamei7jxol22nu63glv3bphszpca2dw34ejk2ojwjzgdta'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamo7skuyjl55vauy3dxh4f7dx5lc5mbut627yymylkk7q'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqapknkjim5jg33xzvt6idugarxezqmcmlmqnasrs3hnzbq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqausedelhfjjyvyeg65rzo3lpkmr6fumawhlpw7m5najga'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqauuzpuhayxboqr3co7rlhpnopjaohixolupra5bmdlbpa'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaznsrawruaovcypaj6rjwu4exfxdnlaypvizugt6ii5pq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.phx.amaaaaaawvcnegyawjjwrhy2f6imvzcry2kspjzxqzt3nimhlq5cndvevtwq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.uk-london-1.amaaaaaahk5nlkya54tbhiu2v3vyxupaynufvk7l4wr5yi6ineuvy7tbtyra'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-abilene-1.amaaaaaa6dbdngiayhfth4wj2hv7e62fr25lilqmn75eedwdkilnyusxcnta'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-desmoines-1.amaaaaaapwe32sqaa2q2iswunrnoge7gzjxhfgi4wg3xrkihy5pkcnbvyrmq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiabb3njf5nhuj7oq5y3jv7xpylg2xqpuou6befhhvbcspa'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiaifkgmp5r4e3e6u2vsmpomz2hwywo7maxrwy6zjr2wamq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiazsx3qbxj3iuvj3noqqktiv66k273nuhkrrkxlculguxa'},5
+allow resource agcsgovernanceinstance agcs-rp to manage domains in tenancy where target.resource.compartment.tag.oracleinternalreserved.owneremail = '*',5
+allow resource agcsgovernanceinstance agcs-rp to manage functions-family in compartment id  ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiaukklbdrujhvlq5ybbvfj4tqqctsqgn62juf6pygejyda'},5
+allow resource agcsgovernanceinstance agcs-rp to manage functions-family in compartment id ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-mumbai-1.amaaaaaazcwn2lqaxyocokmptosrw4kwr6m62p7wzttwibxzil3oi5uadv2q'},5
+allow resource agcsgovernanceinstance agcs-rp to manage functions-family in compartment id ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiae3ywrs4yb3ejtsbuqfrq244yl3p43iafhplxpcxnehqq'},5
+allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid = 'ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaaeta3yf37fapkwbc3gth4uakuanzkkhxsrbeqtkbnjzq'},5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia2njaqdofnzmue75mxxqoel4o5vzr24g3i3rvjnpfgjoa', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia4mtywoxhpcu2qzcxlcla32vt72c3zuuiqs2b2lonsmya', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiagaruddrvwdj45cxbrqjdxyyijrylhen2cyojp4va27qq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiai7a25ili7bseqncxqfkdvqfujujiju5qiflraneg57sq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiajsesr67tepxnzqn3qqfhvhe34bcn2ollsehnguwanbqa', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaoc74a65uubm234iapyysd65tqixsnklzocqmatowflbq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiau3cccht45csa3ft2axakyc5krmiltsjbrtrnsnpgux2q', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiax5zfaryw34s3l763zzn7lzott4cvv2d4bqb6lmzhqmiq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaysnexpcrkle7wtkffgsnlso7yzg2es3mhl2xvhdhosmq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-hyderabad-1.amaaaaaazcwn2lqaugo2rr35nvyzlrzx3qlkahitgyg5engqs7pilipmcyza', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.eu-madrid-1.amaaaaaahk5nlkyawlywctzb6yetsdbyku4zyphqo6d7kf6caknvfiqrfx5a', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r53rrha', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqab2fe3sh4hoevkxybvcda4icaidm6r5pbk44onkh6rwsa', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqabvtmjwybvzrowg4jqqavjmi4zxelxsrgkevv2hmd6bma', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamei7jxol22nu63glv3bphszpca2dw34ejk2ojwjzgdta', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamo7skuyjl55vauy3dxh4f7dx5lc5mbut627yymylkk7q', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqapknkjim5jg33xzvt6idugarxezqmcmlmqnasrs3hnzbq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqausedelhfjjyvyeg65rzo3lpkmr6fumawhlpw7m5najga', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqauuzpuhayxboqr3co7rlhpnopjaohixolupra5bmdlbpa', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaznsrawruaovcypaj6rjwu4exfxdnlaypvizugt6ii5pq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.phx.amaaaaaawvcnegyawjjwrhy2f6imvzcry2kspjzxqzt3nimhlq5cndvevtwq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.uk-london-1.amaaaaaahk5nlkya54tbhiu2v3vyxupaynufvk7l4wr5yi6ineuvy7tbtyra', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-abilene-1.amaaaaaa6dbdngiayhfth4wj2hv7e62fr25lilqmn75eedwdkilnyusxcnta', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-desmoines-1.amaaaaaapwe32sqaa2q2iswunrnoge7gzjxhfgi4wg3xrkihy5pkcnbvyrmq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiabb3njf5nhuj7oq5y3jv7xpylg2xqpuou6befhhvbcspa', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiaifkgmp5r4e3e6u2vsmpomz2hwywo7maxrwy6zjr2wamq', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+"allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiazsx3qbxj3iuvj3noqqktiv66k273nuhkrrkxlculguxa', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",5
+allow resource agcsgovernanceinstance agcs-rp to manage policies in tenancy where target.resource.compartment.tag.oracleinternalreserved.owneremail = '*',5
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid = 'ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaaeta3yf37fapkwbc3gth4uakuanzkkhxsrbeqtkbnjzq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia2njaqdofnzmue75mxxqoel4o5vzr24g3i3rvjnpfgjoa'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia4mtywoxhpcu2qzcxlcla32vt72c3zuuiqs2b2lonsmya'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiagaruddrvwdj45cxbrqjdxyyijrylhen2cyojp4va27qq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiai7a25ili7bseqncxqfkdvqfujujiju5qiflraneg57sq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiajsesr67tepxnzqn3qqfhvhe34bcn2ollsehnguwanbqa'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaoc74a65uubm234iapyysd65tqixsnklzocqmatowflbq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiau3cccht45csa3ft2axakyc5krmiltsjbrtrnsnpgux2q'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiax5zfaryw34s3l763zzn7lzott4cvv2d4bqb6lmzhqmiq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaysnexpcrkle7wtkffgsnlso7yzg2es3mhl2xvhdhosmq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-hyderabad-1.amaaaaaazcwn2lqaugo2rr35nvyzlrzx3qlkahitgyg5engqs7pilipmcyza'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-mumbai-1.amaaaaaazcwn2lqaxyocokmptosrw4kwr6m62p7wzttwibxzil3oi5uadv2q'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.eu-madrid-1.amaaaaaahk5nlkyawlywctzb6yetsdbyku4zyphqo6d7kf6caknvfiqrfx5a'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r53rrha'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqab2fe3sh4hoevkxybvcda4icaidm6r5pbk44onkh6rwsa'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqabvtmjwybvzrowg4jqqavjmi4zxelxsrgkevv2hmd6bma'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamei7jxol22nu63glv3bphszpca2dw34ejk2ojwjzgdta'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamo7skuyjl55vauy3dxh4f7dx5lc5mbut627yymylkk7q'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqapknkjim5jg33xzvt6idugarxezqmcmlmqnasrs3hnzbq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqausedelhfjjyvyeg65rzo3lpkmr6fumawhlpw7m5najga'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqauuzpuhayxboqr3co7rlhpnopjaohixolupra5bmdlbpa'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaznsrawruaovcypaj6rjwu4exfxdnlaypvizugt6ii5pq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaag3et56yalgk4yedizllvgc26qdrfcrxed53zxtr475z2g4lm5doa'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.phx.amaaaaaawvcnegyawjjwrhy2f6imvzcry2kspjzxqzt3nimhlq5cndvevtwq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.uk-london-1.amaaaaaahk5nlkya54tbhiu2v3vyxupaynufvk7l4wr5yi6ineuvy7tbtyra'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-abilene-1.amaaaaaa6dbdngiayhfth4wj2hv7e62fr25lilqmn75eedwdkilnyusxcnta'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-desmoines-1.amaaaaaapwe32sqaa2q2iswunrnoge7gzjxhfgi4wg3xrkihy5pkcnbvyrmq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiabb3njf5nhuj7oq5y3jv7xpylg2xqpuou6befhhvbcspa'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiaifkgmp5r4e3e6u2vsmpomz2hwywo7maxrwy6zjr2wamq'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiazsx3qbxj3iuvj3noqqktiv66k273nuhkrrkxlculguxa'},3
+allow resource agcsgovernanceinstance agcs-rp to read audit-events in tenancy where target.resource.compartment.tag.oracleinternalreserved.owneremail = '*',3
+allow resource agcsgovernanceinstance agcs-rp to read domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-mumbai-1.amaaaaaazcwn2lqaxyocokmptosrw4kwr6m62p7wzttwibxzil3oi5uadv2q'},3
+allow resource agcsgovernanceinstance agcs-rp to read domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaag3et56yalgk4yedizllvgc26qdrfcrxed53zxtr475z2g4lm5doa'},3
+allow resource agcsgovernanceinstance agcs-rp to read domains in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.phx.amaaaaaawvcnegyawjjwrhy2f6imvzcry2kspjzxqzt3nimhlq5cndvevtwq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid = 'ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaaeta3yf37fapkwbc3gth4uakuanzkkhxsrbeqtkbnjzq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia2njaqdofnzmue75mxxqoel4o5vzr24g3i3rvjnpfgjoa'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdia4mtywoxhpcu2qzcxlcla32vt72c3zuuiqs2b2lonsmya'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiagaruddrvwdj45cxbrqjdxyyijrylhen2cyojp4va27qq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiai7a25ili7bseqncxqfkdvqfujujiju5qiflraneg57sq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiajsesr67tepxnzqn3qqfhvhe34bcn2ollsehnguwanbqa'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaoc74a65uubm234iapyysd65tqixsnklzocqmatowflbq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiau3cccht45csa3ft2axakyc5krmiltsjbrtrnsnpgux2q'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiax5zfaryw34s3l763zzn7lzott4cvv2d4bqb6lmzhqmiq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.dev.dev.amaaaaaapzw5rdiaysnexpcrkle7wtkffgsnlso7yzg2es3mhl2xvhdhosmq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-hyderabad-1.amaaaaaazcwn2lqaugo2rr35nvyzlrzx3qlkahitgyg5engqs7pilipmcyza'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-mumbai-1.amaaaaaazcwn2lqaxyocokmptosrw4kwr6m62p7wzttwibxzil3oi5uadv2q'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.eu-madrid-1.amaaaaaahk5nlkyawlywctzb6yetsdbyku4zyphqo6d7kf6caknvfiqrfx5a'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r53rrha'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqab2fe3sh4hoevkxybvcda4icaidm6r5pbk44onkh6rwsa'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqabvtmjwybvzrowg4jqqavjmi4zxelxsrgkevv2hmd6bma'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamei7jxol22nu63glv3bphszpca2dw34ejk2ojwjzgdta'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqamo7skuyjl55vauy3dxh4f7dx5lc5mbut627yymylkk7q'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqapknkjim5jg33xzvt6idugarxezqmcmlmqnasrs3hnzbq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqausedelhfjjyvyeg65rzo3lpkmr6fumawhlpw7m5najga'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqauuzpuhayxboqr3co7rlhpnopjaohixolupra5bmdlbpa'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaznsrawruaovcypaj6rjwu4exfxdnlaypvizugt6ii5pq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaag3et56yalgk4yedizllvgc26qdrfcrxed53zxtr475z2g4lm5doa'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.uk-london-1.amaaaaaahk5nlkya54tbhiu2v3vyxupaynufvk7l4wr5yi6ineuvy7tbtyra'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-abilene-1.amaaaaaa6dbdngiayhfth4wj2hv7e62fr25lilqmn75eedwdkilnyusxcnta'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.us-desmoines-1.amaaaaaapwe32sqaa2q2iswunrnoge7gzjxhfgi4wg3xrkihy5pkcnbvyrmq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiabb3njf5nhuj7oq5y3jv7xpylg2xqpuou6befhhvbcspa'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiaifkgmp5r4e3e6u2vsmpomz2hwywo7maxrwy6zjr2wamq'},3
+allow resource agcsgovernanceinstance agcs-rp to read objectstorage-namespace in tenancy where all {request.principal.siOcid='ocid1.notreviewedplaceholder.dev.dev.amaaaaaapzw5rdiazsx3qbxj3iuvj3noqqktiv66k273nuhkrrkxlculguxa'},3
+"allow resource agcsgovernanceinstance agcs-rp to read policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.ap-mumbai-1.amaaaaaazcwn2lqaxyocokmptosrw4kwr6m62p7wzttwibxzil3oi5uadv2q', request.permission in ('POLICY_UPDATE', 'POLICY_DELETE'), target.policy.name !='Tenant Admin Policy'}",4
+allow resource agcsgovernanceinstance agcs-rp to read policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaag3et56yalgk4yedizllvgc26qdrfcrxed53zxtr475z2g4lm5doa'},3
+allow resource agcsgovernanceinstance agcs-rp to read policies in tenancy where all {request.principal.siOcid='ocid1.agcsgovernanceinstance.oc1.phx.amaaaaaawvcnegyawjjwrhy2f6imvzcry2kspjzxqzt3nimhlq5cndvevtwq'},3
+allow resource psmrp psm to manage all-resources in compartment ManagedCompartmentForPaaS,5
+allow service accessgov-preprod to manage all-resources in tenancy,5
+Allow service applicationperformancemonitoring to read secret-family in compartment id ocid1.compartment.oc1..aaaaaaaatjuie5geal5fw4h4itqjr535jsxcbilyzdmrn3lbcl5rkpqdsa3a,3
+ALLOW SERVICE artifact-push-service to manage object-family in compartment idcs-clp-assets-us-sanjose-idcs-1,4
+ALLOW SERVICE artifact-push-service TO READ objectstorage-namespaces IN TENANCY,3
+ALLOW service CertNanny TO {SECRET-SERVICE-MANAGE-SECRET-VERSION} IN tenancy,5
+ALLOW service CertNanny TO USE load-balancers IN tenancy,4
+allow service cloudguard to manage cloudevents-rules in tenancy where target.rule.type='managed',5
+allow service cloudguard to read audit-events in tenancy,3
+allow service cloudguard to read authentication-policies in tenancy,3
+allow service cloudguard to read autonomous-database-family in tenancy,3
+allow service cloudguard to read compartments in tenancy,3
+allow service cloudguard to read compute-management-family in tenancy,3
+allow service cloudguard to read data-safe-family in tenancy,3
+allow service cloudguard to read database-family in tenancy,3
+allow service cloudguard to read dynamic-groups in tenancy,3
+allow service cloudguard to read groups in tenancy,3
+allow service cloudguard to read instance-family in tenancy,3
+allow service cloudguard to read keys in tenancy,3
+allow service cloudguard to read load-balancers in tenancy,3
+allow service cloudguard to read log-groups in tenancy,3
+allow service cloudguard to read object-family in tenancy,3
+allow service cloudguard to read policies in tenancy,3
+allow service cloudguard to read tenancies in tenancy,3
+allow service cloudguard to read users in tenancy,3
+allow service cloudguard to read vaults in tenancy,3
+allow service cloudguard to read virtual-network-family in tenancy,4
+allow service cloudguard to read volume-family in tenancy,3
+allow service cloudguard to use network-security-groups in tenancy,4
+Allow service datascience to manage virtual-network-family in compartment OAG-Data-Feed,5
+Allow service datascience to manage virtual-network-family in tenancy,5
+allow service datascience to use virtual-network-family in compartment id ocid1.compartment.oc1..aaaaaaaaui3num7b6gsuxvknd3ggjmoueklyxzb62aohbgkde6w7bhjvkq3q,4
+Allow service faas to {KEY_READ} in compartment access-gov-test-c1 where request.operation='GetKeyVersion',3
+Allow service faas to {KEY_READ} in compartment ocifn_compartmentmar24 where request.operation='GetKeyVersion',3
+Allow service faas to {KEY_READ} in tenancy where request.operation='GetKeyVersion',4
+Allow service faas to {KEY_VERIFY} in compartment access-gov-test-c1 where request.operation='Verify',3
+Allow service faas to {KEY_VERIFY} in compartment ocifn_compartmentmar24 where request.operation='Verify',3
+Allow service faas to {KEY_VERIFY} in tenancy where request.operation='Verify',4
+Allow service faas to read repos in tenancy where request.operation='ListContainerImageSignatures',3
+Allow service faas to use apm-domains in compartment access-gov-test-c1,3
+Allow service faas to use apm-domains in compartment ocifn_compartmentmar24,3
+Allow service faas to use apm-domains in tenancy,4
+Allow service keymanagementservice to manage vaults in tenancy,5
+allow service loganalytics to {APM_DOMAIN_READ} in tenancy,4
+allow service loganalytics to {APPROVED_SENDER_READ} in tenancy,4
+allow service loganalytics to {BUCKET_READ} in tenancy,4
+allow service loganalytics to {CLUSTER_READ} in tenancy,4
+allow service loganalytics to {DATAFLOW_APPLICATION_READ} in tenancy,4
+allow service loganalytics to {DEVOPS_DEPLOY_PIPELINE_READ} in tenancy,4
+allow service loganalytics to {DEVOPS_DEPLOY_STAGE_READ} in tenancy,4
+allow service loganalytics to {DEVOPS_DEPLOYMENT_READ} in tenancy,4
+allow service loganalytics to {EVENTRULE_READ} in tenancy,4
+allow service loganalytics to {GOLDENGATE_DEPLOYMENT_READ} in tenancy,4
+allow service loganalytics to {IPSEC_CONNECTION_READ} in tenancy,4
+allow service loganalytics to {LOAD_BALANCER_READ} in tenancy,4
+allow service loganalytics to {MEDIA_WORKFLOW_JOB_READ} in tenancy,4
+allow service loganalytics to {MEDIA_WORKFLOW_READ} in tenancy,4
+allow service loganalytics to {NETWORK_FIREWALL_READ} in tenancy,5
+allow service loganalytics to {SERVICE_CONNECTOR_READ} in tenancy,4
+allow service loganalytics to {VNIC_READ} in tenancy,4
+allow service loganalytics to {WEB_APP_FIREWALL_READ} in tenancy,5
+allow service loganalytics to read api-gateway-family in tenancy,3
+allow service loganalytics to READ compartments in tenancy,3
+allow service loganalytics to read functions-family in tenancy,3
+allow service loganalytics to READ loganalytics-features-family in tenancy,3
+allow service loganalytics to read operator-control-family in tenancy,3
+Allow service objectstorage-us-phoenix-1 to manage object-family in compartment agcs-db-test,4
+allow service OracleEnterpriseManager to manage all-resources in compartment managedcompartmentforpaas,5
+Allow service osms to read instances in tenancy,3
+allow service PSM to inspect compartments in tenancy,2
+allow service PSM to inspect tenant in tenancy,2
+allow service PSM to manage all-resources in compartment managedcompartmentforpaas,5
+allow service PSM to manage users in tenancy where target.user.name = /__PSM*/,5
+"Allow service shepherd to {SCANPLATFORM_ONBOARDING_DEFINITION_CREATE, SCANPLATFORM_ONBOARDING_DEFINITION_DELETE, SCANPLATFORM_ONBOARDING_DEFINITION_INSPECT, SCANPLATFORM_ONBOARDING_DEFINITION_READ, SCANPLATFORM_ONBOARDING_DEFINITION_UPDATE, SCANPLATFORM_WORK_REQUEST_INSPECT, SCANPLATFORM_WORK_REQUEST_READ} in tenancy",4
+allow service shepherd to manage all-resources in compartment DSEE,5
+"allow service speservice to {SCANPLATFORM_SCAN_REQUEST_INSPECT, SCANPLATFORM_SCAN_REQUEST_READ, SCANPLATFORM_SCAN_REQUEST_CREATE, SCANPLATFORM_SCAN_REQUEST_DELETE} in compartment OIM",3
+allow service tim-service to read all-resources in tenancy,5
+Allow service vulnerability-scanning-service to manage instances in tenancy,5
+Allow service vulnerability-scanning-service to read compartments in tenancy,3
+Allow service vulnerability-scanning-service to read vnic-attachments in tenancy,3
+Allow service vulnerability-scanning-service to read vnics in tenancy,3
+"endorse any-user to {LOG_WRITE, LOG_DEFINITION_READ, LOG_DEFINITION_WRITE, LOG_NAMESPACE_READ, UNIFIEDAGENT_CONFIG_GENERATE} in tenancy security-log",5
+"endorse any-user to manage object-family in tenancy ODO_TENANCY where all { request.principal.type='artifactpushjob',  target.bucket.name = 'ocid1.tenancy.oc1..aaaaaaaatdylvcgv2r6xxplnkemowvxvihlutixhvvynl4d2t6kpbp4s6ygq',  any {request.principal.calling-flock.projectName = 'corp-idcs-clp', request.principal.calling-claimingTenancy.id = 'ocid1.tenancy.oc1..aaaaaaaatdylvcgv2r6xxplnkemowvxvihlutixhvvynl4d2t6kpbp4s6ygq'}}",5
+"endorse any-user to read objectstorage-namespaces in tenancy ODO_TENANCY where all { request.principal.type='artifactpushjob',  any {request.principal.calling-flock.projectName = 'corp-idcs-clp', request.principal.calling-claimingTenancy.id = 'ocid1.tenancy.oc1..aaaaaaaatdylvcgv2r6xxplnkemowvxvihlutixhvvynl4d2t6kpbp4s6ygq'}}",5
+endorse dynamic-group access-managers to read object-family in tenancy secinf,3
+Endorse dynamic-group automation_servers to read secret-family in tenancy PRODSI where target.resource.tag.idm.environment= 'development',4
+"ENDORSE dynamic-group Griffin-DynamicGroup to {LOG_WRITE, LOG_DEFINITION_READ, LOG_DEFINITION_WRITE, LOG_NAMESPACE_READ, UNIFIEDAGENT_CONFIG_GENERATE,LOG_CONTENT_PUSH} in tenancy security-log",4
+ENDORSE dynamic-group Griffin-DynamicGroup.installationLogs to {LOG_CONTENT_PUSH} in tenancy security-log,4
+ENDORSE dynamic-group Griffin-DynamicGroup.installationLogs to {LOG_CONTENT_PUSH} in tenancy SecurityTenancy,4
+endorse dynamic-group idcs-clp-instances to read object-family in tenancy ODO,3
+endorse dynamic-group idcs-clp-instances to read object-family in tenancy secinf,3
+endorse dynamic-group idcs-clp-instances to use metrics in tenancy telemetry,4
+endorse dynamic-group idcs-clp-jump-instances to read object-family in tenancy ODO,3
+endorse dynamic-group idcs-clp-jump-instances to read object-family in tenancy secinf,3
+endorse group Administrators to read compartments in tenancy sampledata,3
+endorse group Administrators to read loganalytics-features-family in tenancy sampledata,3
+endorse group Administrators to read loganalytics-resources-family in tenancy sampledata,3
+endorse group Administrators to read objects in tenancy usage-report,3
+Endorse group AdvancedGovernance to manage object-family in tenancy DestinationTenancy,5
+endorse resource agcsgovernanceinstance agcs-rp to use agcs-instance in tenancy AG-OCI-RESPONDING where all {request.principal.id='ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqab2fe3sh4hoevkxybvcda4icaidm6r5pbk44onkh6rwsa'},3

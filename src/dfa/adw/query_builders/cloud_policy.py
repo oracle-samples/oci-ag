@@ -56,13 +56,10 @@ class CloudPolicyStateUpdateQueryBuilder(CloudPolicyStateQueryBuilder):
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info("tgt access pol stmt create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d tgt access pol stmt creates failed for unique constraint violation - \
-                performing bulk tgt access pol stmt updates",
+                "%d tgt access pol stmt creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -78,7 +75,7 @@ class CloudPolicyStateUpdateQueryBuilder(CloudPolicyStateQueryBuilder):
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("tgt access pol stmt update failed - %s", batch_error.message)
+                self.logger.warning("tgt access pol stmt update failed - %s", batch_error.message)
 
         AdwConnection.commit()
 
@@ -95,7 +92,6 @@ class CloudPolicyStateDeleteQueryBuilder(CloudPolicyStateQueryBuilder):
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for tgt access pol stmt delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 

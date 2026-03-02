@@ -83,13 +83,10 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(permission_assignment_adds[batch_error.offset])
-            else:
-                self.logger.info("permission assignment create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d permission assignment creates failed for unique constraint violation - \
-                performing bulk permission assignment updates",
+                "%d permission assignment creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -105,7 +102,7 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("permission assignment update failed - %s", batch_error.message)
+                self.logger.warning("permission assignment update failed - %s", batch_error.message)
 
         AdwConnection.commit()
 
@@ -140,7 +137,6 @@ class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQuery
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for permission assignment delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 

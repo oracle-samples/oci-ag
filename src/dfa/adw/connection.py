@@ -21,7 +21,7 @@ class AdwConnection:
     @classmethod
     def get_connection(cls, username: str | None = None):
         if cls.__connection is None:
-            cls.logger.info("Creating new connection - pulling all secrets from OCI vault")
+            cls.logger.info("Initializing ADW connection (loading wallet and secrets)")
 
             secrets_mgr = AdwSecrets()
             if cls.__wallet_dir is None:
@@ -53,7 +53,6 @@ class AdwConnection:
                 f'{os.environ["DFA_CONN_SERVICE_NAME"]}?{query}'
             )
 
-            cls.logger.info("Attempting to connect...")
             cls.__connection = oracledb.connect(
                 user=username,
                 password=password,
@@ -63,7 +62,7 @@ class AdwConnection:
             )
             atexit.register(cls._close_all)
 
-            cls.logger.info("Connection established successfully!!")
+            cls.logger.info("ADW connection established")
 
         return cls.__connection
 
@@ -78,28 +77,22 @@ class AdwConnection:
     def _close_all(cls):
         if cls.__cursor:
             try:
-                cls.logger.info("Closing cursor(s)")
                 cls.__cursor.close()
                 cls.__cursor = None
             except Exception as e:
-                cls.logger.info("Cannot close cursor - %s", e)
-                cls.logger.info("Resetting cursor property so new one can be created")
+                cls.logger.warning("Failed to close cursor: %s", e)
                 cls.__cursor = None
         else:
-            cls.logger.info("No cursor to close - resetting connection manager's cursor tracking")
             cls.__cursor = None
 
         if cls.__connection:
             try:
-                cls.logger.info("Closing connection(s)")
                 cls.__connection.close()
                 cls.__connection = None
             except Exception as e:
-                cls.logger.info("Cannot close connection - %s", e)
-                cls.logger.info("Resetting connection property so new one can be created")
+                cls.logger.warning("Failed to close connection: %s", e)
                 cls.__connection = None
         else:
-            cls.logger.info("No connection to close - resetting connection manager's connection")
             cls.__connection = None
 
     @classmethod
@@ -107,10 +100,7 @@ class AdwConnection:
         cls.__connection.commit()
 
         if cls.__cursor is not None:
-            cls.logger.info("Open cursor - performing commit")
             cls.__cursor.close()
-        else:
-            cls.logger.info("No open cursor - nothing to commit")
 
         cls.__cursor = None
 

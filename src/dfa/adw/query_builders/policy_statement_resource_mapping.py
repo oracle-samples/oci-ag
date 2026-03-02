@@ -66,15 +66,10 @@ class PolicyStatementResourceMappingStateUpdateQueryBuilder(
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info(
-                    "policy stmt resource mapping create failed - %s", batch_error.message
-                )
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d policy stmt resource mapping creates failed for unique constraint violation - \
-                performing bulk policy stmt resource mapping updates",
+                "%d policy stmt resource mapping creates failed for unique constraint violation - performing updates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -90,7 +85,7 @@ class PolicyStatementResourceMappingStateUpdateQueryBuilder(
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info(
+                self.logger.warning(
                     "policy stmt resource mapping update failed - %s", batch_error.message
                 )
 
@@ -113,7 +108,6 @@ class PolicyStatementResourceMappingStateDeleteQueryBuilder(
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for policy stmt res mapp delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 
