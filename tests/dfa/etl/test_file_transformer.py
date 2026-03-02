@@ -70,10 +70,6 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 5)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 5)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
-
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "5 access bundle events"))
@@ -92,10 +88,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 1)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
-
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 1)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
@@ -116,10 +108,6 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 233)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 233)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
-
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "233 cloud group membership events"))
@@ -138,10 +126,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 4)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
-
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 4)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
@@ -164,10 +148,6 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 8)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 8)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
-
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "8 global identity collection events"))
@@ -186,10 +166,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 1)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
-
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 1)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
@@ -248,10 +224,6 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 8)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 8)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
-
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "8 permission assignment events"))
@@ -270,10 +242,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 2)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
-
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 2)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
@@ -296,10 +264,6 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 9997)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 9997)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
-
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(
@@ -321,10 +285,6 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 3)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 3)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
-
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "3 policy events"))
@@ -343,10 +303,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 2)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
-
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 2)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
@@ -367,10 +323,6 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 3)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 3)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
-
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "3 role events"))
@@ -390,10 +342,6 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 7)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 7)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
-
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
             self.assertTrue(self.check_logs(logs.output, "7 ownership collection events"))
@@ -412,10 +360,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 1)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
-
-        self.transformer.clean_data()
-        self.assertEqual(len(self.transformer._prepared_events), 1)
-        self.assertTrue(isinstance(self.transformer._prepared_events_df, pd.DataFrame))
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()

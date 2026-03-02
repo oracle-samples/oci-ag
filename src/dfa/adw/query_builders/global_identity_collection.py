@@ -78,15 +78,10 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(gic_adds[batch_error.offset])
-            else:
-                self.logger.info(
-                    "global identity collection create failed - %s", batch_error.message
-                )
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d global identity collection creates failed for unique constraint violation - \
-                performing bulk global identity collection updates",
+                "%d GIC creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -94,6 +89,7 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
                 constraint_violating_rows,
                 [],
                 self.table_manager.get_unique_contraint_definition_details()["columns"],
+                self.table_manager.get_nullable_constraint_columns(),
             )
 
             AdwConnection.get_cursor().setinputsizes(**input_sizes)
@@ -102,7 +98,7 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info(
+                self.logger.warning(
                     "global identity collection update failed - %s", batch_error.message
                 )
 
@@ -126,7 +122,6 @@ class GlobalIdentityCollectionStateDeleteQueryBuilder(GlobalIdentityCollectionSt
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for global identity collection delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 

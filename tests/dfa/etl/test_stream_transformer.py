@@ -48,11 +48,9 @@ class TestStreamTransformer(unittest.TestCase):
 
     def test_transform_messages_calls(self):
         messages = {"TYPE1": {"INSERT": [{}]}}
-        self.transformer._start_processing_timer = MagicMock()
         self.transformer._set_raw_event_data = MagicMock()
         self.transformer.transform_data = MagicMock()
         self.transformer.transform_messages(messages)
-        self.transformer._start_processing_timer.assert_called_once()
         self.transformer._set_raw_event_data.assert_called_once_with(messages)
         self.transformer.transform_data.assert_called_once()
 

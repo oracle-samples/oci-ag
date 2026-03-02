@@ -38,7 +38,6 @@ class BaseTable(ABC):
 
     def create(self):
         if not self._table_exists():
-            self.logger.info("Executing before create table activities")
             self._before_create()
 
             self.logger.info("Creating table %s", self.get_table_name())
@@ -46,10 +45,9 @@ class BaseTable(ABC):
 
             AdwConnection.get_cursor().execute(create_sql)
 
-            self.logger.info("Executing after create table activities")
             self._after_create()
         else:
-            self.logger.info("Nothing to do - table %s has already exists", self.get_table_name())
+            self.logger.info("Table %s already exists - skipping create", self.get_table_name())
 
     def _after_create(self):
         pass
@@ -58,7 +56,7 @@ class BaseTable(ABC):
         return self._get_create_ddl()
 
     def _get_create_ddl(self):
-        self.logger.info("Generating DDL to create table %s", self.get_table_name())
+
         sql = f"""
             CREATE TABLE {self.get_schema()}.{self.get_table_name()}
             (
@@ -68,7 +66,7 @@ class BaseTable(ABC):
         return sql
 
     def _build_column_ddl(self):
-        self.logger.info("Generating DDL for column definition for table %s", self.get_table_name())
+
         all_columns_ddl = self._get_all_columns_ddl()
 
         table_column_ddl = ""
@@ -103,7 +101,7 @@ class BaseTable(ABC):
         return table_definitions
 
     def _get_delete_ddl(self):
-        self.logger.info("Generating DDL to drop table %s", self.get_table_name())
+        self.logger.info("Dropping table %s", self.get_table_name())
         sql = f"DROP TABLE {self.get_schema()}.{self.get_table_name()} PURGE"
         return sql
 
@@ -111,7 +109,6 @@ class BaseTable(ABC):
         pass
 
     def delete(self):
-        self.logger.info("Executing before delete table activities")
         self._before_delete()
 
         if self._table_exists():
@@ -120,13 +117,10 @@ class BaseTable(ABC):
 
             AdwConnection.get_cursor().execute(delete_sql)
         else:
-            self.logger.info(
-                "Nothing to do - table %s has already been dropped", self.get_table_name()
-            )
+            self.logger.info("Table %s already dropped - skipping delete", self.get_table_name())
 
     def _table_exists(self):
         exists = False
-        self.logger.info("Checking if table %s exists", self.get_table_name())
 
         exists_sql = f"""
             SELECT
@@ -140,7 +134,7 @@ class BaseTable(ABC):
         table_count = AdwConnection.get_cursor().fetchone()
 
         if table_count[0] == 1:
-            self.logger.info("Table %s exists", self.get_table_name())
+
             exists = True
 
         return exists
@@ -179,10 +173,10 @@ class BaseStateTable(BaseTable, ABC):
     def get_unique_contraint_definition_details(self):
         pass
 
+    def get_nullable_constraint_columns(self):
+        return []
+
     def _build_unique_constraint_ddl(self):
-        self.logger.info(
-            "Generating DDL to add unique constraint to table %s", self.get_table_name()
-        )
 
         ddl = ""
         if len(self.get_unique_contraint_definition_details()) > 0:
@@ -197,7 +191,6 @@ class BaseStateTable(BaseTable, ABC):
         return ddl
 
     def _build_unique_index_ddl(self):
-        self.logger.info("Generating DDL to add unique index to table %s", self.get_table_name())
 
         ddl = ""
         if len(self.get_unique_contraint_definition_details()) > 0:
@@ -206,7 +199,7 @@ class BaseStateTable(BaseTable, ABC):
             constraint = self.get_unique_contraint_definition_details()["name"]
             ddl = f"""
                 CREATE UNIQUE INDEX {self.get_schema()}.{constraint} ON \
-                {self.get_schema()}.{self.get_table_name()} ({constraint_columns_ddl})
+{self.get_schema()}.{self.get_table_name()} ({constraint_columns_ddl})
                 """
         return ddl
 

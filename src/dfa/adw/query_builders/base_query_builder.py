@@ -132,10 +132,13 @@ class UpdateQueryBuilder:
         if update_sql is None:
             return None
 
+        # Use Oracle DECODE for NULL-safe equality: DECODE(col, :param, 1, 0) = 1
+        # This treats NULL = NULL as equal and avoids overmatching on NULL columns
+        decode = CustomFunction("DECODE", ["expr1", "expr2", "ret_equal", "ret_not_equal"])
         for where_column_name in where_columns:
-            update_sql = update_sql.where(
-                getattr(query_builder, where_column_name.upper()) == event[where_column_name]
-            )
+            column = getattr(query_builder, where_column_name.upper())
+            param = Parameter(f":{where_column_name}")
+            update_sql = update_sql.where(decode(column, param, 1, 0) == 1)
 
         complete_update_stmt = update_sql.get_sql()
 
@@ -143,11 +146,14 @@ class UpdateQueryBuilder:
 
 
 class UpdateManyQueryBuilder:
-    def get_operation_sql(self, query_builder, events, date_columns, where_columns):
+    def get_operation_sql(
+        self, query_builder, events, date_columns, where_columns, nullable_columns=None
+    ):
         event = events[0]
         update_sql: Any = None
         where_columns = [col.lower() for col in where_columns]
         date_columns = [col.lower() for col in date_columns]
+        nullable_columns = [col.lower() for col in (nullable_columns or [])]
         for column_name, _ in event.items():
             if column_name.lower() in where_columns:
                 continue
@@ -163,15 +169,96 @@ class UpdateManyQueryBuilder:
         if update_sql is None:
             return None
 
+        # Use Oracle DECODE for NULL-safe equality on executemany binds
+        decode = CustomFunction("DECODE", ["expr1", "expr2", "ret_equal", "ret_not_equal"])
         for where_column_name in where_columns:
-            update_sql = update_sql.where(
-                getattr(query_builder, where_column_name.upper())
-                == Parameter(f":{where_column_name}")
-            )
+            column = getattr(query_builder, where_column_name.upper())
+            param = Parameter(f":{where_column_name}")
+            if where_column_name.upper() in nullable_columns:
+                # For nullable columns, treat NULL = NULL as a match using DECODE
+                update_sql = update_sql.where(decode(column, param, 1, 0) == 1)
+            else:
+                # For non-nullable columns, simple equality is sufficient
+                update_sql = update_sql.where(column == param)
 
         complete_update_stmt = update_sql.get_sql()
 
         return complete_update_stmt
+
+
+class MergeManyQueryBuilder:
+    """
+    Builds an Oracle MERGE (upsert) statement suitable for executemany with dict bindings.
+
+    Behavior:
+    - WHEN MATCHED: updates all non-key, non-date columns using incoming values
+    - WHEN NOT MATCHED: inserts all columns using incoming values
+    - The ON condition uses the provided where_columns (unique/primary key columns)
+    - date_columns are excluded from SET (caller can manage them if needed)
+    """
+
+    # pylint: disable=too-many-locals
+    def get_operation_sql(
+        self,
+        query_builder,
+        events: list[dict[str, Any]],
+        date_columns: list[str],
+        where_columns: list[str],
+    ) -> str:
+        assert len(events) > 0, "events cannot be empty for MERGE"
+
+        example = events[0]
+        all_cols = list(example.keys())
+        key_cols = [c.lower() for c in where_columns]
+        date_cols = [c.lower() for c in date_columns]
+
+        # Columns used in UPDATE SET (exclude keys and date columns)
+        updatable_cols = [
+            c for c in all_cols if c.lower() not in key_cols and c.lower() not in date_cols
+        ]
+
+        # Qualify table name with schema
+        schema = query_builder.table_manager.get_schema().upper()
+        table = query_builder.table_manager.get_table_name().upper()
+        qualified_table = f'"{schema}"."{table}"'
+
+        # USING subquery with bind variables once per executemany row
+        select_bind_parts = []
+        for col in all_cols:
+            select_bind_parts.append(f':{col} AS "{col.upper()}"')
+        using_subquery = f"SELECT {', '.join(select_bind_parts)} FROM DUAL"
+
+        # Build ON clause with composite keys if needed
+        on_conditions = []
+        for k in where_columns:
+            on_conditions.append(f"NVL(t.\"{k.upper()}\", '') = NVL(s.\"{k.upper()}\", '')")
+        on_clause = " AND ".join(on_conditions)
+
+        # Build UPDATE SET list
+        if len(updatable_cols) > 0:
+            set_parts = [f't."{c.upper()}" = s."{c.upper()}"' for c in updatable_cols]
+            update_clause = " WHEN MATCHED THEN UPDATE SET " + ", ".join(set_parts)
+        else:
+            # If nothing to update, skip UPDATE branch
+            update_clause = ""
+
+        # Build INSERT columns and values
+        insert_cols = ", ".join([f'"{c.upper()}"' for c in all_cols])
+        insert_vals = ", ".join([f's."{c.upper()}"' for c in all_cols])
+        insert_clause = f" WHEN NOT MATCHED THEN INSERT ({insert_cols}) VALUES ({insert_vals})"
+
+        merge_sql = (
+            f"MERGE INTO {qualified_table} t "
+            f"USING ({using_subquery}) s ON ({on_clause})"
+            f"{update_clause}"
+            f"{insert_clause}"
+        )
+
+        return merge_sql
+
+    def get_input_sizes(self, columns_definition: list[dict[str, Any]]):
+        # Reuse the same sizing logic as InsertMany
+        return InsertManyQueryBuilder().get_input_sizes(columns_definition)
 
 
 class AttibuteStatementHandler:
@@ -338,18 +425,81 @@ class BaseQueryBuilder:
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
 
-        self.logger.info(
-            "%s time series inserts failed for %s events",
-            self.table_manager.get_table_name().lower(),
-            len(AdwConnection.get_cursor().getbatcherrors()),
-        )
-        for batch_error in AdwConnection.get_cursor().getbatcherrors():
-            self.logger.info(
-                "%s time series inserts failed for %s events, %s",
+        batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
+        if batch_errors:
+            self.logger.warning(
+                "%s time series inserts encountered %d batch error(s)",
                 self.table_manager.get_table_name().lower(),
-                len(AdwConnection.get_cursor().getbatcherrors()),
-                batch_error,
+                len(batch_errors),
             )
+            # Log top-N distinct messages for signal; avoid full spam
+            seen = set()
+            top_msgs = []
+            for be in batch_errors:
+                msg = getattr(be, "message", str(be))
+                if msg not in seen:
+                    seen.add(msg)
+                    top_msgs.append(msg)
+                if len(top_msgs) >= 5:
+                    break
+            for m in top_msgs:
+                self.logger.warning("batch error: %s", m)
+
+        AdwConnection.commit()
+
+    def executemany_merge_for_events(
+        self,
+        where_columns: list[str],
+        date_columns: list[str] | None = None,
+    ):
+        """
+        Generic helper to perform MERGE (upsert) for current events using the
+        provided unique key columns. Intended for state tables that would
+        otherwise do insert+update passes.
+        """
+        date_columns = date_columns or []
+
+        if not self.events or len(self.events) == 0:
+            self.logger.info(
+                "No events to process by %s merge query builder",
+                self.table_manager.get_table_name().lower(),
+            )
+            return
+
+        self.logger.info(
+            "Using MERGE into %s for %d events (keys: %s)",
+            self.table_manager.get_table_name().lower(),
+            len(self.events),
+            ",".join([c.lower() for c in where_columns]),
+        )
+
+        merge_sql = MergeManyQueryBuilder().get_operation_sql(
+            self, self.events, date_columns, where_columns
+        )
+        input_sizes = MergeManyQueryBuilder().get_input_sizes(
+            self.table_manager.get_column_list_definition_for_table_ddl()
+        )
+        AdwConnection.get_cursor().setinputsizes(**input_sizes)
+        AdwConnection.get_cursor().executemany(merge_sql, self.events, batcherrors=True)
+
+        batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
+        if batch_errors:
+            self.logger.warning(
+                "%s merge encountered %d batch error(s)",
+                self.table_manager.get_table_name().lower(),
+                len(batch_errors),
+            )
+            seen = set()
+            top_msgs = []
+            for be in batch_errors:
+                msg = getattr(be, "message", str(be))
+                if msg not in seen:
+                    seen.add(msg)
+                    top_msgs.append(msg)
+                if len(top_msgs) >= 5:
+                    break
+            for m in top_msgs:
+                self.logger.warning("batch error: %s", m)
 
         AdwConnection.commit()
 

@@ -5,7 +5,9 @@ import importlib.util
 import inspect
 import os
 from abc import ABC, abstractmethod
+from functools import wraps
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from common.logger.logger import Logger
@@ -82,18 +84,41 @@ class AbstractTransformer(ABC):
         pass
 
     @abstractmethod
-    def clean_data(self):
-        pass
-
-    @abstractmethod
     def load_data(self):
         pass
+
+    # Auto-wrap subclass with runtime logging
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        def _wrap_with_timing(fn_name: str, label: str):
+            method = cls.__dict__.get(fn_name)
+            if callable(method) and not getattr(method, "__wrapped__", None):
+
+                @wraps(method)
+                def _timed(self, *args, **kw):
+                    start = perf_counter()
+                    try:
+                        return method(self, *args, **kw)
+                    finally:
+                        duration = perf_counter() - start
+                        try:
+                            self.logger.info("%s runtime: %.3fs", label, duration)
+                        except Exception:
+                            pass
+
+                setattr(cls, fn_name, _timed)
+
+        # Wrap key methods if overridden in subclass
+        _wrap_with_timing("extract_data", "extract_data")
+        _wrap_with_timing("transform_data", "transform_data")
+        _wrap_with_timing("load_data", "load_data")
 
     def transformer_factory(self):
         class_name = f"{self.get_event_object_type().lower().title().replace('_', '')}\
 {self.get_operation_type().lower().title().replace('_', '')}EventTransformer"
         transformers = Path(__file__).parent / "transformers"
-        self.logger.info("Looking for transformer class %s in %s", class_name, transformers)
+
         for file in os.listdir(transformers):
             full_path = os.path.join(transformers, file)
             if os.path.isfile(full_path) and file.endswith(".py") and not file.startswith("__"):

@@ -60,13 +60,10 @@ class OwnershipCollectionStateUpdateQueryBuilder(OwnershipCollectionStateQueryBu
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info("identity create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d ownership collection creates failed for unique constraint violation - \
-                performing bulk ownership collection updates",
+                "%d ownership collection creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
 
@@ -83,7 +80,7 @@ class OwnershipCollectionStateUpdateQueryBuilder(OwnershipCollectionStateQueryBu
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("ownership collection update failed - %s", batch_error.message)
+                self.logger.warning("ownership collection update failed - %s", batch_error.message)
 
         unique_id_timstamp_pairs = DeleteQueryBuilder().remove_duplicates(self.events)
         self.logger.info(
@@ -109,7 +106,6 @@ class OwnershipCollectionStateDeleteQueryBuilder(OwnershipCollectionStateQueryBu
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for ownership collection delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 

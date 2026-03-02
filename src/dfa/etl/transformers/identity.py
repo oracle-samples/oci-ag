@@ -115,12 +115,6 @@ class IdentityEventTransformer(BaseEventTransformer):
 
         return identities_list
 
-    def clean_prepared_events(self, prepared_events_df):
-        if "id" in prepared_events_df:
-            filter_condition = prepared_events_df["id"] != ""
-            prepared_events_df = prepared_events_df.loc[filter_condition]
-        return prepared_events_df
-
     def transform_stream_message(self, message):
         transformed_identities = []
         if isinstance(self._access_message_value_data(message), list):

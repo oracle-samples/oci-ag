@@ -56,13 +56,10 @@ class RoleStateUpdateQueryBuilder(RoleStateQueryBuilder):
         for batch_error in AdwConnection.get_cursor().getbatcherrors():
             if batch_error.full_code == "ORA-00001":
                 constraint_violating_rows.append(self.events[batch_error.offset])
-            else:
-                self.logger.info("role create failed - %s", batch_error.message)
 
         if len(constraint_violating_rows) > 0:
             self.logger.info(
-                "%d role creates failed for unique constraint violation - \
-                performing bulk role updates",
+                "%d role creates failed for unique constraint violation - performing bulk updates",
                 len(constraint_violating_rows),
             )
             update_sql = UpdateManyQueryBuilder().get_operation_sql(
@@ -78,7 +75,7 @@ class RoleStateUpdateQueryBuilder(RoleStateQueryBuilder):
             )
 
             for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.info("role update failed - %s", batch_error.message)
+                self.logger.warning("role update failed - %s", batch_error.message)
 
         unique_id_timstamp_pairs = DeleteQueryBuilder().remove_duplicates(self.events)
         self.logger.info(
@@ -104,7 +101,6 @@ class RoleStateDeleteQueryBuilder(RoleStateQueryBuilder):
             AdwConnection.get_cursor().execute(delete_sql)
             self.logger.info("Row delete for role delete request")
 
-        self.logger.info("Committing work for now")
         AdwConnection.commit()
 
 

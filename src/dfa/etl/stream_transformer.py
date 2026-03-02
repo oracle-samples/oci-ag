@@ -1,9 +1,6 @@
 # Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
-import time
-from datetime import datetime
-
 from common.ocihelpers.stream import DataEnablementStream
 from dfa.adw.connection import AdwConnection
 from dfa.adw.query_builders.base_query_builder import get_query_builder
@@ -24,24 +21,11 @@ class StreamTransformer(AbstractTransformer):
         self.transformer_name += "_timeseries" if is_timeseries else ""
         self._stream_manager = DataEnablementStream(self.transformer_name)
 
-    def _start_processing_timer(self):
-        self._processing_start_time = time.perf_counter()
-        self.logger.info(
-            "start processing time at: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        )
-
-    def _end_processing_timer(self):
-        self._processing_duration = time.perf_counter() - self._processing_start_time
-        self.logger.info("Took %f seconds to write to data store", self._processing_duration)
-
     def _set_raw_event_data(self, event_data):
-        self.logger.info("Received %d events to process", len(self._get_raw_events()))
         self._raw_events = event_data
 
     def _append_prepared_event(self, event):
-        self.logger.info("Appending prepared event...")
         if event is None or len(event) == 0:
-            self.logger.info("Event to append is empty or None")
             return
 
         if not isinstance(event, list):
@@ -73,7 +57,6 @@ class StreamTransformer(AbstractTransformer):
                 self._prepared_events.append(prepared_events)
 
     def transform_messages(self, messages):
-        self._start_processing_timer()
         self._set_raw_event_data(messages)
         self.transform_data()
 
@@ -89,7 +72,6 @@ class StreamTransformer(AbstractTransformer):
             self._operation_type = None
 
             if not self.is_valid_object_type(event_type):
-                self.logger.info("Skipping processing for event of type %s", event_type)
                 continue
 
             operations = self._get_raw_events()[event_type].keys()
@@ -102,12 +84,7 @@ class StreamTransformer(AbstractTransformer):
                 for message in event_type_ops_messages:
                     self._append_prepared_event(transformer.transform_stream_message(message))
 
-                self.logger.info("Processed all events for %s %s", event_type, operation)
-
         self.logger.info("Transformed %d events", len(self._prepared_events))
-
-    def clean_data(self):
-        pass
 
     def load_data(self):
         self.logger.info("Loading transformed data to data store...")
@@ -125,6 +102,5 @@ class StreamTransformer(AbstractTransformer):
             )
             query_builder.execute_sql_for_events()
         self.logger.info("We executed all of the queries")
-        self._end_processing_timer()
 
         AdwConnection.close()

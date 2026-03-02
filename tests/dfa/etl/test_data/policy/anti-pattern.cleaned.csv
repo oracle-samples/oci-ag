@@ -1,0 +1,29 @@
+Pattern,Permissive Score
+admit any-user from any-tenancy to manage <resource-family> in tenancy,5
+admit any-user from any-tenancy to manage all-resources in tenancy,5
+admit group BOAT of tenancy <internal> to manage all-resources in tenancy,5
+admit service to manage all-resources in tenancy,5
+allow any-user to manage all-resources in tenancy,5
+allow any-user to manage all-resources in tenancy where all { request.principal.type = '' },5
+allow any-user to manage all-resources in tenancy where all { request.principal.id = '' },4
+allow dynamic-group to manage <resource-family> in compartment,4
+allow dynamic-group to manage all-resources in tenancy,5
+allow dynamic-group to manage all-resources in tenancy where any { request.principal.tag.workload = '*' },5
+allow dynamic-group to manage iam-family in compartment,5
+allow dynamic-group to read <resource-family> in compartment,2
+allow dynamic-group to use <resource-family> in compartment,3
+allow group to manage all-resources in tenancy,5
+allow group to manage key-family in compartment,5
+allow group to manage key-family in tenancy,5
+allow group to manage log-family in compartment,5
+allow group to manage log-family in tenancy,5
+allow group to manage <runtime-family> in compartment,4
+allow group to manage virtual-network-family in compartment,5
+allow group to manage virtual-network-family in tenancy,5
+allow group to read all-resources in tenancy where all { target.compartment.id != '' },5
+allow group to read secret-family in compartment,3
+allow group to read secret-family in tenancy,4
+allow instance to manage iam-family in compartment,5
+allow service to manage all-resources in tenancy,5
+allow service to manage all-resources in tenancy where all { request.networkSource = 'internet' },5
+allow service to manage all-resources in tenancy where all { target.compartment.id != '' },5
