@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from dfa.adw.connection import AdwConnection
 from dfa.etl.file_transformer import FileTransformer
 
 
