@@ -4,9 +4,8 @@
 import os
 import types
 from types import SimpleNamespace
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-import pytest
 
 
 def json_dumps(obj):
@@ -219,28 +218,3 @@ def test_file_transformer_jsonl_detection(monkeypatch):
     # Should have set object type and one raw event
     assert t.get_event_object_type() == "PERMISSION"
     assert isinstance(t._raw_events, list) and len(t._raw_events) == 1  # type: ignore[attr-defined]
-
-
-# 5) UpdateQueryBuilder defensive path test
-from dfa.adw.query_builders.base_query_builder import UpdateQueryBuilder
-
-
-class DummyTableManager:
-    def get_table_name(self):
-        return "dummy"
-
-
-class DummyQB:
-    table_manager = DummyTableManager()
-
-    def __getattr__(self, item):
-        # Returning table columns for pypika
-        return item
-
-
-def test_update_query_builder_no_sets_but_where_clause_still_builds():
-    qb = DummyQB()
-    uq = UpdateQueryBuilder()
-    # Event has only where columns; date_columns empty
-    sql = uq.get_operation_sql(qb, {"id": 1}, date_columns=[], where_columns=["id"])
-    assert sql is None

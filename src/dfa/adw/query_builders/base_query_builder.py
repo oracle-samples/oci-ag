@@ -17,66 +17,6 @@ from dfa.adw.connection import AdwConnection
 from dfa.adw.tables.base_table import StreamOffsetTrackerTable
 
 
-class BulkInsertQueryBuilder:
-    def get_operation_sql(self, query_builder, events, date_columns):
-        all_states = []
-        for event in events:
-            insert_data = []
-            insert_column_list = []
-            for event_group_column_name in event.keys():
-                if event_group_column_name in date_columns:
-                    continue
-                insert_column_list.append(event_group_column_name.upper())
-                insert_data.append(event[event_group_column_name])
-            all_states.append(tuple(insert_data))
-
-        # generate bulk insert query
-        query = """INSERT ALL\n"""
-        all_into_statements = []
-        if len(all_states) > 0:
-            for current_state in all_states:
-                insert_sql = (
-                    Query.into(query_builder)
-                    .insert(*current_state)
-                    .get_sql()
-                    .replace("INSERT", "   ")
-                )
-                table_name = query_builder.table_manager.get_table_name().upper()
-                column_list_str = ", ".join(insert_column_list)
-                insert_sql = insert_sql.replace(
-                    f'"{table_name}"', f'"{table_name}" ({column_list_str}) '
-                )
-                all_into_statements.append(insert_sql)
-
-        query += """\n""".join(all_into_statements)
-        query += """\nSELECT 1 FROM DUAL"""
-
-        return [query]
-
-
-class InsertQueryBuilder:
-    def get_operation_sql(self, query_builder, event, date_columns):
-        state_sets = None
-        # for event in events:
-        insert_data = []
-        insert_column_list = []
-        for event_group_column_name in event.keys():
-            if event_group_column_name in date_columns:
-                continue
-            insert_column_list.append(event_group_column_name.upper())
-            insert_data.append(event[event_group_column_name])
-        state_sets = tuple(insert_data)
-
-        insert_sql = Query.into(query_builder).insert(*state_sets).get_sql()
-        table_name = query_builder.table_manager.get_table_name().upper()
-        column_list_str = ", ".join(insert_column_list)
-        insert_sql = insert_sql.replace(f'"{table_name}"', f'"{table_name}" ({column_list_str}) ')
-        insert_sql = AttibuteStatementHandler.prepare_attribute_column_for_insert_statement(
-            event, insert_sql
-        )
-        return insert_sql
-
-
 class InsertManyQueryBuilder:
     def get_operation_sql(self, query_builder, events, date_columns):
         event = events[0]
@@ -114,37 +54,6 @@ class InsertManyQueryBuilder:
         return input_sizes
 
 
-class UpdateQueryBuilder:
-    def get_operation_sql(self, query_builder, event, date_columns, where_columns):
-        update_sql: Any = None
-        where_columns = [col.lower() for col in where_columns]
-        date_columns = [col.lower() for col in date_columns]
-        for column_name, column_value in event.items():
-            if column_name.lower() in where_columns:
-                continue
-            if column_name.lower() in date_columns:
-                continue
-            if update_sql is None:
-                update_sql = Query.update(query_builder).set(column_name.upper(), column_value)
-            else:
-                update_sql = update_sql.set(column_name.upper(), column_value)
-
-        if update_sql is None:
-            return None
-
-        # Use Oracle DECODE for NULL-safe equality: DECODE(col, :param, 1, 0) = 1
-        # This treats NULL = NULL as equal and avoids overmatching on NULL columns
-        decode = CustomFunction("DECODE", ["expr1", "expr2", "ret_equal", "ret_not_equal"])
-        for where_column_name in where_columns:
-            column = getattr(query_builder, where_column_name.upper())
-            param = Parameter(f":{where_column_name}")
-            update_sql = update_sql.where(decode(column, param, 1, 0) == 1)
-
-        complete_update_stmt = update_sql.get_sql()
-
-        return complete_update_stmt
-
-
 class UpdateManyQueryBuilder:
     def get_operation_sql(
         self, query_builder, events, date_columns, where_columns, nullable_columns=None
@@ -174,7 +83,7 @@ class UpdateManyQueryBuilder:
         for where_column_name in where_columns:
             column = getattr(query_builder, where_column_name.upper())
             param = Parameter(f":{where_column_name}")
-            if where_column_name.upper() in nullable_columns:
+            if where_column_name in nullable_columns:
                 # For nullable columns, treat NULL = NULL as a match using DECODE
                 update_sql = update_sql.where(decode(column, param, 1, 0) == 1)
             else:

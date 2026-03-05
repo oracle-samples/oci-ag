@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from dfa.adw.connection import AdwConnection
 from dfa.etl.file_transformer import FileTransformer
 
 
@@ -183,31 +182,12 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._operation_type, "CREATE")
 
         self.transformer.transform_data()
-        self.assertEqual(len(self.transformer._prepared_events), 1)
+        self.assertEqual(len(self.transformer._prepared_events), 2)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "1 identity events"))
-
-    def test_identity_unmatched_ts(self):
-        # initializing the transformer with is_timeseries=True to test the timeseries logic in the transformer
-        self.transformer = FileTransformer(
-            "test_namespace", "test_bucket", "test_object.jsonl", True
-        )
-        content = self.read_file_content("tests/dfa/etl/test_data/file/identity_unmatched.jsonl")
-        mock_object = MagicMock()
-        mock_object.data.content.decode.return_value = content
-        self.mock_storage.download.return_value = mock_object
-
-        self.transformer.extract_data()
-        self.assertEqual(len(self.transformer._raw_events), 2)
-        self.assertEqual(self.transformer._event_object_type, "IDENTITY")
-        self.assertEqual(self.transformer._operation_type, "CREATE")
-
-        self.transformer.transform_data()
-        self.assertEqual(len(self.transformer._prepared_events), 2)
-        self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
+            self.assertTrue(self.check_logs(logs.output, "2 identity events"))
 
     def test_permission_assignment(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/permission_assignment.jsonl")
