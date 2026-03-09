@@ -55,7 +55,7 @@ class IdentityStateTable(BaseStateTable, IdentityTimeSeriesTable):
         }
 
     def get_nullable_constraint_columns(self):
-        return ["TI_ID"]
+        return ["ID"]
 
     def _after_create(self):
         super()._after_create()
