@@ -52,9 +52,9 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
                 pa_copy["policy_rule_id"] = i["policyRuleId"]
             if "userLogin" in i:
                 pa_copy["user_login"] = i["userLogin"]
-            if "validFrom" in i:
+            if "validFrom" in i and i["validFrom"] not in (0, "0"):
                 pa_copy["valid_from"] = i["validFrom"]
-            if "validTo" in i:
+            if "validTo" in i and i["validTo"] not in (0, "0"):
                 pa_copy["valid_to"] = i["validTo"]
             if "customAttributes" in i:
                 pa_copy["assignment_attributes"] = json.dumps(i["customAttributes"])
