@@ -8,6 +8,25 @@ from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 
 
 class AuditEventsEventTransformer(BaseEventTransformer):
+    SENSITIVE_SELECTION_KEYWORDS = ("password", "secret", "privatekey", "credentials")
+
+    def _mask_sensitive_payload(self, payload):
+        if isinstance(payload, dict):
+            masked_payload = {k: self._mask_sensitive_payload(v) for k, v in payload.items()}
+
+            selection_value = payload.get("selection")
+            if isinstance(selection_value, str) and any(
+                keyword in selection_value.lower() for keyword in self.SENSITIVE_SELECTION_KEYWORDS
+            ):
+                if "value" in masked_payload:
+                    masked_payload["value"] = ["***"]
+
+            return masked_payload
+
+        if isinstance(payload, list):
+            return [self._mask_sensitive_payload(item) for item in payload]
+        return payload
+
     def transform_raw_event(self, raw_event):
         base_audit_event = AuditEventsTable().get_default_row()
         audit_events_list = []
@@ -66,9 +85,8 @@ class AuditEventsEventTransformer(BaseEventTransformer):
                         raw_event["request"]["headers"]
                     )
                 if "payload" in raw_event["request"]:
-                    base_audit_event["request_payload"] = json.dumps(
-                        raw_event["request"]["payload"]
-                    )
+                    masked_payload = self._mask_sensitive_payload(raw_event["request"]["payload"])
+                    base_audit_event["request_payload"] = json.dumps(masked_payload)
 
             if "response" in raw_event:
                 if "responseTime" in raw_event["response"]:
@@ -80,9 +98,8 @@ class AuditEventsEventTransformer(BaseEventTransformer):
                         raw_event["response"]["headers"]
                     )
                 if "payload" in raw_event["response"]:
-                    base_audit_event["response_payload"] = json.dumps(
-                        raw_event["response"]["payload"]
-                    )
+                    masked_payload = self._mask_sensitive_payload(raw_event["response"]["payload"])
+                    base_audit_event["response_payload"] = json.dumps(masked_payload)
 
             if "stateChange" in raw_event:
                 base_audit_event["state_change"] = json.dumps(raw_event["stateChange"])

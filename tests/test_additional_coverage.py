@@ -7,7 +7,6 @@ from types import SimpleNamespace
 from typing import Any, Dict
 
 
-
 def json_dumps(obj):
     import json
 

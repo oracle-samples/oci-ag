@@ -9,7 +9,7 @@ from dfa.etl.abstract_transformer import AbstractTransformer
 
 class DummyTransformer(AbstractTransformer):
     is_timeseries = False
-    
+
     def _set_raw_event_data(self, obj):
         self._raw_events.append(obj)
 
