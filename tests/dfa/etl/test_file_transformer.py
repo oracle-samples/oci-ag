@@ -45,9 +45,12 @@ class TestFileTransformer(unittest.TestCase):
                 return True
         return False
 
-    def test_access_bundle(self):
+    @patch("dfa.etl.file_transformer.get_query_builder")
+    def test_access_bundle(self, mock_get_query_builder):
         content = self.read_file_content("tests/dfa/etl/test_data/file/access_bundle.jsonl")
         mock_object = MagicMock()
+        mock_query_builder = MagicMock()
+        mock_get_query_builder.return_value = mock_query_builder
         mock_object.data.content.decode.return_value = content
         self.mock_storage.download.return_value = mock_object
 
@@ -56,6 +59,7 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._event_object_type, "ACCESS_BUNDLE")
         self.assertEqual(self.transformer._operation_type, "CREATE")
         self.assertEqual(self.transformer._event_timestamp, "2025-08-15T17:38:23.645616585Z")
+        self.assertTrue(self.transformer._last_batch)
         self.assertEqual(
             self.transformer._tenancy_id,
             "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
@@ -69,9 +73,26 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 5)
         self.assertIsInstance(self.transformer._prepared_events_df, pd.DataFrame)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "5 access bundle events"))
+    @patch("dfa.etl.file_transformer.get_query_builder")
+    def test_load_data_triggers_last_batch_cleanup(self, mock_get_query_builder):
+        mock_query_builder = MagicMock()
+        mock_get_query_builder.return_value = mock_query_builder
+
+        self.transformer._event_object_type = "ACCESS_BUNDLE"
+        self.transformer._operation_type = "CREATE"
+        self.transformer._tenancy_id = "tenant-1"
+        self.transformer._service_instance_id = "svc-1"
+        self.transformer._prepared_events = [{"id": "ab-1"}]
+        self.transformer._last_batch = True
+
+        self.transformer.load_data()
+
+        mock_query_builder.execute_sql_for_events.assert_called_once()
+        mock_query_builder.delete_rows_older_than_event_timestamp.assert_called_once()
+        cleanup_args = mock_query_builder.delete_rows_older_than_event_timestamp.call_args
+        self.assertEqual(cleanup_args.kwargs["tenancy_id"], "tenant-1")
+        self.assertEqual(cleanup_args.kwargs["service_instance_id"], "svc-1")
+        self.assertIsInstance(cleanup_args.args[0], str)
 
     def test_access_guardrail(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/access_guardrail.jsonl")

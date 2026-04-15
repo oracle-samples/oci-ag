@@ -150,10 +150,8 @@ class DfaCreateVCN(BaseVCN):
                 self.__service_id = service.id
 
         if self.__service_id is None:
-            raise ValueError(
-                f"Could not find id for service: {target_service_name}. \
-Please check ensure configurations are correct before proceeding."
-            )
+            raise ValueError(f"Could not find id for service: {target_service_name}. \
+Please check ensure configurations are correct before proceeding.")
 
         self.logger.info("Successfully retrieved the service id for %s", target_service_name)
 

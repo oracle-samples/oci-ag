@@ -6,7 +6,7 @@ import inspect
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import oracledb
 from pypika import CustomFunction, Order, Parameter, Query, Table
@@ -312,6 +312,43 @@ class BaseQueryBuilder:
     logger = Logger(__name__).get_logger()
     events: Optional[list[Any]] = None
     table_manager: Any = None
+
+    def _table(self) -> Table:
+        return cast(Table, self)
+
+    def delete_rows_older_than_event_timestamp(
+        self,
+        completion_timestamp: str,
+        tenancy_id: str | None = None,
+        service_instance_id: str | None = None,
+    ):
+        self.logger.info(
+            "Removing stale rows from %s older than %s",
+            self.table_manager.get_table_name().lower(),
+            completion_timestamp,
+        )
+
+        to_timestamp = CustomFunction("TO_TIMESTAMP", ["timestamp_string", "format_string"])
+        table = self._table()
+        delete_sql = (
+            Query.from_(table)
+            .delete()
+            .where(
+                getattr(table, "EVENT_TIMESTAMP")
+                < to_timestamp(completion_timestamp, "DD-Mon-YY HH:MI:SS.FF6 AM")
+            )
+        )
+
+        if tenancy_id is not None:
+            delete_sql = delete_sql.where(getattr(table, "TENANCY_ID") == tenancy_id)
+
+        if service_instance_id is not None:
+            delete_sql = delete_sql.where(
+                getattr(table, "SERVICE_INSTANCE_ID") == service_instance_id
+            )
+
+        AdwConnection.get_cursor().execute(delete_sql.get_sql())
+        AdwConnection.commit()
 
     def executemany_sql_for_events(self):
         self.logger.info(

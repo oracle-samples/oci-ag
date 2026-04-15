@@ -3,6 +3,7 @@
 
 import json
 import os
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -21,6 +22,7 @@ class FileTransformer(AbstractTransformer):
     _bucket_name = None
     _object_name = None
     _object_storage_client = None
+    _last_batch = False
 
     def __init__(self, namespace, bucket_name, object_name, is_timeseries=False):
         self.logger.info(
@@ -36,6 +38,15 @@ class FileTransformer(AbstractTransformer):
         self._bucket_name = bucket_name
         self._object_name = object_name
         self._object_storage_client = BaseObjectStorage()
+        self._last_batch = False
+
+    @staticmethod
+    def _parse_bool_header_value(value):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() == "true"
+        return False
 
     def _set_raw_event_data(self, event_data):
         content = event_data.data.content.decode("utf-8")
@@ -54,6 +65,10 @@ class FileTransformer(AbstractTransformer):
                         self._tenancy_id = raw_event["headers"]["tenancyId"]
                     if "serviceInstanceId" in raw_event["headers"]:
                         self._service_instance_id = raw_event["headers"]["serviceInstanceId"]
+                    if "lastBatch" in raw_event["headers"]:
+                        self._last_batch = self._parse_bool_header_value(
+                            raw_event["headers"]["lastBatch"]
+                        )
                     continue
                 self._raw_events.append(raw_event)
         else:
@@ -82,6 +97,8 @@ class FileTransformer(AbstractTransformer):
                     self._tenancy_id = headers["tenancyId"]
                 if "serviceInstanceId" in headers:
                     self._service_instance_id = headers["serviceInstanceId"]
+                if "lastBatch" in headers:
+                    self._last_batch = self._parse_bool_header_value(headers["lastBatch"])
 
         if not self.is_valid_object_type(self.get_event_object_type()):
             self.logger.info(
@@ -127,6 +144,7 @@ class FileTransformer(AbstractTransformer):
 
     def load_data(self):
         self.logger.info("Loading transformed data to data store...")
+        current_query_builder = None
         if len(self._prepared_events) > 0:
             self.chunk_prepared_events()
             for batched_events in self._prepared_events:
@@ -136,12 +154,13 @@ class FileTransformer(AbstractTransformer):
                     self.get_event_object_type(),
                     self.get_operation_type(),
                 )
-                self.query_builder = get_query_builder(
+                current_query_builder = get_query_builder(
                     self.get_event_object_type(),
                     self.get_operation_type(),
                     batched_events,
                     self.is_timeseries,
                 )
+                self.query_builder = current_query_builder
                 self.query_builder.execute_sql_for_events()
         else:
             self.logger.info(
@@ -149,4 +168,29 @@ class FileTransformer(AbstractTransformer):
                 self.get_event_object_type(),
                 self.get_operation_type(),
             )
+
+        if (
+            self._last_batch
+            and not self.is_timeseries
+            and self.get_operation_type() == "CREATE"
+            and self.is_valid_object_type(self.get_event_object_type())
+        ):
+            if current_query_builder is None:
+                current_query_builder = get_query_builder(
+                    self.get_event_object_type(),
+                    self.get_operation_type(),
+                    [],
+                    self.is_timeseries,
+                )
+                self.query_builder = current_query_builder
+
+            if current_query_builder is not None:
+                completion_timestamp = datetime.now(timezone.utc).strftime(
+                    "%d-%b-%y %I:%M:%S.%f %p"
+                )
+                current_query_builder.delete_rows_older_than_event_timestamp(
+                    completion_timestamp,
+                    tenancy_id=self._tenancy_id,
+                    service_instance_id=self._service_instance_id,
+                )
         AdwConnection.close()
