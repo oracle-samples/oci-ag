@@ -9,8 +9,6 @@ from dfa.adw.connection import AdwConnection
 from dfa.adw.query_builders.base_query_builder import (
     BaseQueryBuilder,
     DeleteQueryBuilder,
-    InsertManyQueryBuilder,
-    UpdateManyQueryBuilder,
 )
 from dfa.adw.tables.approval_workflow import (
     ApprovalWorkflowStateTable,
@@ -40,48 +38,7 @@ class ApprovalWorkflowStateCreateQueryBuilder(ApprovalWorkflowStateQueryBuilder)
 
 class ApprovalWorkflowStateUpdateQueryBuilder(ApprovalWorkflowStateQueryBuilder):
     def executemany_sql_for_events(self):
-        self.logger.info(
-            "Using bulk insert / update operations for %d approval workflow events",
-            len(self.events),
-        )
-
-        if len(self.events) == 0:
-            self.logger.info("No events to process by approval workflow query builder")
-            return
-
-        insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            ApprovalWorkflowStateTable().get_column_list_definition_for_table_ddl()
-        )
-        AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
-
-        constraint_violating_rows = []
-        for batch_error in AdwConnection.get_cursor().getbatcherrors():
-            if batch_error.full_code == "ORA-00001":
-                constraint_violating_rows.append(self.events[batch_error.offset])
-
-        if len(constraint_violating_rows) > 0:
-            self.logger.info(
-                "%d approval workflow creates failed for unique constraint violation - performing bulk updates",
-                len(constraint_violating_rows),
-            )
-            update_sql = UpdateManyQueryBuilder().get_operation_sql(
-                self,
-                constraint_violating_rows,
-                [],
-                self.table_manager.get_unique_contraint_definition_details()["columns"],
-            )
-
-            AdwConnection.get_cursor().setinputsizes(**input_sizes)
-            AdwConnection.get_cursor().executemany(
-                update_sql, constraint_violating_rows, batcherrors=True
-            )
-
-            for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.warning("approval workflow update failed - %s", batch_error.message)
-
-        AdwConnection.commit()
+        return self.executemany_state_merge_for_events()
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

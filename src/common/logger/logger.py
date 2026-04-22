@@ -5,6 +5,13 @@ import logging
 import os
 
 dfa_loggers: dict[str, logging.Logger] = {}
+OCI_SDK_LOGGER_NAMES = (
+    "oci",
+    "oci.base_client",
+    "oci.circuit_breaker",
+    "oci.circuit_breaker.circuit_breaker",
+    "oci.retry",
+)
 
 
 class Logger:
@@ -28,6 +35,13 @@ class Logger:
                 sh_formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
                 sh.setFormatter(sh_formatter)
                 self.__logger.addHandler(sh)
+
+            oci_level_name = os.getenv("DFA_OCI_LOG_LEVEL", "WARNING").upper()
+            oci_level = getattr(logging, oci_level_name, logging.WARNING)
+            for oci_logger_name in OCI_SDK_LOGGER_NAMES:
+                oci_logger = logging.getLogger(oci_logger_name)
+                oci_logger.setLevel(oci_level)
+
             dfa_loggers[app_name] = self.__logger
 
     def get_logger(self):

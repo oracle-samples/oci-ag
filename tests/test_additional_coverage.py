@@ -30,6 +30,58 @@ def test_logger_returns_singleton_and_respects_env_level(monkeypatch):
     assert logger1.level <= 10  # DEBUG or more verbose
 
 
+def test_logger_sets_oci_sdk_loggers_to_warning_by_default(monkeypatch):
+    monkeypatch.delenv("DFA_OCI_LOG_LEVEL", raising=False)
+    _ = Logger("unit.oci.loggers").get_logger()
+
+    import logging
+
+    assert logging.getLogger("oci.circuit_breaker.circuit_breaker").level == logging.WARNING
+    assert logging.getLogger("oci.retry").level == logging.WARNING
+
+
+def test_logger_respects_explicit_oci_sdk_log_level(monkeypatch):
+    monkeypatch.setenv("DFA_OCI_LOG_LEVEL", "ERROR")
+    _ = Logger("unit.oci.loggers.error").get_logger()
+
+    import logging
+
+    assert logging.getLogger("oci.circuit_breaker.circuit_breaker").level == logging.ERROR
+
+
+def test_vault_clients_use_retry_strategy(monkeypatch):
+    import common.ocihelpers.vault as vault_mod
+
+    sentinel_retry = object()
+    kms_calls = []
+    secret_calls = []
+
+    monkeypatch.setattr(vault_mod, "build_default_oci_retry_strategy", lambda: sentinel_retry)
+    monkeypatch.setattr(
+        vault_mod.oci.key_management,
+        "KmsVaultClient",
+        lambda **kwargs: kms_calls.append(kwargs) or object(),
+    )
+    monkeypatch.setattr(
+        vault_mod.oci.secrets,
+        "SecretsClient",
+        lambda **kwargs: secret_calls.append(kwargs) or object(),
+    )
+
+    dfa_vault = vault_mod.DfaVault()
+    dfa_vault._DfaVault__get_config = lambda: {"region": "iad"}  # type: ignore[attr-defined]
+    dfa_vault._DfaVault__get_signer = lambda: "signer"  # type: ignore[attr-defined]
+    _ = dfa_vault._get_kms_vault_client()
+
+    adw_secrets = vault_mod.AdwSecrets()
+    adw_secrets._DfaBaseSecret__get_config = lambda: {"region": "iad"}  # type: ignore[attr-defined]
+    adw_secrets._DfaBaseSecret__get_signer = lambda: "signer"  # type: ignore[attr-defined]
+    _ = adw_secrets._DfaBaseSecret__get_secret_client()  # type: ignore[attr-defined]
+
+    assert kms_calls[0]["retry_strategy"] is sentinel_retry
+    assert secret_calls[0]["retry_strategy"] is sentinel_retry
+
+
 # 2) Bootstrap envvars tests
 from dfa.bootstrap.envvars import (
     bootstrap_base_environment_variables,

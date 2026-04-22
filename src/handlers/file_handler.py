@@ -50,4 +50,4 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
 
     except Exception as e:
         logger.exception("File handler caught exception - %s", e)
-        raise Exception("File handler exception") from e
+        raise

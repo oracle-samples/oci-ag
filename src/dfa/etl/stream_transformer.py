@@ -2,7 +2,6 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
 from common.ocihelpers.stream import DataEnablementStream
-from dfa.adw.connection import AdwConnection
 from dfa.adw.query_builders.base_query_builder import get_query_builder
 from dfa.etl.abstract_transformer import AbstractTransformer
 
@@ -103,4 +102,4 @@ class StreamTransformer(AbstractTransformer):
             query_builder.execute_sql_for_events()
         self.logger.info("We executed all of the queries")
 
-        AdwConnection.close()
+        # Keep the connection warm for subsequent invocations in the same process.

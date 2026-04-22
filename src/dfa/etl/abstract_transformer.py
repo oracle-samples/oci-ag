@@ -5,7 +5,7 @@ import importlib.util
 import inspect
 import os
 from abc import ABC, abstractmethod
-from functools import wraps
+from functools import lru_cache, wraps
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -23,7 +23,6 @@ class AbstractTransformer(ABC):
     _service_instance_id = None
     _raw_events: list[Any] = []
     _prepared_events: list[Any] = []
-    _prepared_events_df: Any = None
 
     def _get_raw_events(self):
         return self._raw_events
@@ -37,9 +36,6 @@ class AbstractTransformer(ABC):
 
     def _get_prepared_events(self):
         return self._prepared_events
-
-    def _get_prepared_events_df(self):
-        return self._prepared_events_df
 
     def get_event_object_type(self):
         return self._event_object_type
@@ -114,27 +110,42 @@ class AbstractTransformer(ABC):
         _wrap_with_timing("transform_data", "transform_data")
         _wrap_with_timing("load_data", "load_data")
 
-    def transformer_factory(self):
-        class_name = f"{self.get_event_object_type().lower().title().replace('_', '')}\
-{self.get_operation_type().lower().title().replace('_', '')}EventTransformer"
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def _resolve_transformer_class(event_object_type, operation_type):
+        class_name = f"{event_object_type.lower().title().replace('_', '')}\
+{operation_type.lower().title().replace('_', '')}EventTransformer"
         transformers = Path(__file__).parent / "transformers"
 
         for file in os.listdir(transformers):
             full_path = os.path.join(transformers, file)
             if os.path.isfile(full_path) and file.endswith(".py") and not file.startswith("__"):
-                module_name = file[:-3]  # Remove .py extension
-                if module_name.lower() == self.get_event_object_type().lower():
-                    try:
-                        spec = importlib.util.spec_from_file_location(module_name, full_path)
-                        module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(module)
-                        for cls_name, cls_obj in inspect.getmembers(module):
-                            if inspect.isclass(cls_obj) and cls_name == class_name:
-                                return cls_obj(
-                                    self.get_event_object_type(),
-                                    self.get_operation_type(),
-                                    self.is_timeseries,
-                                )
-                    except Exception as e:
-                        self.logger.error("Error finding %s: %s", class_name, e)
+                module_name = file[:-3]
+                if module_name.lower() == event_object_type.lower():
+                    spec = importlib.util.spec_from_file_location(module_name, full_path)
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    for cls_name, cls_obj in inspect.getmembers(module):
+                        if inspect.isclass(cls_obj) and cls_name == class_name:
+                            return cls_obj
+        return None
+
+    def transformer_factory(self):
+        try:
+            transformer_class = self._resolve_transformer_class(
+                self.get_event_object_type(), self.get_operation_type()
+            )
+            if transformer_class is not None:
+                return transformer_class(
+                    self.get_event_object_type(),
+                    self.get_operation_type(),
+                    self.is_timeseries,
+                )
+        except Exception as e:
+            self.logger.error(
+                "Error finding transformer for %s/%s: %s",
+                self.get_event_object_type(),
+                self.get_operation_type(),
+                e,
+            )
         return None

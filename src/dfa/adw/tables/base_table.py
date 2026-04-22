@@ -46,8 +46,6 @@ class BaseTable(ABC):
             AdwConnection.get_cursor().execute(create_sql)
 
             self._after_create()
-        else:
-            self.logger.info("Table %s already exists - skipping create", self.get_table_name())
 
     def _after_create(self):
         pass
@@ -229,3 +227,35 @@ class StreamOffsetTrackerTable(BaseTable):
                 {"field_name":"END_OFFSET","column_id":4,"column_name":"END_OFFSET","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null}
             ]
             """
+
+
+class SnapshotBatchTrackerTable(BaseTable):
+    _table_name = "snapshot_batch_tracker"
+    _schema = None
+
+    def _column_definitions(self):
+        return """
+            [
+                {"field_name":"ENTITY_TYPE","column_name":"ENTITY_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":255,"data_format":null},
+                {"field_name":"TENANCY_ID","column_name":"TENANCY_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":1000,"data_format":null},
+                {"field_name":"SERVICE_INSTANCE_ID","column_name":"SERVICE_INSTANCE_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":1000,"data_format":null},
+                {"field_name":"SNAPSHOT_ID","column_name":"SNAPSHOT_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":1000,"data_format":null},
+                {"field_name":"BATCH_ID","column_name":"BATCH_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":1000,"data_format":null},
+                {"field_name":"STATUS","column_name":"STATUS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32,"data_format":null},
+                {"field_name":"UPDATED_AT","column_name":"UPDATED_AT","column_expression":null,"skip_column":false,"data_type":"TIMESTAMP","data_length":null,"data_format":null}
+            ]
+            """
+
+    def _after_create(self):
+        AdwConnection.get_cursor().execute(f"""
+                ALTER TABLE {self.get_schema()}.{self.get_table_name()}
+                ADD CONSTRAINT "PK_SNAPSHOT_BATCH_TRACKER"
+                PRIMARY KEY (
+                    "ENTITY_TYPE",
+                    "TENANCY_ID",
+                    "SERVICE_INSTANCE_ID",
+                    "SNAPSHOT_ID",
+                    "BATCH_ID"
+                )
+                USING INDEX ENABLE
+            """)

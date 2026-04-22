@@ -11,9 +11,25 @@ from dfa.etl.stream_transformer import StreamTransformer
 class TestStreamTransformer(unittest.TestCase):
 
     def setUp(self):
-        self.adw_patcher = patch("dfa.adw.connection.AdwConnection", autospec=True)
-        self.mock_adw_manager = self.adw_patcher.start()
-        self.addCleanup(self.adw_patcher.stop)
+        self.env_patcher = patch.dict("os.environ", {"DFA_ADW_DFA_SCHEMA": "DFA"})
+        self.env_patcher.start()
+        self.addCleanup(self.env_patcher.stop)
+
+        self.mock_cursor = MagicMock()
+        self.mock_cursor.getbatcherrors.return_value = []
+
+        self.adw_get_cursor_patcher = patch("dfa.adw.connection.AdwConnection.get_cursor")
+        self.mock_get_cursor = self.adw_get_cursor_patcher.start()
+        self.mock_get_cursor.return_value = self.mock_cursor
+        self.addCleanup(self.adw_get_cursor_patcher.stop)
+
+        self.adw_commit_patcher = patch("dfa.adw.connection.AdwConnection.commit")
+        self.mock_adw_commit = self.adw_commit_patcher.start()
+        self.addCleanup(self.adw_commit_patcher.stop)
+
+        self.adw_close_patcher = patch("dfa.adw.connection.AdwConnection.close")
+        self.mock_adw_close = self.adw_close_patcher.start()
+        self.addCleanup(self.adw_close_patcher.stop)
 
         self.patcher_stream = patch(
             "dfa.etl.stream_transformer.DataEnablementStream", autospec=True
@@ -99,7 +115,7 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "1 access bundle events"))
+            self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))
 
     def test_approval_workflow_changed(self):
         messages = self.read_file_content(
@@ -132,7 +148,7 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "1 approval workflow events"))
+            self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))
 
     def test_identity_delete(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/identity_deleted.json")
@@ -234,4 +250,4 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "1 identity events"))
+            self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))

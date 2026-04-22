@@ -5,13 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-    InsertManyQueryBuilder,
-    UpdateManyQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.cloud_group import CloudGroupStateTable, CloudGroupTimeSeriesTable
 
 
@@ -53,53 +47,11 @@ class CloudGroupStateUpdateQueryBuilder(CloudGroupStateQueryBuilder):
                 "No group membership removes found... moving onto group membership adds"
             )
 
-        ## Bulk insert and updates
-        self.logger.info(
-            "Using bulk insert / update operations for %d cloud group membership events",
-            len(group_membership_adds),
-        )
-
         if len(group_membership_adds) == 0:
             self.logger.info("No events to process by group membership query builder")
             return
 
-        insert_statement = InsertManyQueryBuilder().get_operation_sql(
-            self, group_membership_adds, []
-        )
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            CloudGroupStateTable().get_column_list_definition_for_table_ddl()
-        )
-        AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(
-            insert_statement, group_membership_adds, batcherrors=True
-        )
-
-        constraint_violating_rows = []
-        for batch_error in AdwConnection.get_cursor().getbatcherrors():
-            if batch_error.full_code == "ORA-00001":
-                constraint_violating_rows.append(group_membership_adds[batch_error.offset])
-
-        if len(constraint_violating_rows) > 0:
-            self.logger.info(
-                "%d group membership creates failed for unique constraint violation - performing bulk updates",
-                len(constraint_violating_rows),
-            )
-            update_sql = UpdateManyQueryBuilder().get_operation_sql(
-                self,
-                constraint_violating_rows,
-                [],
-                self.table_manager.get_unique_contraint_definition_details()["columns"],
-            )
-
-            AdwConnection.get_cursor().setinputsizes(**input_sizes)
-            AdwConnection.get_cursor().executemany(
-                update_sql, constraint_violating_rows, batcherrors=True
-            )
-
-            for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.warning("identity update failed - %s", batch_error.message)
-
-        AdwConnection.commit()
+        self.executemany_state_merge_for_events(group_membership_adds)
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
@@ -107,18 +59,26 @@ class CloudGroupStateUpdateQueryBuilder(CloudGroupStateQueryBuilder):
 
 class CloudGroupStateDeleteQueryBuilder(CloudGroupStateQueryBuilder):
     def execute_sql_for_events(self):
+        self.logger.info("Row delete for cloud group delete request")
+        events_with_identity = []
+        events_without_identity = []
+
         for event in self.events:
             if event["identity_global_id"] != "":
-                delete_sql = DeleteQueryBuilder().get_operation_sql(
-                    self, event, ["id", "identity_global_id", "service_instance_id", "tenancy_id"]
-                )
+                events_with_identity.append(event)
             else:
-                delete_sql = DeleteQueryBuilder().get_operation_sql(
-                    self, event, ["id", "service_instance_id", "tenancy_id"]
-                )
-            AdwConnection.get_cursor().execute(delete_sql)
+                events_without_identity.append(event)
 
-        AdwConnection.commit()
+        if events_with_identity:
+            self.executemany_delete_for_events(
+                ["id", "identity_global_id", "service_instance_id", "tenancy_id"],
+                events=events_with_identity,
+            )
+        if events_without_identity:
+            self.executemany_delete_for_events(
+                ["id", "service_instance_id", "tenancy_id"],
+                events=events_without_identity,
+            )
 
 
 class CloudGroupTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):

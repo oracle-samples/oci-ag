@@ -34,4 +34,4 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
 
     except Exception as e:
         logger.exception("Stream handler caught exception - %s", e)
-        raise Exception("Stream handler exception") from e
+        raise

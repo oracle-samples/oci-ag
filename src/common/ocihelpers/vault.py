@@ -5,10 +5,26 @@ import base64
 import os
 import secrets
 import string
+from typing import ClassVar
 
 import oci
 
 from common.logger.logger import Logger
+
+
+def build_default_oci_retry_strategy():
+    return oci.retry.RetryStrategyBuilder(
+        max_attempts_check=True,
+        max_attempts=20,
+        total_elapsed_time_check=True,
+        total_elapsed_time_seconds=75,
+        retry_max_wait_between_calls_seconds=7,
+        retry_base_sleep_time_seconds=4,
+        service_error_check=False,
+        service_error_retry_on_any_5xx=False,
+        service_error_retry_config={429: []},
+        backoff_type=oci.retry.BACKOFF_FULL_JITTER_EQUAL_ON_THROTTLE_VALUE,
+    ).get_retry_strategy()
 
 
 class DfaVault:
@@ -75,7 +91,9 @@ class DfaVault:
 
     def __set_kms_vault_client(self):
         self.__kms_vault_client = oci.key_management.KmsVaultClient(
-            config=self.__get_config(), signer=self.__get_signer()
+            config=self.__get_config(),
+            signer=self.__get_signer(),
+            retry_strategy=build_default_oci_retry_strategy(),
         )
 
     def _get_kms_vault_client(self):
@@ -90,6 +108,7 @@ class DfaVault:
             config=self.__get_config(),
             signer=self.__get_signer(),
             service_endpoint=vault_details.management_endpoint,
+            retry_strategy=build_default_oci_retry_strategy(),
         )
 
     def _get_kms_mgmt_client(self):
@@ -226,6 +245,9 @@ class DfaBaseSecret:
     __config = None
     __vault_client = None
     __secret_client = None
+    _secret_ocid_cache: ClassVar[dict[str, str]] = {}
+    _secret_value_cache: ClassVar[dict[str, str]] = {}
+    _wallet_value_cache: ClassVar[dict[str, bytes]] = {}
 
     def _secret_exists(self, secret_name):
         exists_flag = False
@@ -240,33 +262,49 @@ class DfaBaseSecret:
         return exists_flag
 
     def _get_secret_ocid(self, secret_name):
+        if secret_name in self._secret_ocid_cache:
+            return self._secret_ocid_cache[secret_name]
+
         secrets_list = self.__get_vault_client().list_secrets(
             os.environ["DFA_COMPARTMENT_ID"],
             name=secret_name,
             vault_id=os.environ["DFA_VAULT_ID"],
         )
         secret_ocid = secrets_list.data[0].id
+        self._secret_ocid_cache[secret_name] = secret_ocid
 
         return secret_ocid
 
     def _get_secret_value(self, secret_ocid):
+        if secret_ocid in self._secret_value_cache:
+            return self._secret_value_cache[secret_ocid]
+
         response = self.__get_secret_client().get_secret_bundle(secret_ocid)
         base64_secret_content = response.data.secret_bundle_content.content
         base64_secret_bytes = base64_secret_content.encode("ascii")
         base64_message_bytes = base64.b64decode(base64_secret_bytes)
         secret_value = base64_message_bytes.decode("ascii")
+        self._secret_value_cache[secret_ocid] = secret_value
 
         return secret_value
 
     def _get_wallet_value(self, secret_ocid):
+        if secret_ocid in self._wallet_value_cache:
+            return self._wallet_value_cache[secret_ocid]
+
         response = self.__get_secret_client().get_secret_bundle(secret_ocid)
         base64_secret_content = response.data.secret_bundle_content.content
 
-        return base64.b64decode(base64.b64decode(base64_secret_content))
+        wallet_value = base64.b64decode(base64.b64decode(base64_secret_content))
+        self._wallet_value_cache[secret_ocid] = wallet_value
+
+        return wallet_value
 
     def __set_vault_client(self):
         self.__vault_client = oci.vault.VaultsClient(
-            config=self.__get_config(), signer=self.__get_signer()
+            config=self.__get_config(),
+            signer=self.__get_signer(),
+            retry_strategy=build_default_oci_retry_strategy(),
         )
 
     def __get_vault_client(self):
@@ -277,7 +315,9 @@ class DfaBaseSecret:
 
     def __set_secret_client(self):
         self.__secret_client = oci.secrets.SecretsClient(
-            config=self.__get_config(), signer=self.__get_signer()
+            config=self.__get_config(),
+            signer=self.__get_signer(),
+            retry_strategy=build_default_oci_retry_strategy(),
         )
 
     def __get_secret_client(self):

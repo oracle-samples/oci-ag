@@ -5,13 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-    InsertManyQueryBuilder,
-    UpdateManyQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.global_identity_collection import (
     GlobalIdentityCollectionStateTable,
     GlobalIdentityCollectionTimeSeriesTable,
@@ -43,7 +37,7 @@ class GlobalIdentityCollectionStateCreateQueryBuilder(GlobalIdentityCollectionSt
 class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionStateQueryBuilder):
     def executemany_sql_for_events(self):
         self.logger.info(
-            "Using bulk insert / update operations for %d global identity collection events",
+            "Using merge operations for %d global identity collection events",
             len(self.events),
         )
 
@@ -67,42 +61,7 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
             self.logger.info("No events to process by global identity collection query builder")
             return
 
-        insert_statement = InsertManyQueryBuilder().get_operation_sql(self, gic_adds, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            GlobalIdentityCollectionStateTable().get_column_list_definition_for_table_ddl()
-        )
-        AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(insert_statement, gic_adds, batcherrors=True)
-
-        constraint_violating_rows = []
-        for batch_error in AdwConnection.get_cursor().getbatcherrors():
-            if batch_error.full_code == "ORA-00001":
-                constraint_violating_rows.append(gic_adds[batch_error.offset])
-
-        if len(constraint_violating_rows) > 0:
-            self.logger.info(
-                "%d GIC creates failed for unique constraint violation - performing bulk updates",
-                len(constraint_violating_rows),
-            )
-            update_sql = UpdateManyQueryBuilder().get_operation_sql(
-                self,
-                constraint_violating_rows,
-                [],
-                self.table_manager.get_unique_contraint_definition_details()["columns"],
-                self.table_manager.get_nullable_constraint_columns(),
-            )
-
-            AdwConnection.get_cursor().setinputsizes(**input_sizes)
-            AdwConnection.get_cursor().executemany(
-                update_sql, constraint_violating_rows, batcherrors=True
-            )
-
-            for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.warning(
-                    "global identity collection update failed - %s", batch_error.message
-                )
-
-        AdwConnection.commit()
+        self.executemany_state_merge_for_events(gic_adds)
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
@@ -110,19 +69,26 @@ class GlobalIdentityCollectionStateUpdateQueryBuilder(GlobalIdentityCollectionSt
 
 class GlobalIdentityCollectionStateDeleteQueryBuilder(GlobalIdentityCollectionStateQueryBuilder):
     def execute_sql_for_events(self):
+        self.logger.info("Row delete for global identity collection delete request")
+        events_with_member = []
+        events_without_member = []
+
         for event in self.events:
             if event["member_global_id"] != "":
-                delete_sql = DeleteQueryBuilder().get_operation_sql(
-                    self, event, ["id", "member_global_id", "service_instance_id", "tenancy_id"]
-                )
+                events_with_member.append(event)
             else:
-                delete_sql = DeleteQueryBuilder().get_operation_sql(
-                    self, event, ["id", "service_instance_id", "tenancy_id"]
-                )
-            AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for global identity collection delete request")
+                events_without_member.append(event)
 
-        AdwConnection.commit()
+        if events_with_member:
+            self.executemany_delete_for_events(
+                ["id", "member_global_id", "service_instance_id", "tenancy_id"],
+                events=events_with_member,
+            )
+        if events_without_member:
+            self.executemany_delete_for_events(
+                ["id", "service_instance_id", "tenancy_id"],
+                events=events_without_member,
+            )
 
 
 class GlobalIdentityCollectionTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
