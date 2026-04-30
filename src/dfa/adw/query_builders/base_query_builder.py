@@ -16,10 +16,7 @@ from pypika.functions import ToDate
 
 from common.logger.logger import Logger
 from dfa.adw.connection import AdwConnection
-from dfa.adw.tables.base_table import (
-    SnapshotBatchTrackerTable,
-    StreamOffsetTrackerTable,
-)
+from dfa.adw.tables.base_table import SnapshotBatchTrackerTable, StreamOffsetTrackerTable
 
 
 class InsertManyQueryBuilder:
@@ -654,6 +651,7 @@ class BaseQueryBuilder:
                     completed_batch_count,
                     required_batch_count,
                 )
+                AdwConnection.rollback()
                 return
 
             if not self._try_acquire_snapshot_cleanup_lock(
@@ -666,6 +664,7 @@ class BaseQueryBuilder:
                     self.table_manager.get_table_name().lower(),
                     snapshot_id,
                 )
+                AdwConnection.rollback()
                 return
 
             completion_timestamp = self._snapshot_get_earliest_batch_timestamp(
@@ -674,6 +673,7 @@ class BaseQueryBuilder:
                 service_instance_id,
             )
             if completion_timestamp is None:
+                AdwConnection.rollback()
                 return
             self.delete_rows_older_than_event_timestamp(
                 completion_timestamp,
@@ -687,7 +687,9 @@ class BaseQueryBuilder:
             AdwConnection.commit()
         except Exception as exc:
             if self._is_retryable_cleanup_error(exc):
-                AdwConnection.close()
+                AdwConnection.rollback_and_close()
+            else:
+                AdwConnection.rollback()
             raise
 
     def delete_rows_older_than_event_timestamp(

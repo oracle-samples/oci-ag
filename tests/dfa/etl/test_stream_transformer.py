@@ -106,11 +106,11 @@ class TestStreamTransformer(unittest.TestCase):
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
-            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
+            "test-tenancy-0f3a6b0c9e2d4f11",
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
-            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r639054",
+            "test-service-instance-5d71a8e3c04b49af",
         )
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
@@ -139,11 +139,11 @@ class TestStreamTransformer(unittest.TestCase):
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
-            "ocid.tenancy.oc1..tenant_test_1_p2",
+            "test-tenancy-a6d2b4e9087f41c3",
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
-            "ocid1.instance.oc1..cc73a..instance_test_1_p2",
+            "test-service-instance-c92f0d17aab34e65",
         )
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
@@ -160,11 +160,11 @@ class TestStreamTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._prepared_events[0]["operation_type"], "DELETE")
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
-            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
+            "test-tenancy-0f3a6b0c9e2d4f11",
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
-            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r639054",
+            "test-service-instance-5d71a8e3c04b49af",
         )
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
@@ -183,11 +183,11 @@ class TestStreamTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._prepared_events[0]["operation_type"], "DELETE")
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
-            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
+            "test-tenancy-0f3a6b0c9e2d4f11",
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
-            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r639054",
+            "test-service-instance-5d71a8e3c04b49af",
         )
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
@@ -212,11 +212,11 @@ class TestStreamTransformer(unittest.TestCase):
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
-            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
+            "test-tenancy-0f3a6b0c9e2d4f11",
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
-            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r639054",
+            "test-service-instance-5d71a8e3c04b49af",
         )
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
@@ -241,11 +241,11 @@ class TestStreamTransformer(unittest.TestCase):
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
-            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny27h6f3q",
+            "test-tenancy-78cfe291d0ab43b6",
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
-            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r53rrha",
+            "test-service-instance-b8a42fd0936e47ac",
         )
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:

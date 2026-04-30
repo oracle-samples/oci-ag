@@ -105,5 +105,26 @@ class AdwConnection:
         cls.__cursor = None
 
     @classmethod
+    def rollback(cls):
+        if cls.__connection is not None:
+            try:
+                cls.__connection.rollback()
+            except Exception as e:
+                cls.logger.warning("Failed to roll back connection: %s", e)
+
+        if cls.__cursor is not None:
+            try:
+                cls.__cursor.close()
+            except Exception as e:
+                cls.logger.warning("Failed to close cursor after rollback: %s", e)
+
+        cls.__cursor = None
+
+    @classmethod
+    def rollback_and_close(cls):
+        cls.rollback()
+        cls._close_all()
+
+    @classmethod
     def close(cls):
         cls._close_all()

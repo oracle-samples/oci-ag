@@ -94,11 +94,11 @@ class TestFileTransformer(unittest.TestCase):
         self.assertIsNone(self.transformer._num_of_batches)
         self.assertEqual(
             self.transformer._tenancy_id,
-            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
+            "test-tenancy-0f3a6b0c9e2d4f11",
         )
         self.assertEqual(
             self.transformer._service_instance_id,
-            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r639054",
+            "test-service-instance-5d71a8e3c04b49af",
         )
 
         self.transformer.transform_data()

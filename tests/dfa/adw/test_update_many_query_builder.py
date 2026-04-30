@@ -262,7 +262,8 @@ def test_snapshot_get_earliest_batch_timestamp_uses_scope_and_formats_datetime(m
     assert first_bind["snapshot_id"] == "snapshot-1"
 
 
-def test_finalize_snapshot_cleanup_if_ready_returns_when_completed_count_not_reached():
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback")
+def test_finalize_snapshot_cleanup_if_ready_returns_when_completed_count_not_reached(mock_rollback):
     qb = IdentityStateUpdateQueryBuilder([])
     qb._snapshot_get_completed_batch_count = MagicMock(return_value=2)
     qb._try_acquire_snapshot_cleanup_lock = MagicMock()
@@ -281,10 +282,11 @@ def test_finalize_snapshot_cleanup_if_ready_returns_when_completed_count_not_rea
     qb._delete_snapshot_batch_tracking.assert_not_called()
     qb._try_acquire_snapshot_cleanup_lock.assert_not_called()
     assert qb._snapshot_get_completed_batch_count.call_count == 1
+    mock_rollback.assert_called_once()
 
 
-@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.close")
-def test_finalize_snapshot_cleanup_if_ready_raises_transient_tracker_error(mock_close):
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback_and_close")
+def test_finalize_snapshot_cleanup_if_ready_raises_transient_tracker_error(mock_rollback_and_close):
     qb = AccessBundleStateUpdateQueryBuilder([])
     qb._snapshot_get_completed_batch_count = MagicMock(
         side_effect=oracledb.DatabaseError("transient")
@@ -302,7 +304,7 @@ def test_finalize_snapshot_cleanup_if_ready_raises_transient_tracker_error(mock_
             service_instance_id="svc-1",
         )
 
-    mock_close.assert_called_once()
+    mock_rollback_and_close.assert_called_once()
     qb.delete_rows_older_than_event_timestamp.assert_not_called()
 
 
@@ -337,7 +339,8 @@ def test_finalize_snapshot_cleanup_if_ready_runs_delete_and_clears_tracking(mock
     mock_commit.assert_called_once()
 
 
-def test_finalize_snapshot_cleanup_if_ready_returns_without_earliest_timestamp():
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback")
+def test_finalize_snapshot_cleanup_if_ready_returns_without_earliest_timestamp(mock_rollback):
     qb = AccessBundleStateUpdateQueryBuilder([])
     qb._snapshot_get_completed_batch_count = MagicMock(return_value=3)
     qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=True)
@@ -354,10 +357,11 @@ def test_finalize_snapshot_cleanup_if_ready_returns_without_earliest_timestamp()
 
     qb.delete_rows_older_than_event_timestamp.assert_not_called()
     qb._delete_snapshot_batch_tracking.assert_not_called()
+    mock_rollback.assert_called_once()
 
 
-@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.close")
-def test_finalize_snapshot_cleanup_if_ready_raises_transient_delete_error(mock_close):
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback_and_close")
+def test_finalize_snapshot_cleanup_if_ready_raises_transient_delete_error(mock_rollback_and_close):
     qb = AccessBundleStateUpdateQueryBuilder([])
     qb._snapshot_get_completed_batch_count = MagicMock(return_value=3)
     qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=True)
@@ -375,12 +379,15 @@ def test_finalize_snapshot_cleanup_if_ready_raises_transient_delete_error(mock_c
             service_instance_id="svc-1",
         )
 
-    mock_close.assert_called_once()
+    mock_rollback_and_close.assert_called_once()
     assert qb.delete_rows_older_than_event_timestamp.call_count == 1
     qb._delete_snapshot_batch_tracking.assert_not_called()
 
 
-def test_finalize_snapshot_cleanup_if_ready_defers_until_passed_num_of_batches_reached():
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback")
+def test_finalize_snapshot_cleanup_if_ready_defers_until_passed_num_of_batches_reached(
+    mock_rollback,
+):
     qb = AccessBundleStateUpdateQueryBuilder([])
     qb._snapshot_get_completed_batch_count = MagicMock(return_value=0)
     qb._try_acquire_snapshot_cleanup_lock = MagicMock()
@@ -398,6 +405,7 @@ def test_finalize_snapshot_cleanup_if_ready_defers_until_passed_num_of_batches_r
     qb.delete_rows_older_than_event_timestamp.assert_not_called()
     qb._delete_snapshot_batch_tracking.assert_not_called()
     assert qb._snapshot_get_completed_batch_count.call_count == 1
+    mock_rollback.assert_called_once()
 
 
 def test_finalize_snapshot_cleanup_if_ready_returns_immediately_without_num_of_batches():
@@ -421,7 +429,8 @@ def test_finalize_snapshot_cleanup_if_ready_returns_immediately_without_num_of_b
     qb._delete_snapshot_batch_tracking.assert_not_called()
 
 
-def test_finalize_snapshot_cleanup_if_ready_returns_when_lock_busy():
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback")
+def test_finalize_snapshot_cleanup_if_ready_returns_when_lock_busy(mock_rollback):
     qb = AccessBundleStateUpdateQueryBuilder([])
     qb._snapshot_get_completed_batch_count = MagicMock(return_value=3)
     qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=False)
@@ -439,3 +448,4 @@ def test_finalize_snapshot_cleanup_if_ready_returns_when_lock_busy():
     qb._snapshot_get_earliest_batch_timestamp.assert_not_called()
     qb.delete_rows_older_than_event_timestamp.assert_not_called()
     qb._delete_snapshot_batch_tracking.assert_not_called()
+    mock_rollback.assert_called_once()
