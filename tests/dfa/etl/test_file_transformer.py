@@ -14,12 +14,6 @@ class TestFileTransformer(unittest.TestCase):
         self.env_patcher.start()
         self.addCleanup(self.env_patcher.stop)
 
-        self.snapshot_start_patcher = patch(
-            "dfa.adw.query_builders.base_query_builder.BaseQueryBuilder.register_snapshot_batch_started"
-        )
-        self.mock_snapshot_start = self.snapshot_start_patcher.start()
-        self.addCleanup(self.snapshot_start_patcher.stop)
-
         self.snapshot_complete_patcher = patch(
             "dfa.adw.query_builders.base_query_builder.BaseQueryBuilder.register_snapshot_batch_completed"
         )
@@ -142,13 +136,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.load_data()
 
         mock_query_builder.execute_sql_for_events.assert_called_once()
-        mock_query_builder.register_snapshot_batch_started.assert_called_once_with(
-            snapshot_id="snapshot-1",
-            batch_id="access_bundle.snapshot-1.batch-1",
-            event_timestamp="15-Aug-25 17:38:23.645616",
-            tenancy_id="tenant-1",
-            service_instance_id="svc-1",
-        )
         mock_query_builder.register_snapshot_batch_completed.assert_called_once_with(
             snapshot_id="snapshot-1",
             batch_id="access_bundle.snapshot-1.batch-1",
@@ -197,7 +184,6 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.load_data()
 
         mock_query_builder.execute_sql_for_events.assert_not_called()
-        mock_query_builder.register_snapshot_batch_started.assert_not_called()
         mock_query_builder.register_snapshot_batch_completed.assert_not_called()
         mock_query_builder.finalize_snapshot_cleanup_if_ready.assert_called_once()
         cleanup_args = mock_query_builder.finalize_snapshot_cleanup_if_ready.call_args
@@ -225,7 +211,6 @@ class TestFileTransformer(unittest.TestCase):
 
         self.transformer.load_data()
 
-        mock_query_builder.register_snapshot_batch_started.assert_not_called()
         mock_query_builder.register_snapshot_batch_completed.assert_not_called()
         cleanup_args = mock_query_builder.finalize_snapshot_cleanup_if_ready.call_args
         self.assertEqual(cleanup_args.args, ())

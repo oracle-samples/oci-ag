@@ -55,6 +55,7 @@ def test_audit_transformer():
     transformer.transform_messages(messages)
     transformer.load_data()
 
+
 def test_identity_stream_transformer():
     messages = []
     with open("tests/dfa/etl/test_data/stream/identity_unmatched_created.json", "r") as file:
@@ -84,6 +85,7 @@ def test_identity_stream_transformer():
     transformer.transform_messages(messages)
     transformer.load_data()
 
+
 def main():
 
     # To run integration tests:
@@ -112,6 +114,7 @@ def main():
     test_file_transformer(data_type="policyToResourceMapping")
     test_file_transformer(data_type="resource")
     test_file_transformer(data_type="role")
+    test_file_transformer(data_type="orchestratedSystem")
 
 
 if __name__ == "__main__":

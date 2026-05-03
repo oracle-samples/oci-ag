@@ -7,7 +7,12 @@ import pytest
 from pypika import Table
 
 from dfa.adw.query_builders.access_bundle import AccessBundleStateUpdateQueryBuilder
-from dfa.adw.query_builders.base_query_builder import MergeManyQueryBuilder, UpdateManyQueryBuilder
+from dfa.adw.query_builders.base_query_builder import (
+    InsertManyQueryBuilder,
+    MergeManyQueryBuilder,
+    UpdateManyQueryBuilder,
+)
+from dfa.adw.query_builders.cloud_group import CloudGroupStateUpdateQueryBuilder
 from dfa.adw.query_builders.identity import IdentityStateUpdateQueryBuilder
 
 
@@ -85,8 +90,8 @@ def test_merge_many_binds_clob_columns_directly():
     assert 'MERGE INTO "DFA"."DUMMY_TABLE"' in norm
 
 
-def test_insert_many_clob_columns_use_clob_input_size():
-    input_sizes = MergeManyQueryBuilder().get_input_sizes(
+def test_insert_many_clob_columns_use_string_input_size():
+    input_sizes = InsertManyQueryBuilder().get_input_sizes(
         [
             {"column_name": "ID", "data_type": "VARCHAR2", "data_length": 32767},
             {"column_name": "ATTRIBUTES", "data_type": "CLOB", "data_length": None},
@@ -95,7 +100,33 @@ def test_insert_many_clob_columns_use_clob_input_size():
 
     assert input_sizes["ID"] == 32767
     assert input_sizes["id"] == 32767
-    assert input_sizes["ATTRIBUTES"] == oracledb.DB_TYPE_CLOB
+    assert input_sizes["ATTRIBUTES"] == 32767
+    assert input_sizes["attributes"] == 32767
+
+
+def test_insert_many_event_sized_clob_uses_string_size_for_small_values():
+    input_sizes = InsertManyQueryBuilder().get_input_sizes_for_events(
+        [
+            {"column_name": "ID", "data_type": "VARCHAR2", "data_length": 32767},
+            {"column_name": "ATTRIBUTES", "data_type": "CLOB", "data_length": None},
+        ],
+        [{"id": "abc", "attributes": '{"small":true}'}],
+    )
+
+    assert input_sizes["id"] == 3
+    assert input_sizes["attributes"] == 14
+
+
+def test_insert_many_event_sized_clob_uses_clob_bind_for_large_values():
+    input_sizes = InsertManyQueryBuilder().get_input_sizes_for_events(
+        [
+            {"column_name": "ID", "data_type": "VARCHAR2", "data_length": 32767},
+            {"column_name": "ATTRIBUTES", "data_type": "CLOB", "data_length": None},
+        ],
+        [{"id": "abc", "attributes": "x" * 4001}],
+    )
+
+    assert input_sizes["id"] == 3
     assert input_sizes["attributes"] == oracledb.DB_TYPE_CLOB
 
 
@@ -179,42 +210,6 @@ def test_delete_rows_older_than_event_timestamp_scopes_by_tenant_and_service(
     assert bind_values["tenancy_id"] == "tenant-1"
     assert bind_values["service_instance_id"] == "svc-1"
     mock_commit.assert_called_once()
-
-
-@patch("dfa.adw.connection.AdwConnection.get_cursor")
-@patch("dfa.adw.connection.AdwConnection.commit")
-def test_register_snapshot_batch_started_merges_status(mock_commit, mock_get_cursor):
-    cursor = MagicMock()
-    mock_get_cursor.return_value = cursor
-
-    qb = AccessBundleStateUpdateQueryBuilder([])
-    qb._snapshot_batch_tracker_table = MagicMock()
-    qb._snapshot_batch_tracker_table.create = MagicMock()
-    qb._snapshot_batch_tracker_table.get_schema.return_value = "DFA"
-    qb._snapshot_batch_tracker_table.get_table_name.return_value = "SNAPSHOT_BATCH_TRACKER"
-
-    qb.register_snapshot_batch_started(
-        snapshot_id="snapshot-1",
-        batch_id="batch-1",
-        event_timestamp="14-Apr-26 21:40:20.331306",
-        tenancy_id="tenant-1",
-        service_instance_id="svc-1",
-    )
-
-    qb._snapshot_batch_tracker_table.create.assert_called_once()
-    merge_sql = cursor.execute.call_args.args[0]
-    bind_values = cursor.execute.call_args.args[1]
-    normalized = _normalize_sql(merge_sql).upper()
-    assert "MERGE INTO DFA.SNAPSHOT_BATCH_TRACKER" in normalized
-    assert "TO_TIMESTAMP(:UPDATED_AT, 'DD-MON-RR HH24:MI:SS.FF6') AS UPDATED_AT" in normalized
-    assert bind_values["entity_type"] == "ACCESS_BUNDLE"
-    assert bind_values["tenancy_id"] == "tenant-1"
-    assert bind_values["service_instance_id"] == "svc-1"
-    assert bind_values["snapshot_id"] == "snapshot-1"
-    assert bind_values["batch_id"] == "batch-1"
-    assert bind_values["updated_at"] == "14-Apr-26 21:40:20.331306"
-    assert bind_values["status"] == "STARTED"
-    assert mock_commit.call_count == 2
 
 
 @patch("dfa.adw.connection.AdwConnection.get_cursor")

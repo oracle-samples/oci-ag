@@ -20,6 +20,9 @@ from dfa.adw.tables.base_table import SnapshotBatchTrackerTable, StreamOffsetTra
 
 
 class InsertManyQueryBuilder:
+    MAX_DIRECT_STRING_BIND_SIZE = 32767
+    MAX_DIRECT_CLOB_STRING_BIND_SIZE = 4000
+
     def get_operation_sql(self, query_builder, events, date_columns):
         event = events[0]
 
@@ -49,17 +52,48 @@ class InsertManyQueryBuilder:
             if data_type.startswith("VARCHAR"):
                 bind_size = column["data_length"]
             elif data_type == "CLOB":
-                bind_size = oracledb.DB_TYPE_CLOB
+                bind_size = self.MAX_DIRECT_STRING_BIND_SIZE
             elif data_type == "NUMBER":
                 bind_size = oracledb.NUMBER
             else:
                 bind_size = None
 
-            # SQL bind placeholders in this codebase use lowercase event keys
-            # (for example :attributes) while table metadata is uppercase.
-            # Register both spellings so CLOB/NUMBER sizing is always applied.
             input_sizes[column_name] = bind_size
             input_sizes[column_name.lower()] = bind_size
+        return input_sizes
+
+    def get_input_sizes_for_events(
+        self,
+        columns_definition: list[dict[str, Any]],
+        events: list[dict[str, Any]],
+    ):
+        input_sizes = {}
+        for column in columns_definition:
+            column_name = column["column_name"]
+            bind_name = column_name.lower()
+            data_type = column["data_type"].upper()
+
+            if data_type.startswith("VARCHAR") or data_type == "CLOB":
+                max_value_length = max(
+                    (
+                        len(str(event[bind_name]))
+                        for event in events
+                        if event.get(bind_name) is not None
+                    ),
+                    default=1,
+                )
+                if data_type == "CLOB" and max_value_length > self.MAX_DIRECT_CLOB_STRING_BIND_SIZE:
+                    bind_size = oracledb.DB_TYPE_CLOB
+                else:
+                    max_column_length = column["data_length"] or self.MAX_DIRECT_STRING_BIND_SIZE
+                    bind_size = max(1, min(max_value_length, max_column_length))
+            elif data_type == "NUMBER":
+                bind_size = oracledb.NUMBER
+            else:
+                bind_size = None
+
+            input_sizes[column_name] = bind_size
+            input_sizes[bind_name] = bind_size
 
         return input_sizes
 
@@ -179,10 +213,6 @@ class MergeManyQueryBuilder:
         )
 
         return merge_sql
-
-    def get_input_sizes(self, columns_definition: list[dict[str, Any]]):
-        # Reuse the same sizing logic as InsertMany
-        return InsertManyQueryBuilder().get_input_sizes(columns_definition)
 
 
 class DeleteManyQueryBuilder:
@@ -353,19 +383,6 @@ class BaseQueryBuilder:
         return cast(Table, self)
 
     @staticmethod
-    def _sort_events_for_lock_order(
-        events: list[dict[str, Any]], ordering_columns: list[str]
-    ) -> list[dict[str, Any]]:
-        def _sort_key(event: dict[str, Any]):
-            key_parts: list[tuple[int, str]] = []
-            for column in ordering_columns:
-                value = event.get(column)
-                key_parts.append((value is None, "" if value is None else str(value)))
-            return tuple(key_parts)
-
-        return sorted(events, key=_sort_key)
-
-    @staticmethod
     def _normalize_cleanup_timestamp(completion_timestamp: str) -> str:
         for timestamp_format in ("%d-%b-%y %H:%M:%S.%f", "%d-%b-%y %I:%M:%S.%f %p"):
             try:
@@ -404,57 +421,32 @@ class BaseQueryBuilder:
     def _is_retryable_cleanup_error(exc: Exception) -> bool:
         return isinstance(exc, (oracledb.DatabaseError, oracledb.InterfaceError))
 
-    def _upsert_snapshot_batch_status(
+    def _insert_snapshot_batch_completed(
         self,
         snapshot_id: str,
         batch_id: str,
         event_timestamp: str,
-        status: str,
         tenancy_id: str | None = None,
         service_instance_id: str | None = None,
     ):
         tracker_table = self._snapshot_batch_tracker_table
         self._ensure_helper_table_exists(tracker_table)
 
-        merge_sql = f"""
-            MERGE INTO {tracker_table.get_schema()}.{tracker_table.get_table_name()} t
-            USING (
-                SELECT
-                    :entity_type AS ENTITY_TYPE,
-                    :tenancy_id AS TENANCY_ID,
-                    :service_instance_id AS SERVICE_INSTANCE_ID,
-                    :snapshot_id AS SNAPSHOT_ID,
-                    :batch_id AS BATCH_ID,
-                    TO_TIMESTAMP(:updated_at, 'DD-MON-RR HH24:MI:SS.FF6') AS UPDATED_AT,
-                    :status AS STATUS
-                FROM DUAL
-            ) s
-            ON (
-                t.ENTITY_TYPE = s.ENTITY_TYPE
-                AND t.TENANCY_ID = s.TENANCY_ID
-                AND t.SERVICE_INSTANCE_ID = s.SERVICE_INSTANCE_ID
-                AND t.SNAPSHOT_ID = s.SNAPSHOT_ID
-                AND t.BATCH_ID = s.BATCH_ID
-            )
-            WHEN MATCHED THEN UPDATE SET
-                t.STATUS = s.STATUS,
-                t.UPDATED_AT = s.UPDATED_AT
-            WHEN NOT MATCHED THEN INSERT (
+        insert_sql = f"""
+            INSERT INTO {tracker_table.get_schema()}.{tracker_table.get_table_name()} (
                 ENTITY_TYPE,
                 TENANCY_ID,
                 SERVICE_INSTANCE_ID,
                 SNAPSHOT_ID,
                 BATCH_ID,
-                STATUS,
                 UPDATED_AT
             ) VALUES (
-                s.ENTITY_TYPE,
-                s.TENANCY_ID,
-                s.SERVICE_INSTANCE_ID,
-                s.SNAPSHOT_ID,
-                s.BATCH_ID,
-                s.STATUS,
-                s.UPDATED_AT
+                :entity_type,
+                :tenancy_id,
+                :service_instance_id,
+                :snapshot_id,
+                :batch_id,
+                TO_TIMESTAMP(:updated_at, 'DD-MON-RR HH24:MI:SS.FF6')
             )
         """
         bind_values = {
@@ -462,30 +454,12 @@ class BaseQueryBuilder:
             "snapshot_id": snapshot_id,
             "batch_id": batch_id,
             "updated_at": event_timestamp,
-            "status": status,
         }
         AdwConnection.get_cursor().execute(
-            merge_sql,
+            insert_sql,
             bind_values,
         )
         AdwConnection.commit()
-
-    def register_snapshot_batch_started(
-        self,
-        snapshot_id: str,
-        batch_id: str,
-        event_timestamp: str,
-        tenancy_id: str | None = None,
-        service_instance_id: str | None = None,
-    ):
-        self._upsert_snapshot_batch_status(
-            snapshot_id=snapshot_id,
-            batch_id=batch_id,
-            event_timestamp=event_timestamp,
-            status="STARTED",
-            tenancy_id=tenancy_id,
-            service_instance_id=service_instance_id,
-        )
 
     def register_snapshot_batch_completed(
         self,
@@ -495,11 +469,10 @@ class BaseQueryBuilder:
         tenancy_id: str | None = None,
         service_instance_id: str | None = None,
     ):
-        self._upsert_snapshot_batch_status(
+        self._insert_snapshot_batch_completed(
             snapshot_id=snapshot_id,
             batch_id=batch_id,
             event_timestamp=event_timestamp,
-            status="COMPLETED",
             tenancy_id=tenancy_id,
             service_instance_id=service_instance_id,
         )
@@ -518,7 +491,6 @@ class BaseQueryBuilder:
               AND TENANCY_ID = :tenancy_id
               AND SERVICE_INSTANCE_ID = :service_instance_id
               AND SNAPSHOT_ID = :snapshot_id
-              AND STATUS = 'COMPLETED'
         """
         AdwConnection.get_cursor().execute(
             query_sql,
@@ -543,7 +515,6 @@ class BaseQueryBuilder:
               AND TENANCY_ID = :tenancy_id
               AND SERVICE_INSTANCE_ID = :service_instance_id
               AND SNAPSHOT_ID = :snapshot_id
-              AND STATUS = 'COMPLETED'
         """
         AdwConnection.get_cursor().execute(
             query_sql,
@@ -575,7 +546,6 @@ class BaseQueryBuilder:
               AND TENANCY_ID = :tenancy_id
               AND SERVICE_INSTANCE_ID = :service_instance_id
               AND SNAPSHOT_ID = :snapshot_id
-              AND STATUS = 'COMPLETED'
               AND ROWNUM = 1
             FOR UPDATE NOWAIT
         """
@@ -618,6 +588,11 @@ class BaseQueryBuilder:
         )
         if commit:
             AdwConnection.commit()
+        self.logger.info(
+            "Deleted snapshot tracker rows for %s snapshot %s",
+            self.table_manager.get_table_name().lower(),
+            snapshot_id,
+        )
 
     def finalize_snapshot_cleanup_if_ready(
         self,
@@ -739,8 +714,9 @@ class BaseQueryBuilder:
             return
 
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            self.table_manager.get_column_list_definition_for_table_ddl()
+        input_sizes = InsertManyQueryBuilder().get_input_sizes_for_events(
+            self.table_manager.get_column_list_definition_for_table_ddl(),
+            self.events,
         )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
         AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
@@ -790,23 +766,22 @@ class BaseQueryBuilder:
             )
             return
 
-        sorted_events = self._sort_events_for_lock_order(active_events, where_columns)
-
         self.logger.info(
             "Using MERGE into %s for %d events (keys: %s)",
             self.table_manager.get_table_name().lower(),
-            len(sorted_events),
+            len(active_events),
             ",".join([c.lower() for c in where_columns]),
         )
 
         merge_sql = MergeManyQueryBuilder().get_operation_sql(
-            self, sorted_events, date_columns, where_columns, nullable_columns
+            self, active_events, date_columns, where_columns, nullable_columns
         )
-        input_sizes = MergeManyQueryBuilder().get_input_sizes(
-            self.table_manager.get_column_list_definition_for_table_ddl()
+        input_sizes = InsertManyQueryBuilder().get_input_sizes_for_events(
+            self.table_manager.get_column_list_definition_for_table_ddl(),
+            active_events,
         )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(merge_sql, sorted_events, batcherrors=True)
+        AdwConnection.get_cursor().executemany(merge_sql, active_events, batcherrors=True)
 
         batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
         if batch_errors:
@@ -814,7 +789,7 @@ class BaseQueryBuilder:
             other_batch_errors = []
             for be in batch_errors:
                 if getattr(be, "full_code", None) == "ORA-00001":
-                    constraint_violating_rows.append(sorted_events[be.offset])
+                    constraint_violating_rows.append(active_events[be.offset])
                 else:
                     other_batch_errors.append(be)
 
@@ -893,11 +868,10 @@ class BaseQueryBuilder:
             )
             return
 
-        sorted_events = self._sort_events_for_lock_order(active_events, where_columns)
         self.logger.info(
             "Using bulk delete from %s for %d events (keys: %s)",
             self.table_manager.get_table_name().lower(),
-            len(sorted_events),
+            len(active_events),
             ",".join([c.lower() for c in where_columns]),
         )
 
@@ -910,7 +884,7 @@ class BaseQueryBuilder:
             self.table_manager.get_column_list_definition_for_table_ddl()
         )
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(delete_sql, sorted_events, batcherrors=True)
+        AdwConnection.get_cursor().executemany(delete_sql, active_events, batcherrors=True)
 
         batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
         if batch_errors:

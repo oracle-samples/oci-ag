@@ -241,13 +241,13 @@ class SnapshotBatchTrackerTable(BaseTable):
                 {"field_name":"SERVICE_INSTANCE_ID","column_name":"SERVICE_INSTANCE_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":1000,"data_format":null},
                 {"field_name":"SNAPSHOT_ID","column_name":"SNAPSHOT_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":1000,"data_format":null},
                 {"field_name":"BATCH_ID","column_name":"BATCH_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":1000,"data_format":null},
-                {"field_name":"STATUS","column_name":"STATUS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32,"data_format":null},
                 {"field_name":"UPDATED_AT","column_name":"UPDATED_AT","column_expression":null,"skip_column":false,"data_type":"TIMESTAMP","data_length":null,"data_format":null}
             ]
             """
 
     def _after_create(self):
-        AdwConnection.get_cursor().execute(f"""
+        AdwConnection.get_cursor().execute(
+            f"""
                 ALTER TABLE {self.get_schema()}.{self.get_table_name()}
                 ADD CONSTRAINT "PK_SNAPSHOT_BATCH_TRACKER"
                 PRIMARY KEY (
@@ -258,4 +258,5 @@ class SnapshotBatchTrackerTable(BaseTable):
                     "BATCH_ID"
                 )
                 USING INDEX ENABLE
-            """)
+            """
+        )

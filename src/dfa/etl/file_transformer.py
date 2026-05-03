@@ -179,7 +179,6 @@ class FileTransformer(AbstractTransformer):
         is_snapshot_completion_marker = self._is_snapshot_completion_marker()
         should_track_snapshot_batch = should_track_snapshot and not is_snapshot_completion_marker
         should_finalize_snapshot = should_track_snapshot and is_snapshot_completion_marker
-
         if should_track_snapshot_batch or should_finalize_snapshot:
             snapshot_query_builder = get_query_builder(
                 self.get_event_object_type(),
@@ -188,14 +187,6 @@ class FileTransformer(AbstractTransformer):
                 self.is_timeseries,
             )
             self.query_builder = snapshot_query_builder
-        if should_track_snapshot_batch and snapshot_query_builder is not None:
-            snapshot_query_builder.register_snapshot_batch_started(
-                snapshot_id=self._get_snapshot_id_for_batch(),
-                batch_id=self._get_batch_id_for_batch(),
-                event_timestamp=self._get_utc_current_event_timestamp(),
-                tenancy_id=self._tenancy_id,
-                service_instance_id=self._service_instance_id,
-            )
 
         if len(self._prepared_events) > 0:
             self.chunk_prepared_events()
