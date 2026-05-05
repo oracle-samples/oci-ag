@@ -5,9 +5,11 @@
 import importlib.util
 import inspect
 import os
+import re
 from datetime import datetime, timedelta, timezone
-from functools import lru_cache
+from functools import lru_cache, wraps
 from pathlib import Path
+from time import perf_counter, sleep
 from typing import Any, Optional, cast
 
 import oracledb
@@ -20,21 +22,17 @@ from dfa.adw.tables.base_table import SnapshotBatchTrackerTable, StreamOffsetTra
 
 
 class InsertManyQueryBuilder:
-    MAX_DIRECT_STRING_BIND_SIZE = 32767
-    MAX_DIRECT_CLOB_STRING_BIND_SIZE = 4000
-
     def get_operation_sql(self, query_builder, events, date_columns):
         event = events[0]
 
-        insert_data = []
         insert_column_list = []
         insert_parameters = []
         for event_group_column_name in event.keys():
             if event_group_column_name in date_columns:
                 continue
-            insert_column_list.append(event_group_column_name.upper())
-            insert_data.append(event[event_group_column_name])
-            insert_parameters.append(Parameter(f":{event_group_column_name}"))
+            bind_name = event_group_column_name.upper()
+            insert_column_list.append(bind_name)
+            insert_parameters.append(Parameter(f":{bind_name}"))
         parameter_set = tuple(insert_parameters)
 
         insert_sql = Query.into(query_builder).insert(*parameter_set).get_sql()
@@ -44,64 +42,16 @@ class InsertManyQueryBuilder:
         insert_sql = insert_sql.replace(f'"{table_name}"', f'"{table_name}" ({column_list_str}) ')
         return insert_sql
 
-    def get_input_sizes(self, columns_definition: list[dict[str, Any]]):
-        input_sizes = {}
-        for column in columns_definition:
-            column_name = column["column_name"]
-            data_type = column["data_type"].upper()
-            if data_type.startswith("VARCHAR"):
-                bind_size = column["data_length"]
-            elif data_type == "CLOB":
-                bind_size = self.MAX_DIRECT_STRING_BIND_SIZE
-            elif data_type == "NUMBER":
-                bind_size = oracledb.NUMBER
-            else:
-                bind_size = None
-
-            input_sizes[column_name] = bind_size
-            input_sizes[column_name.lower()] = bind_size
-        return input_sizes
-
-    def get_input_sizes_for_events(
-        self,
-        columns_definition: list[dict[str, Any]],
-        events: list[dict[str, Any]],
-    ):
-        input_sizes = {}
-        for column in columns_definition:
-            column_name = column["column_name"]
-            bind_name = column_name.lower()
-            data_type = column["data_type"].upper()
-
-            if data_type.startswith("VARCHAR") or data_type == "CLOB":
-                max_value_length = max(
-                    (
-                        len(str(event[bind_name]))
-                        for event in events
-                        if event.get(bind_name) is not None
-                    ),
-                    default=1,
-                )
-                if data_type == "CLOB" and max_value_length > self.MAX_DIRECT_CLOB_STRING_BIND_SIZE:
-                    bind_size = oracledb.DB_TYPE_CLOB
-                else:
-                    max_column_length = column["data_length"] or self.MAX_DIRECT_STRING_BIND_SIZE
-                    bind_size = max(1, min(max_value_length, max_column_length))
-            elif data_type == "NUMBER":
-                bind_size = oracledb.NUMBER
-            else:
-                bind_size = None
-
-            input_sizes[column_name] = bind_size
-            input_sizes[bind_name] = bind_size
-
-        return input_sizes
-
 
 class UpdateManyQueryBuilder:
     def get_operation_sql(
-        self, query_builder, events, date_columns, where_columns, nullable_columns=None
-    ):
+        self,
+        query_builder: Any,
+        events: list[dict[str, Any]],
+        date_columns: list[str],
+        where_columns: list[str],
+        nullable_columns: list[str] | None = None,
+    ) -> str | None:
         event = events[0]
         update_sql: Any = None
         where_columns = [col.lower() for col in where_columns]
@@ -112,12 +62,11 @@ class UpdateManyQueryBuilder:
                 continue
             if column_name.lower() in date_columns:
                 continue
+            bind_name = column_name.upper()
             if update_sql is None:
-                update_sql = Query.update(query_builder).set(
-                    column_name.upper(), Parameter(f":{column_name}")
-                )
+                update_sql = Query.update(query_builder).set(bind_name, Parameter(f":{bind_name}"))
             else:
-                update_sql = update_sql.set(column_name.upper(), Parameter(f":{column_name}"))
+                update_sql = update_sql.set(bind_name, Parameter(f":{bind_name}"))
 
         if update_sql is None:
             return None
@@ -125,8 +74,9 @@ class UpdateManyQueryBuilder:
         # Use Oracle DECODE for NULL-safe equality on executemany binds
         decode = CustomFunction("DECODE", ["expr1", "expr2", "ret_equal", "ret_not_equal"])
         for where_column_name in where_columns:
-            column = getattr(query_builder, where_column_name.upper())
-            param = Parameter(f":{where_column_name}")
+            bind_name = where_column_name.upper()
+            column = getattr(query_builder, bind_name)
+            param = Parameter(f":{bind_name}")
             if where_column_name in nullable_columns:
                 # For nullable columns, treat NULL = NULL as a match using DECODE
                 update_sql = update_sql.where(decode(column, param, 1, 0) == 1)
@@ -180,7 +130,8 @@ class MergeManyQueryBuilder:
         # USING subquery with bind variables once per executemany row
         select_bind_parts = []
         for col in all_cols:
-            select_bind_parts.append(f':{col} AS "{col.upper()}"')
+            bind_name = col.upper()
+            select_bind_parts.append(f':{bind_name} AS "{bind_name}"')
         using_subquery = f"SELECT {', '.join(select_bind_parts)} FROM DUAL"
 
         # Build ON clause with composite keys if needed
@@ -216,93 +167,27 @@ class MergeManyQueryBuilder:
 
 
 class DeleteManyQueryBuilder:
-    def get_operation_sql(self, query_builder, where_columns, nullable_columns=None):
+    def get_operation_sql(
+        self,
+        query_builder: Any,
+        where_columns: list[str],
+        nullable_columns: list[str] | None = None,
+    ) -> str:
         delete_sql: Any = Query.from_(query_builder).delete()
         where_columns = [col.lower() for col in where_columns]
         nullable_columns = [col.lower() for col in (nullable_columns or [])]
 
         decode = CustomFunction("DECODE", ["expr1", "expr2", "ret_equal", "ret_not_equal"])
         for where_column_name in where_columns:
-            column = getattr(query_builder, where_column_name.upper())
-            param = Parameter(f":{where_column_name}")
+            bind_name = where_column_name.upper()
+            column = getattr(query_builder, bind_name)
+            param = Parameter(f":{bind_name}")
             if where_column_name in nullable_columns:
                 delete_sql = delete_sql.where(decode(column, param, 1, 0) == 1)
             else:
                 delete_sql = delete_sql.where(column == param)
 
         return delete_sql.get_sql()
-
-
-class AttibuteStatementHandler:
-    MAX_ATTRIBUTE_SIZE = 32767
-    CHUNK_SIZE = 30000
-
-    @classmethod
-    def prepare_attribute_column_for_insert_statement(cls, data, insert_statement):
-        for data_key, data_value in data.items():
-            if "attribute" in data_key:
-
-                if len(data_value) >= AttibuteStatementHandler.MAX_ATTRIBUTE_SIZE:
-                    moving_start = 0
-                    moving_end = AttibuteStatementHandler.CHUNK_SIZE
-                    keep_splitting = True
-                    all_chunks = []
-                    first_chunk = True
-                    while keep_splitting:
-
-                        chunk_string = ""
-                        chunk_string = data_value[moving_start:moving_end]
-
-                        if first_chunk:
-                            chunk_for_insert = "to_clob('" + chunk_string + "')"
-                            first_chunk = False
-                        else:
-                            chunk_for_insert = "'" + chunk_string + "'"
-                        all_chunks.append(chunk_for_insert)
-
-                        if moving_start > len(data_value):
-                            keep_splitting = False
-
-                        moving_start += AttibuteStatementHandler.CHUNK_SIZE
-                        moving_end += AttibuteStatementHandler.CHUNK_SIZE
-
-                    insert_statement = insert_statement.replace(
-                        "'" + data[data_key] + "'", " || ".join(all_chunks)
-                    )
-
-        return insert_statement
-
-
-class DeleteQueryBuilder:
-    def get_operation_sql(self, query_builder, event, where_columns):
-        final_delete_sql: Any = None
-        delete_sql = Query.from_(query_builder).delete()
-        for where in where_columns:
-            delete_sql = delete_sql.where(getattr(query_builder, where.upper()) == event[where])
-        final_delete_sql = delete_sql.get_sql()
-
-        return final_delete_sql
-
-    def delete_outdated_rows(self, query_builder, event):
-        to_timestamp = CustomFunction("TO_TIMESTAMP", ["timestamp_string", "format_string"])
-
-        where_clause = (getattr(query_builder, "ID") == event["id"]) & (
-            getattr(query_builder, "EVENT_TIMESTAMP")
-            < to_timestamp(event["event_timestamp"], "DD-Mon-YY HH:MI:SS.FF6 AM")
-        )
-
-        delete_sql = Query.from_(query_builder).delete().where(where_clause)
-        final_delete_query = delete_sql.get_sql()
-
-        return final_delete_query
-
-    def remove_duplicates(self, events):
-        unique_pairs = {}
-        for event in events:
-            key = (event["id"], event["event_timestamp"])
-            if key not in unique_pairs:
-                unique_pairs[key] = event
-        return list(unique_pairs.values())
 
 
 class StreamOffsetTrackerQueryBuilder(Table):
@@ -375,12 +260,126 @@ class BaseQueryBuilder:
     logger = Logger(__name__).get_logger()
     events: Optional[list[Any]] = None
     table_manager: Any = None
+    MAX_DIRECT_STRING_BIND_SIZE = 32767
+    MAX_DIRECT_CLOB_STRING_BIND_SIZE = 4000
     STALE_ROW_DELETE_MAX_ATTEMPTS = 3
     STALE_ROW_DELETE_RETRY_DELAY_SECONDS = 30
     _snapshot_batch_tracker_table = SnapshotBatchTrackerTable()
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        BaseQueryBuilder._wrap_execute_sql_for_events(cls)
+
+    @staticmethod
+    def _wrap_execute_sql_for_events(subclass):
+        method = subclass.__dict__.get("execute_sql_for_events")
+        if not callable(method) or getattr(method, "__dfa_timed_execute_sql_for_events__", False):
+            return
+
+        @wraps(method)
+        def _timed_execute_sql_for_events(self, *args, **kw):
+            start_time = perf_counter()
+            try:
+                return method(self, *args, **kw)
+            finally:
+                duration = perf_counter() - start_time
+                try:
+                    table_name = self.table_manager.get_table_name().lower()
+                except Exception:
+                    table_name = self.__class__.__name__
+
+                events = getattr(self, "events", None) or []
+                try:
+                    event_count = len(events)
+                except TypeError:
+                    event_count = 0
+
+                try:
+                    self.logger.info(
+                        "%s execute_sql_for_events runtime: %.3fs for %d event(s)",
+                        table_name,
+                        duration,
+                        event_count,
+                    )
+                except Exception:
+                    pass
+
+        setattr(_timed_execute_sql_for_events, "__dfa_timed_execute_sql_for_events__", True)
+        if getattr(method, "__isabstractmethod__", False):
+            _timed_execute_sql_for_events.__isabstractmethod__ = True
+        setattr(subclass, "execute_sql_for_events", _timed_execute_sql_for_events)
+
     def _table(self) -> Table:
         return cast(Table, self)
+
+    @staticmethod
+    def _get_event_value(event: dict[str, Any], column_name: str):
+        if column_name in event:
+            return event[column_name]
+        return event.get(column_name.lower())
+
+    def get_input_sizes_for_events(
+        self,
+        columns_definition: list[dict[str, Any]],
+        events: list[dict[str, Any]],
+    ):
+        input_sizes = {}
+        for column in columns_definition:
+            column_name = column["column_name"]
+            data_type = column["data_type"].upper()
+
+            if data_type.startswith("VARCHAR") or data_type == "CLOB":
+                max_value_length = max(
+                    (
+                        len(str(value))
+                        for event in events
+                        for value in (self._get_event_value(event, column_name),)
+                        if value is not None
+                    ),
+                    default=1,
+                )
+                if data_type == "CLOB" and max_value_length > self.MAX_DIRECT_CLOB_STRING_BIND_SIZE:
+                    bind_size = oracledb.DB_TYPE_CLOB
+                else:
+                    max_column_length = column["data_length"] or self.MAX_DIRECT_STRING_BIND_SIZE
+                    bind_size = max(1, min(max_value_length, max_column_length))
+            elif data_type == "NUMBER":
+                bind_size = oracledb.NUMBER
+            else:
+                bind_size = None
+
+            input_sizes[column_name] = bind_size
+
+        return input_sizes
+
+    @staticmethod
+    def _get_bind_names_for_sql(sql: str) -> set[str]:
+        return set(re.findall(r"(?<!:):([A-Za-z_][A-Za-z0-9_]*)", sql))
+
+    @classmethod
+    def _filter_input_sizes_for_sql(
+        cls,
+        input_sizes: dict[str, Any],
+        sql: str,
+    ) -> dict[str, Any]:
+        bind_names = cls._get_bind_names_for_sql(sql)
+        return {name: size for name, size in input_sizes.items() if name in bind_names}
+
+    @staticmethod
+    def _uppercase_bind_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [{name.upper(): value for name, value in event.items()} for event in events]
+
+    @classmethod
+    def _bind_rows_for_sql(
+        cls,
+        events: list[dict[str, Any]],
+        sql: str,
+    ) -> list[dict[str, Any]]:
+        bind_names = cls._get_bind_names_for_sql(sql)
+        return [
+            {name: value for name, value in row.items() if name in bind_names}
+            for row in cls._uppercase_bind_rows(events)
+        ]
 
     @staticmethod
     def _normalize_cleanup_timestamp(completion_timestamp: str) -> str:
@@ -402,14 +401,16 @@ class BaseQueryBuilder:
         elif entity_type.endswith("_TS"):
             entity_type = entity_type[: -len("_TS")]
         return {
-            "entity_type": entity_type,
-            "tenancy_id": tenancy_id or "-",
-            "service_instance_id": service_instance_id or "-",
+            "ENTITY_TYPE": entity_type,
+            "TENANCY_ID": tenancy_id or "-",
+            "SERVICE_INSTANCE_ID": service_instance_id or "-",
         }
 
     def _ensure_helper_table_exists(self, table_manager):
         try:
             table_manager.create()
+            if hasattr(table_manager, "ensure_supporting_objects"):
+                table_manager.ensure_supporting_objects()
             AdwConnection.commit()
         except oracledb.DatabaseError as exc:
             error = exc.args[0] if exc.args else None
@@ -420,6 +421,11 @@ class BaseQueryBuilder:
     @staticmethod
     def _is_retryable_cleanup_error(exc: Exception) -> bool:
         return isinstance(exc, (oracledb.DatabaseError, oracledb.InterfaceError))
+
+    @staticmethod
+    def _get_database_error_code(exc: Exception) -> int | None:
+        error = exc.args[0] if exc.args else None
+        return getattr(error, "code", None)
 
     def _insert_snapshot_batch_completed(
         self,
@@ -441,19 +447,19 @@ class BaseQueryBuilder:
                 BATCH_ID,
                 UPDATED_AT
             ) VALUES (
-                :entity_type,
-                :tenancy_id,
-                :service_instance_id,
-                :snapshot_id,
-                :batch_id,
-                TO_TIMESTAMP(:updated_at, 'DD-MON-RR HH24:MI:SS.FF6')
+                :ENTITY_TYPE,
+                :TENANCY_ID,
+                :SERVICE_INSTANCE_ID,
+                :SNAPSHOT_ID,
+                :BATCH_ID,
+                TO_TIMESTAMP(:UPDATED_AT, 'DD-MON-RR HH24:MI:SS.FF6')
             )
         """
         bind_values = {
             **self._get_cleanup_scope_values(tenancy_id, service_instance_id),
-            "snapshot_id": snapshot_id,
-            "batch_id": batch_id,
-            "updated_at": event_timestamp,
+            "SNAPSHOT_ID": snapshot_id,
+            "BATCH_ID": batch_id,
+            "UPDATED_AT": event_timestamp,
         }
         AdwConnection.get_cursor().execute(
             insert_sql,
@@ -487,16 +493,16 @@ class BaseQueryBuilder:
         query_sql = f"""
             SELECT COUNT(*)
             FROM {tracker_table.get_schema()}.{tracker_table.get_table_name()}
-            WHERE ENTITY_TYPE = :entity_type
-              AND TENANCY_ID = :tenancy_id
-              AND SERVICE_INSTANCE_ID = :service_instance_id
-              AND SNAPSHOT_ID = :snapshot_id
+            WHERE ENTITY_TYPE = :ENTITY_TYPE
+              AND TENANCY_ID = :TENANCY_ID
+              AND SERVICE_INSTANCE_ID = :SERVICE_INSTANCE_ID
+              AND SNAPSHOT_ID = :SNAPSHOT_ID
         """
         AdwConnection.get_cursor().execute(
             query_sql,
             {
                 **self._get_cleanup_scope_values(tenancy_id, service_instance_id),
-                "snapshot_id": snapshot_id,
+                "SNAPSHOT_ID": snapshot_id,
             },
         )
         return AdwConnection.get_cursor().fetchone()[0]
@@ -511,16 +517,16 @@ class BaseQueryBuilder:
         query_sql = f"""
             SELECT MIN(UPDATED_AT)
             FROM {tracker_table.get_schema()}.{tracker_table.get_table_name()}
-            WHERE ENTITY_TYPE = :entity_type
-              AND TENANCY_ID = :tenancy_id
-              AND SERVICE_INSTANCE_ID = :service_instance_id
-              AND SNAPSHOT_ID = :snapshot_id
+            WHERE ENTITY_TYPE = :ENTITY_TYPE
+              AND TENANCY_ID = :TENANCY_ID
+              AND SERVICE_INSTANCE_ID = :SERVICE_INSTANCE_ID
+              AND SNAPSHOT_ID = :SNAPSHOT_ID
         """
         AdwConnection.get_cursor().execute(
             query_sql,
             {
                 **self._get_cleanup_scope_values(tenancy_id, service_instance_id),
-                "snapshot_id": snapshot_id,
+                "SNAPSHOT_ID": snapshot_id,
             },
         )
         earliest_updated_at = AdwConnection.get_cursor().fetchone()[0]
@@ -542,11 +548,18 @@ class BaseQueryBuilder:
         lock_sql = f"""
             SELECT BATCH_ID
             FROM {tracker_table.get_schema()}.{tracker_table.get_table_name()}
-            WHERE ENTITY_TYPE = :entity_type
-              AND TENANCY_ID = :tenancy_id
-              AND SERVICE_INSTANCE_ID = :service_instance_id
-              AND SNAPSHOT_ID = :snapshot_id
-              AND ROWNUM = 1
+            WHERE ENTITY_TYPE = :ENTITY_TYPE
+              AND TENANCY_ID = :TENANCY_ID
+              AND SERVICE_INSTANCE_ID = :SERVICE_INSTANCE_ID
+              AND SNAPSHOT_ID = :SNAPSHOT_ID
+              AND BATCH_ID = (
+                  SELECT MIN(BATCH_ID)
+                  FROM {tracker_table.get_schema()}.{tracker_table.get_table_name()}
+                  WHERE ENTITY_TYPE = :ENTITY_TYPE
+                    AND TENANCY_ID = :TENANCY_ID
+                    AND SERVICE_INSTANCE_ID = :SERVICE_INSTANCE_ID
+                    AND SNAPSHOT_ID = :SNAPSHOT_ID
+              )
             FOR UPDATE NOWAIT
         """
         try:
@@ -554,13 +567,12 @@ class BaseQueryBuilder:
                 lock_sql,
                 {
                     **self._get_cleanup_scope_values(tenancy_id, service_instance_id),
-                    "snapshot_id": snapshot_id,
+                    "SNAPSHOT_ID": snapshot_id,
                 },
             )
             return AdwConnection.get_cursor().fetchone() is not None
         except oracledb.DatabaseError as exc:
-            error = exc.args[0] if exc.args else None
-            if getattr(error, "code", None) == 54:
+            if self._get_database_error_code(exc) == 54:
                 return False
             raise
 
@@ -574,16 +586,16 @@ class BaseQueryBuilder:
         tracker_table = self._snapshot_batch_tracker_table
         delete_sql = f"""
             DELETE FROM {tracker_table.get_schema()}.{tracker_table.get_table_name()}
-            WHERE ENTITY_TYPE = :entity_type
-              AND TENANCY_ID = :tenancy_id
-              AND SERVICE_INSTANCE_ID = :service_instance_id
-              AND SNAPSHOT_ID = :snapshot_id
+            WHERE ENTITY_TYPE = :ENTITY_TYPE
+              AND TENANCY_ID = :TENANCY_ID
+              AND SERVICE_INSTANCE_ID = :SERVICE_INSTANCE_ID
+              AND SNAPSHOT_ID = :SNAPSHOT_ID
         """
         AdwConnection.get_cursor().execute(
             delete_sql,
             {
                 **self._get_cleanup_scope_values(tenancy_id, service_instance_id),
-                "snapshot_id": snapshot_id,
+                "SNAPSHOT_ID": snapshot_id,
             },
         )
         if commit:
@@ -600,7 +612,6 @@ class BaseQueryBuilder:
         num_of_batches: int | None = None,
         tenancy_id: str | None = None,
         service_instance_id: str | None = None,
-        completion_timestamp: str | None = None,
     ):
         if num_of_batches is None:
             return
@@ -611,61 +622,79 @@ class BaseQueryBuilder:
         # snapshot, not to derive the expected total.
         required_batch_count = num_of_batches
 
-        try:
-            completed_batch_count = self._snapshot_get_completed_batch_count(
-                snapshot_id,
-                tenancy_id,
-                service_instance_id,
-            )
-
-            if completed_batch_count < required_batch_count:
-                self.logger.info(
-                    "Deferring stale row cleanup for %s snapshot %s; completed %d/%d batches",
-                    self.table_manager.get_table_name().lower(),
+        for attempt in range(1, self.STALE_ROW_DELETE_MAX_ATTEMPTS + 1):
+            try:
+                completed_batch_count = self._snapshot_get_completed_batch_count(
                     snapshot_id,
-                    completed_batch_count,
-                    required_batch_count,
+                    tenancy_id,
+                    service_instance_id,
                 )
-                AdwConnection.rollback()
-                return
 
-            if not self._try_acquire_snapshot_cleanup_lock(
-                snapshot_id,
-                tenancy_id,
-                service_instance_id,
-            ):
-                self.logger.info(
-                    "Deferring stale row cleanup for %s snapshot %s; cleanup already in progress",
-                    self.table_manager.get_table_name().lower(),
+                if completed_batch_count < required_batch_count:
+                    self.logger.info(
+                        "Deferring stale row cleanup for %s snapshot %s; completed %d/%d batches",
+                        self.table_manager.get_table_name().lower(),
+                        snapshot_id,
+                        completed_batch_count,
+                        required_batch_count,
+                    )
+                    AdwConnection.rollback()
+                    return
+
+                if not self._try_acquire_snapshot_cleanup_lock(
                     snapshot_id,
-                )
-                AdwConnection.rollback()
-                return
+                    tenancy_id,
+                    service_instance_id,
+                ):
+                    self.logger.info(
+                        "Deferring stale row cleanup for %s snapshot %s; cleanup already in progress",
+                        self.table_manager.get_table_name().lower(),
+                        snapshot_id,
+                    )
+                    AdwConnection.rollback()
+                    return
 
-            completion_timestamp = self._snapshot_get_earliest_batch_timestamp(
-                snapshot_id,
-                tenancy_id,
-                service_instance_id,
-            )
-            if completion_timestamp is None:
-                AdwConnection.rollback()
+                completion_timestamp = self._snapshot_get_earliest_batch_timestamp(
+                    snapshot_id,
+                    tenancy_id,
+                    service_instance_id,
+                )
+                if completion_timestamp is None:
+                    AdwConnection.rollback()
+                    return
+                self.delete_rows_older_than_event_timestamp(
+                    completion_timestamp,
+                    tenancy_id=tenancy_id,
+                    service_instance_id=service_instance_id,
+                    commit=True,
+                )
+                self._delete_snapshot_batch_tracking(
+                    snapshot_id, tenancy_id, service_instance_id, commit=True
+                )
                 return
-            self.delete_rows_older_than_event_timestamp(
-                completion_timestamp,
-                tenancy_id=tenancy_id,
-                service_instance_id=service_instance_id,
-                commit=False,
-            )
-            self._delete_snapshot_batch_tracking(
-                snapshot_id, tenancy_id, service_instance_id, commit=False
-            )
-            AdwConnection.commit()
-        except Exception as exc:
-            if self._is_retryable_cleanup_error(exc):
-                AdwConnection.rollback_and_close()
-            else:
-                AdwConnection.rollback()
-            raise
+            except Exception as exc:
+                if self._is_retryable_cleanup_error(exc):
+                    AdwConnection.rollback_and_close()
+                    if (
+                        self._get_database_error_code(exc) == 60
+                        and attempt < self.STALE_ROW_DELETE_MAX_ATTEMPTS
+                    ):
+                        retry_message = (
+                            "Retrying stale row cleanup for %s snapshot %s after ORA-00060 deadlock "
+                            "(attempt %d/%d)"
+                        )
+                        self.logger.warning(
+                            retry_message,
+                            self.table_manager.get_table_name().lower(),
+                            snapshot_id,
+                            attempt,
+                            self.STALE_ROW_DELETE_MAX_ATTEMPTS,
+                        )
+                        sleep(self.STALE_ROW_DELETE_RETRY_DELAY_SECONDS)
+                        continue
+                else:
+                    AdwConnection.rollback()
+                raise
 
     def delete_rows_older_than_event_timestamp(
         self,
@@ -684,16 +713,16 @@ class BaseQueryBuilder:
         delete_sql = (
             f'DELETE FROM "{self.table_manager.get_table_name()}" '
             'WHERE "EVENT_TIMESTAMP" < '
-            "TO_TIMESTAMP(:completion_timestamp, 'DD-MON-RR HH24:MI:SS.FF6')"
+            "TO_TIMESTAMP(:COMPLETION_TIMESTAMP, 'DD-MON-RR HH24:MI:SS.FF6')"
         )
-        bind_values: dict[str, str] = {"completion_timestamp": normalized_completion_timestamp}
+        bind_values: dict[str, str] = {"COMPLETION_TIMESTAMP": normalized_completion_timestamp}
         if tenancy_id is not None:
-            delete_sql += ' AND "TENANCY_ID" = :tenancy_id'
-            bind_values["tenancy_id"] = tenancy_id
+            delete_sql += ' AND "TENANCY_ID" = :TENANCY_ID'
+            bind_values["TENANCY_ID"] = tenancy_id
 
         if service_instance_id is not None:
-            delete_sql += ' AND "SERVICE_INSTANCE_ID" = :service_instance_id'
-            bind_values["service_instance_id"] = service_instance_id
+            delete_sql += ' AND "SERVICE_INSTANCE_ID" = :SERVICE_INSTANCE_ID'
+            bind_values["SERVICE_INSTANCE_ID"] = service_instance_id
 
         AdwConnection.get_cursor().execute(delete_sql, bind_values)
         if commit:
@@ -714,12 +743,17 @@ class BaseQueryBuilder:
             return
 
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes_for_events(
+        input_sizes = self.get_input_sizes_for_events(
             self.table_manager.get_column_list_definition_for_table_ddl(),
             self.events,
         )
+        input_sizes = self._filter_input_sizes_for_sql(input_sizes, insert_statement)
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
+        AdwConnection.get_cursor().executemany(
+            insert_statement,
+            self._bind_rows_for_sql(self.events, insert_statement),
+            batcherrors=True,
+        )
 
         batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
         if batch_errors:
@@ -753,8 +787,7 @@ class BaseQueryBuilder:
     ):
         """
         Generic helper to perform MERGE (upsert) for current events using the
-        provided unique key columns. Intended for state tables that would
-        otherwise do insert+update passes.
+        provided unique key columns. Intended for state tables
         """
         date_columns = date_columns or []
 
@@ -776,13 +809,22 @@ class BaseQueryBuilder:
         merge_sql = MergeManyQueryBuilder().get_operation_sql(
             self, active_events, date_columns, where_columns, nullable_columns
         )
-        input_sizes = InsertManyQueryBuilder().get_input_sizes_for_events(
+        input_sizes = self.get_input_sizes_for_events(
             self.table_manager.get_column_list_definition_for_table_ddl(),
             active_events,
         )
+        input_sizes = self._filter_input_sizes_for_sql(input_sizes, merge_sql)
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(merge_sql, active_events, batcherrors=True)
+        AdwConnection.get_cursor().executemany(
+            merge_sql,
+            self._bind_rows_for_sql(active_events, merge_sql),
+            batcherrors=True,
+        )
 
+        # MERGE is not immune to concurrent insert races. Two workers can both evaluate
+        # “not matched” at about the same time. One inserts first; the other then tries its
+        # insert branch and gets ORA-00001. At that point the row exists,
+        # so retrying as UPDATE is a reasonable recovery.
         batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
         if batch_errors:
             constraint_violating_rows = []
@@ -825,10 +867,11 @@ class BaseQueryBuilder:
                     nullable_columns,
                 )
                 if update_sql is not None:
-                    AdwConnection.get_cursor().setinputsizes(**input_sizes)
+                    update_input_sizes = self._filter_input_sizes_for_sql(input_sizes, update_sql)
+                    AdwConnection.get_cursor().setinputsizes(**update_input_sizes)
                     AdwConnection.get_cursor().executemany(
                         update_sql,
-                        constraint_violating_rows,
+                        self._bind_rows_for_sql(constraint_violating_rows, update_sql),
                         batcherrors=True,
                     )
                     update_batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
@@ -874,17 +917,25 @@ class BaseQueryBuilder:
             len(active_events),
             ",".join([c.lower() for c in where_columns]),
         )
+        if hasattr(self.table_manager, "ensure_delete_indexes"):
+            self.table_manager.ensure_delete_indexes()
 
         delete_sql = DeleteManyQueryBuilder().get_operation_sql(
             self,
             where_columns,
             nullable_columns,
         )
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            self.table_manager.get_column_list_definition_for_table_ddl()
+        input_sizes = self.get_input_sizes_for_events(
+            self.table_manager.get_column_list_definition_for_table_ddl(),
+            active_events,
         )
+        input_sizes = self._filter_input_sizes_for_sql(input_sizes, delete_sql)
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(delete_sql, active_events, batcherrors=True)
+        AdwConnection.get_cursor().executemany(
+            delete_sql,
+            self._bind_rows_for_sql(active_events, delete_sql),
+            batcherrors=True,
+        )
 
         batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
         if batch_errors:

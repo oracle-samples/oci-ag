@@ -68,7 +68,7 @@ def test_stream_handler_happy_path(monkeypatch):
 
         @classmethod
         def sort_connector_hub_source_stream_messages(cls, messages):
-            return messages
+            return {"STREAM": {"CREATE": messages}}
 
     monkeypatch.setattr(stream_handler, "DataEnablementStream", DummyStream)
 
@@ -97,7 +97,7 @@ def test_stream_to_timeseries_handler_happy_path(monkeypatch):
 
         @classmethod
         def sort_connector_hub_source_stream_messages(cls, messages):
-            return messages
+            return {"STREAM": {"CREATE": messages}}
 
     monkeypatch.setattr(stream_ts_handler, "DataEnablementStream", DummyStream)
 
@@ -212,7 +212,7 @@ def test_stream_handler_rolls_back_and_closes_adw_on_load_failure(monkeypatch):
     data = io.BytesIO(json.dumps(body).encode("utf-8"))
     ctx = FakeCtx({})
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(Exception, match="Stream handler exception"):
         stream_handler.handler(ctx, data)
 
     cleanup.assert_called_once()

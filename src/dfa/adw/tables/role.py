@@ -52,3 +52,11 @@ class RoleStateTable(BaseStateTable, RoleTimeSeriesTable):
             "name": "DFA_UNQ_ROLE_ST_CONST",
             "columns": ["ID", "ACCESS_BUNDLE_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
         }
+
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_ROLE_ST_DEL_IDX",
+                "columns": ["ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            }
+        ]

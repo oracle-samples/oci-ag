@@ -5,11 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.permission import PermissionStateTable, PermissionTimeSeriesTable
 
 
@@ -43,15 +39,8 @@ class PermissionStateUpdateQueryBuilder(PermissionStateQueryBuilder):
 
 class PermissionStateDeleteQueryBuilder(PermissionStateQueryBuilder):
     def execute_sql_for_events(self):
-        for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["id", "service_instance_id", "tenancy_id"]
-            )
-            AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for permission delete request")
-
-        self.logger.info("Committing work for now")
-        AdwConnection.commit()
+        self.logger.info("Bulk delete for permission delete request")
+        return self.executemany_delete_for_events(["id", "service_instance_id", "tenancy_id"])
 
 
 class PermissionTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):

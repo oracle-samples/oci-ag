@@ -5,11 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.cloud_policy import CloudPolicyStateTable, CloudPolicyTimeSeriesTable
 
 
@@ -43,14 +39,10 @@ class CloudPolicyStateUpdateQueryBuilder(CloudPolicyStateQueryBuilder):
 
 class CloudPolicyStateDeleteQueryBuilder(CloudPolicyStateQueryBuilder):
     def execute_sql_for_events(self):
-        for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["policy_statement_id", "service_instance_id", "tenancy_id"]
-            )
-            AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for tgt access pol stmt delete request")
-
-        AdwConnection.commit()
+        self.logger.info("Bulk delete for tgt access pol stmt delete request")
+        return self.executemany_delete_for_events(
+            ["policy_statement_id", "service_instance_id", "tenancy_id"]
+        )
 
 
 class CloudPolicyTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):

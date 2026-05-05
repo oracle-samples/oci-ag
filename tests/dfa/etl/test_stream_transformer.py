@@ -169,7 +169,7 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Row delete for identity delete request"))
+            self.assertTrue(self.check_logs(logs.output, "Bulk delete for identity delete request"))
 
     def test_target_identity_delete(self):
         messages = self.read_file_content(
@@ -192,7 +192,9 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Row delete for identity delete request"))
+            self.assertTrue(
+                self.check_logs(logs.output, "Bulk delete for target identity delete request")
+            )
 
     def test_ownership_collection_delete(self):
         messages = self.read_file_content(

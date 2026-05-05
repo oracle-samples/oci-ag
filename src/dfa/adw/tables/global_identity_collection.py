@@ -64,3 +64,11 @@ class GlobalIdentityCollectionStateTable(BaseStateTable, GlobalIdentityCollectio
 
     def get_nullable_constraint_columns(self):
         return ["MEMBER_GLOBAL_ID"]
+
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_GIC_ST_ID_DEL_IDX",
+                "columns": ["ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            }
+        ]

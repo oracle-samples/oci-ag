@@ -5,11 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.access_guardrail import (
     AccessGuardrailStateTable,
     AccessGuardrailTimeSeriesTable,
@@ -46,14 +42,8 @@ class AccessGuardrailStateUpdateQueryBuilder(AccessGuardrailStateQueryBuilder):
 
 class AccessGuardrailStateDeleteQueryBuilder(AccessGuardrailStateQueryBuilder):
     def execute_sql_for_events(self):
-        for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["id", "service_instance_id", "tenancy_id"]
-            )
-            AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for access guardrail delete request")
-
-        AdwConnection.commit()
+        self.logger.info("Bulk delete for access guardrail delete request")
+        return self.executemany_delete_for_events(["id", "service_instance_id", "tenancy_id"])
 
 
 class AccessGuardrailTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):

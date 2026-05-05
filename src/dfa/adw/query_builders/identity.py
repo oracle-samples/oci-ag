@@ -5,11 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.identity import IdentityStateTable, IdentityTimeSeriesTable
 
 
@@ -70,23 +66,28 @@ class IdentityStateUpdateQueryBuilder(IdentityStateQueryBuilder):
 
 class IdentityStateDeleteQueryBuilder(IdentityStateQueryBuilder):
     def execute_sql_for_events(self):
+        global_identity_deletes = []
+        target_identity_deletes = []
+
         for event in self.events:
             # if delete target identity, id (global id) must be empty
             if ((event.get("id") is None) or (event.get("id") == "")) and (
                 event.get("ti_id") is not None
             ):
-                delete_sql = DeleteQueryBuilder().get_operation_sql(
-                    self, event, ["ti_id", "service_instance_id", "tenancy_id"]
-                )
+                target_identity_deletes.append(event)
             elif (event.get("id") is not None) and (event.get("id") != ""):
-                delete_sql = DeleteQueryBuilder().get_operation_sql(
-                    self, event, ["id", "service_instance_id", "tenancy_id"]
-                )
-            else:
-                continue
+                global_identity_deletes.append(event)
 
-            ## delete initial identity record if one exists
-            AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for identity delete request")
+        if target_identity_deletes:
+            self.logger.info("Bulk delete for target identity delete request")
+            self.executemany_delete_for_events(
+                ["ti_id", "service_instance_id", "tenancy_id"],
+                events=target_identity_deletes,
+            )
 
-        AdwConnection.commit()
+        if global_identity_deletes:
+            self.logger.info("Bulk delete for identity delete request")
+            self.executemany_delete_for_events(
+                ["id", "service_instance_id", "tenancy_id"],
+                events=global_identity_deletes,
+            )

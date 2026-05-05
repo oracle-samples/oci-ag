@@ -6,6 +6,8 @@ import os
 from abc import ABC, abstractmethod
 from typing import ClassVar, Optional
 
+import oracledb
+
 from common.logger.logger import Logger
 from dfa.adw.connection import AdwConnection
 
@@ -167,11 +169,16 @@ class BaseTable(ABC):
 
 
 class BaseStateTable(BaseTable, ABC):
+    _ensured_delete_index_names: ClassVar[set[str]] = set()
+
     @abstractmethod
     def get_unique_contraint_definition_details(self):
         pass
 
     def get_nullable_constraint_columns(self):
+        return []
+
+    def get_delete_index_definition_details(self):
         return []
 
     def _build_unique_constraint_ddl(self):
@@ -201,6 +208,62 @@ class BaseStateTable(BaseTable, ABC):
                 """
         return ddl
 
+    def _build_delete_index_ddl(self, index_definition):
+        index_columns = index_definition["columns"]
+        index_columns_ddl = '"' + '", "'.join(index_columns) + '"'
+        return f"""
+            CREATE INDEX {self.get_schema()}.{index_definition["name"]} ON \
+{self.get_schema()}.{self.get_table_name()} ({index_columns_ddl})
+            """
+
+    def _index_exists(self, index_name):
+        exists_sql = """
+            SELECT COUNT(*)
+            FROM ALL_INDEXES
+            WHERE OWNER = :OWNER
+              AND TABLE_NAME = :TABLE_NAME
+              AND INDEX_NAME = :INDEX_NAME
+        """
+        AdwConnection.get_cursor().execute(
+            exists_sql,
+            {
+                "OWNER": self.get_schema(),
+                "TABLE_NAME": self.get_table_name(),
+                "INDEX_NAME": index_name,
+            },
+        )
+        index_count = AdwConnection.get_cursor().fetchone()[0]
+        return isinstance(index_count, int) and index_count > 0
+
+    def _create_delete_index(self, index_definition):
+        self.logger.info(
+            "Generating DDL to add delete index %s to table %s",
+            index_definition["name"],
+            self.get_table_name(),
+        )
+        AdwConnection.get_cursor().execute(self._build_delete_index_ddl(index_definition))
+
+    def ensure_delete_indexes(self):
+        for index_definition in self.get_delete_index_definition_details():
+            index_cache_key = (
+                f"{self.get_schema()}.{self.get_table_name()}.{index_definition['name']}"
+            )
+            if index_cache_key in self._ensured_delete_index_names:
+                continue
+            if self._index_exists(index_definition["name"]):
+                self._ensured_delete_index_names.add(index_cache_key)
+                continue
+            try:
+                self._create_delete_index(index_definition)
+            except oracledb.DatabaseError as exc:
+                error = exc.args[0] if exc.args else None
+                if getattr(error, "code", None) != 955:
+                    raise
+            self._ensured_delete_index_names.add(index_cache_key)
+
+    def ensure_supporting_objects(self):
+        self.ensure_delete_indexes()
+
     def _after_create(self):
 
         index_ddl = self._build_unique_index_ddl()
@@ -210,6 +273,9 @@ class BaseStateTable(BaseTable, ABC):
         constraint_ddl = self._build_unique_constraint_ddl()
         if len(constraint_ddl) > 0:
             AdwConnection.get_cursor().execute(constraint_ddl)
+
+        for delete_index_definition in self.get_delete_index_definition_details():
+            self._create_delete_index(delete_index_definition)
 
 
 class StreamOffsetTrackerTable(BaseTable):
@@ -232,6 +298,7 @@ class StreamOffsetTrackerTable(BaseTable):
 class SnapshotBatchTrackerTable(BaseTable):
     _table_name = "snapshot_batch_tracker"
     _schema = None
+    _primary_key_name = "PK_SNAPSHOT_BATCH_TRACKER"
 
     def _column_definitions(self):
         return """
@@ -245,11 +312,33 @@ class SnapshotBatchTrackerTable(BaseTable):
             ]
             """
 
-    def _after_create(self):
+    def _primary_key_exists(self):
+        exists_sql = """
+            SELECT COUNT(*)
+            FROM ALL_CONSTRAINTS
+            WHERE OWNER = :OWNER
+              AND TABLE_NAME = :TABLE_NAME
+              AND CONSTRAINT_NAME = :CONSTRAINT_NAME
+              AND CONSTRAINT_TYPE = 'P'
+        """
+        AdwConnection.get_cursor().execute(
+            exists_sql,
+            {
+                "OWNER": self.get_schema(),
+                "TABLE_NAME": self.get_table_name(),
+                "CONSTRAINT_NAME": self._primary_key_name,
+            },
+        )
+        return AdwConnection.get_cursor().fetchone()[0] == 1
+
+    def ensure_supporting_objects(self):
+        if self._primary_key_exists():
+            return
+
         AdwConnection.get_cursor().execute(
             f"""
                 ALTER TABLE {self.get_schema()}.{self.get_table_name()}
-                ADD CONSTRAINT "PK_SNAPSHOT_BATCH_TRACKER"
+                ADD CONSTRAINT "{self._primary_key_name}"
                 PRIMARY KEY (
                     "ENTITY_TYPE",
                     "TENANCY_ID",
@@ -260,3 +349,6 @@ class SnapshotBatchTrackerTable(BaseTable):
                 USING INDEX ENABLE
             """
         )
+
+    def _after_create(self):
+        self.ensure_supporting_objects()

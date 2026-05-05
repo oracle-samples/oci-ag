@@ -36,4 +36,4 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
     except Exception as e:
         AdwConnection.rollback_and_close()
         logger.exception("Stream handler caught exception - %s", e)
-        raise
+        raise Exception("Stream handler exception") from e

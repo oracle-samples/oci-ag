@@ -52,4 +52,4 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
     except Exception as e:
         AdwConnection.rollback_and_close()
         logger.exception("File handler caught exception - %s", e)
-        raise
+        raise Exception("File handler exception") from e

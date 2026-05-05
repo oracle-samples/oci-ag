@@ -5,11 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.policy_statement_resource_mapping import (
     PolicyStatementResourceMappingStateTable,
     PolicyStatementResourceMappingTimeSeriesTable,
@@ -54,16 +50,10 @@ class PolicyStatementResourceMappingStateDeleteQueryBuilder(
     PolicyStatementResourceMappingStateQueryBuilder
 ):
     def execute_sql_for_events(self):
-        for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self,
-                event,
-                ["policy_statement_id", "resource_id", "service_instance_id", "tenancy_id"],
-            )
-            AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for policy stmt res mapp delete request")
-
-        AdwConnection.commit()
+        self.logger.info("Bulk delete for policy statement resource mapping delete request")
+        return self.executemany_delete_for_events(
+            ["policy_statement_id", "resource_id", "service_instance_id", "tenancy_id"]
+        )
 
 
 class PolicyStatementResourceMappingTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):

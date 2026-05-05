@@ -51,3 +51,11 @@ class CloudPolicyStateTable(BaseStateTable, CloudPolicyTimeSeriesTable):
                 "TENANCY_ID",
             ],
         }
+
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_CP_ST_DEL_IDX",
+                "columns": ["POLICY_STATEMENT_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            }
+        ]

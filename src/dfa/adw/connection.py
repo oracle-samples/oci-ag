@@ -17,6 +17,17 @@ class AdwConnection:
     __connection = None
     __cursor = None
     __wallet_dir = None
+    MAX_CONN_RETRY_COUNT = 3
+    MAX_CONN_RETRY_DELAY = 3
+    MAX_CONN_TCP_CONNECT_TIMEOUT = 10
+
+    @staticmethod
+    def _get_bounded_int_env(name: str, default: int, maximum: int) -> int:
+        try:
+            value = int(os.environ.get(name, str(default)))
+        except ValueError:
+            value = default
+        return max(0, min(value, maximum))
 
     @classmethod
     def get_connection(cls, username: str | None = None):
@@ -43,8 +54,17 @@ class AdwConnection:
             wallet_password = secrets_mgr.get_wallet_password()
 
             params = {
-                "retry_count": os.environ["DFA_CONN_RETRY_COUNT"],
-                "retry_delay": os.environ["DFA_CONN_RETRY_DELAY"],
+                "retry_count": cls._get_bounded_int_env(
+                    "DFA_CONN_RETRY_COUNT", cls.MAX_CONN_RETRY_COUNT, cls.MAX_CONN_RETRY_COUNT
+                ),
+                "retry_delay": cls._get_bounded_int_env(
+                    "DFA_CONN_RETRY_DELAY", cls.MAX_CONN_RETRY_DELAY, cls.MAX_CONN_RETRY_DELAY
+                ),
+                "tcp_connect_timeout": cls._get_bounded_int_env(
+                    "DFA_CONN_TCP_CONNECT_TIMEOUT",
+                    cls.MAX_CONN_TCP_CONNECT_TIMEOUT,
+                    cls.MAX_CONN_TCP_CONNECT_TIMEOUT,
+                ),
             }
             query = "&".join([f"{k}={v}" for k, v in params.items()])
             dsn = (

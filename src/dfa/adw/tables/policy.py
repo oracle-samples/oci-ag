@@ -74,3 +74,11 @@ class PolicyStateTable(BaseStateTable, PolicyTimeSeriesTable):
             "name": "DFA_UNQ_POL_ST_CONST",
             "columns": ["ID", "POLICY_RULE_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
         }
+
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_POL_ST_DEL_IDX",
+                "columns": ["ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            }
+        ]
