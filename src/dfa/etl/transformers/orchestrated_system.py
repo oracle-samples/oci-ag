@@ -70,9 +70,7 @@ class OrchestratedSystemEventTransformer(BaseEventTransformer):
             orchestrated_system_list.append(orchestrated_system)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return orchestrated_system_list
 

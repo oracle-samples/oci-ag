@@ -29,9 +29,7 @@ class PolicyStatementResourceMappingTimeSeriesTable(BaseTable):
         return json
 
 
-class PolicyStatementResourceMappingStateTable(
-    BaseStateTable, PolicyStatementResourceMappingTimeSeriesTable
-):
+class PolicyStatementResourceMappingStateTable(BaseStateTable, PolicyStatementResourceMappingTimeSeriesTable):
     _table_name = "policy_statement_resource_mapping_state"
 
     def get_unique_contraint_definition_details(self):

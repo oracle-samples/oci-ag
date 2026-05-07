@@ -77,13 +77,9 @@ class AuditEventsEventTransformer(BaseEventTransformer):
                 if "action" in raw_event["request"]:
                     base_audit_event["request_action"] = raw_event["request"]["action"]
                 if "parameters" in raw_event["request"]:
-                    base_audit_event["request_parameters"] = json.dumps(
-                        raw_event["request"]["parameters"]
-                    )
+                    base_audit_event["request_parameters"] = json.dumps(raw_event["request"]["parameters"])
                 if "headers" in raw_event["request"]:
-                    base_audit_event["request_headers"] = json.dumps(
-                        raw_event["request"]["headers"]
-                    )
+                    base_audit_event["request_headers"] = json.dumps(raw_event["request"]["headers"])
                 if "payload" in raw_event["request"]:
                     masked_payload = self._mask_sensitive_payload(raw_event["request"]["payload"])
                     base_audit_event["request_payload"] = json.dumps(masked_payload)
@@ -94,9 +90,7 @@ class AuditEventsEventTransformer(BaseEventTransformer):
                 if "status" in raw_event["response"]:
                     base_audit_event["response_status"] = raw_event["response"]["status"]
                 if "headers" in raw_event["response"]:
-                    base_audit_event["response_headers"] = json.dumps(
-                        raw_event["response"]["headers"]
-                    )
+                    base_audit_event["response_headers"] = json.dumps(raw_event["response"]["headers"])
                 if "payload" in raw_event["response"]:
                     masked_payload = self._mask_sensitive_payload(raw_event["response"]["payload"])
                     base_audit_event["response_payload"] = json.dumps(masked_payload)
@@ -113,9 +107,7 @@ class AuditEventsEventTransformer(BaseEventTransformer):
             audit_events_list.append(base_audit_event)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return audit_events_list
 

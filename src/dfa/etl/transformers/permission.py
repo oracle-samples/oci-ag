@@ -72,9 +72,7 @@ class PermissionEventTransformer(BaseEventTransformer):
             permission_list.append(base_permission)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return permission_list
 

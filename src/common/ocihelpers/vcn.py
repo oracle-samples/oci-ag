@@ -17,9 +17,7 @@ class BaseVCN:
 
     def __set_config(self):
         if os.environ["DFA_SIGNER_TYPE"] == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -48,9 +46,7 @@ class BaseVCN:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -70,9 +66,7 @@ class BaseVCN:
         return self._signer
 
     def __set_client(self):
-        self.__client = oci.core.VirtualNetworkClient(
-            config=self.__get_config(), signer=self.__get_signer()
-        )
+        self.__client = oci.core.VirtualNetworkClient(config=self.__get_config(), signer=self.__get_signer())
 
     def _get_client(self):
         if self.__client is None:
@@ -140,9 +134,7 @@ class DfaCreateVCN(BaseVCN):
 
     def find_service(self):
         list_services_response = self._get_client().list_services(limit=10)
-        target_service_name = (
-            f'All {os.environ["DFA_REGION_KEY"]} Services In Oracle Services Network'
-        )
+        target_service_name = f'All {os.environ["DFA_REGION_KEY"]} Services In Oracle Services Network'
 
         for service in list_services_response.data:
             service_name = service.name
@@ -150,8 +142,10 @@ class DfaCreateVCN(BaseVCN):
                 self.__service_id = service.id
 
         if self.__service_id is None:
-            raise ValueError(f"Could not find id for service: {target_service_name}. \
-Please check ensure configurations are correct before proceeding.")
+            raise ValueError(
+                f"Could not find id for service: {target_service_name}. \
+Please check ensure configurations are correct before proceeding."
+            )
 
         self.logger.info("Successfully retrieved the service id for %s", target_service_name)
 
@@ -172,9 +166,7 @@ Please check ensure configurations are correct before proceeding.")
                 create_service_gateway_details=oci.core.models.CreateServiceGatewayDetails(
                     compartment_id=os.environ["DFA_COMPARTMENT_ID"],
                     display_name=service_gateway_display_name,
-                    services=[
-                        oci.core.models.ServiceIdRequestDetails(service_id=self.__get_service_id())
-                    ],
+                    services=[oci.core.models.ServiceIdRequestDetails(service_id=self.__get_service_id())],
                     vcn_id=self.__get_vcn_id(),
                     freeform_tags={"Feature": "Data Feed Analytics(DFA)"},
                 )
@@ -213,13 +205,9 @@ Please check ensure configurations are correct before proceeding.")
                 )
             )
             self.__nat_gateway_id = create_nat_gateway_details.data.id
-            self.logger.info(
-                "Successfully created the nat gateway %s for the VCN", nat_gateway_display_name
-            )
+            self.logger.info("Successfully created the nat gateway %s for the VCN", nat_gateway_display_name)
         else:
-            self.logger.info(
-                "NAT gateway with the name %s already exists for this VCN", nat_gateway_display_name
-            )
+            self.logger.info("NAT gateway with the name %s already exists for this VCN", nat_gateway_display_name)
         return True
 
     def __nat_route_table_exists(self, nat_route_table_display_name):

@@ -31,9 +31,7 @@ class TestStreamTransformer(unittest.TestCase):
         self.mock_adw_close = self.adw_close_patcher.start()
         self.addCleanup(self.adw_close_patcher.stop)
 
-        self.patcher_stream = patch(
-            "dfa.etl.stream_transformer.DataEnablementStream", autospec=True
-        )
+        self.patcher_stream = patch("dfa.etl.stream_transformer.DataEnablementStream", autospec=True)
         self.mock_stream = self.patcher_stream.start()
         self.addCleanup(self.patcher_stream.stop)
 
@@ -91,9 +89,7 @@ class TestStreamTransformer(unittest.TestCase):
         return False
 
     def test_access_bundle_changed(self):
-        messages = self.read_file_content(
-            "tests/dfa/etl/test_data/stream/access_bundle_changed.json"
-        )
+        messages = self.read_file_content("tests/dfa/etl/test_data/stream/access_bundle_changed.json")
         self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
 
         self.transformer.transform_messages(messages)
@@ -118,16 +114,12 @@ class TestStreamTransformer(unittest.TestCase):
             self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))
 
     def test_approval_workflow_changed(self):
-        messages = self.read_file_content(
-            "tests/dfa/etl/test_data/stream/approval_workflow_changed.json"
-        )
+        messages = self.read_file_content("tests/dfa/etl/test_data/stream/approval_workflow_changed.json")
         self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
 
         self.transformer.transform_messages(messages)
         self.assertEqual(len(self.transformer._prepared_events), 1)
-        self.assertEqual(
-            self.transformer._prepared_events[0]["event_object_type"], "APPROVAL_WORKFLOW"
-        )
+        self.assertEqual(self.transformer._prepared_events[0]["event_object_type"], "APPROVAL_WORKFLOW")
         self.assertEqual(self.transformer._prepared_events[0]["operation_type"], "UPDATE")
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["summary"],
@@ -172,9 +164,7 @@ class TestStreamTransformer(unittest.TestCase):
             self.assertTrue(self.check_logs(logs.output, "Bulk delete for identity delete request"))
 
     def test_target_identity_delete(self):
-        messages = self.read_file_content(
-            "tests/dfa/etl/test_data/stream/target_identity_deleted.json"
-        )
+        messages = self.read_file_content("tests/dfa/etl/test_data/stream/target_identity_deleted.json")
         self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
 
         self.transformer.transform_messages(messages)
@@ -192,21 +182,15 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(
-                self.check_logs(logs.output, "Bulk delete for target identity delete request")
-            )
+            self.assertTrue(self.check_logs(logs.output, "Bulk delete for target identity delete request"))
 
     def test_ownership_collection_delete(self):
-        messages = self.read_file_content(
-            "tests/dfa/etl/test_data/stream/ownership_collection_delete.json"
-        )
+        messages = self.read_file_content("tests/dfa/etl/test_data/stream/ownership_collection_delete.json")
         self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
 
         self.transformer.transform_messages(messages)
         self.assertEqual(len(self.transformer._prepared_events), 1)
-        self.assertEqual(
-            self.transformer._prepared_events[0]["event_object_type"], "OWNERSHIP_COLLECTION"
-        )
+        self.assertEqual(self.transformer._prepared_events[0]["event_object_type"], "OWNERSHIP_COLLECTION")
         self.assertEqual(self.transformer._prepared_events[0]["operation_type"], "DELETE")
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["id"],
@@ -223,14 +207,10 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(
-                self.check_logs(logs.output, "Row delete for ownership collection delete request")
-            )
+            self.assertTrue(self.check_logs(logs.output, "Row delete for ownership collection delete request"))
 
     def test_identity_unmatched_created(self):
-        messages = self.read_file_content(
-            "tests/dfa/etl/test_data/stream/identity_unmatched_created.json"
-        )
+        messages = self.read_file_content("tests/dfa/etl/test_data/stream/identity_unmatched_created.json")
         self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
 
         self.transformer.transform_messages(messages)

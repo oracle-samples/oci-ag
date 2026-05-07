@@ -40,9 +40,7 @@ class IdentityEventTransformer(BaseEventTransformer):
                     identity["ag_sub_type"] = raw_event["globalIdentity"]["identity"]["agSubType"]
 
                 if "displayName" in raw_event["globalIdentity"]["identity"]:
-                    identity["display_name"] = raw_event["globalIdentity"]["identity"][
-                        "displayName"
-                    ]
+                    identity["display_name"] = raw_event["globalIdentity"]["identity"]["displayName"]
 
                 if "location" in raw_event["globalIdentity"]["identity"]:
                     identity["location"] = raw_event["globalIdentity"]["identity"]["location"]
@@ -62,17 +60,11 @@ class IdentityEventTransformer(BaseEventTransformer):
 
                 if "name" in raw_event["globalIdentity"]["identity"]:
                     if "familyName" in raw_event["globalIdentity"]["identity"]["name"]:
-                        identity["last_name"] = raw_event["globalIdentity"]["identity"]["name"][
-                            "familyName"
-                        ]
+                        identity["last_name"] = raw_event["globalIdentity"]["identity"]["name"]["familyName"]
                     if "givenName" in raw_event["globalIdentity"]["identity"]["name"]:
-                        identity["first_name"] = raw_event["globalIdentity"]["identity"]["name"][
-                            "givenName"
-                        ]
+                        identity["first_name"] = raw_event["globalIdentity"]["identity"]["name"]["givenName"]
 
-                identity["identity_attributes"] = json.dumps(
-                    raw_event["globalIdentity"]["identity"]
-                )
+                identity["identity_attributes"] = json.dumps(raw_event["globalIdentity"]["identity"])
 
             if "targetIdentities" in raw_event["globalIdentity"]:
                 identity["ti_operation_type"] = self.get_operation_type()
@@ -93,9 +85,7 @@ class IdentityEventTransformer(BaseEventTransformer):
                             if "status" in ti["identity"]:
                                 target_identity["ti_identity_status"] = ti["identity"]["status"]
                             if "name" in ti["identity"]:
-                                target_identity["ti_identity_name"] = json.dumps(
-                                    ti["identity"]["name"]
-                                )
+                                target_identity["ti_identity_name"] = json.dumps(ti["identity"]["name"])
                         identities_list.append(target_identity)
                 else:
                     identities_list.append(identity)
@@ -105,9 +95,7 @@ class IdentityEventTransformer(BaseEventTransformer):
             return identities_list
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return identities_list
 

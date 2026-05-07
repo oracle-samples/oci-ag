@@ -78,7 +78,7 @@ jobs=1
 # Control the amount of potential inferred values when inferring a single
 # object. This can help the performance when dealing with large functions or
 # complex, nested conditions.
-limit-inference-results=100
+limit-inference-results=120
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
@@ -342,9 +342,6 @@ indent-after-paren=4
 # tab).
 indent-string='    '
 
-# Maximum number of characters on a single line.
-max-line-length=120
-
 # Maximum number of lines in a module.
 max-module-lines=1000
 
@@ -449,7 +446,8 @@ disable=raw-checker-failed,
         too-many-nested-blocks,
         too-many-instance-attributes,
         too-many-branches,
-        too-many-statements
+        too-many-statements,
+        line-too-long
 
 
 # Enable the message, report, category or checker with the given id(s). You can

@@ -21,9 +21,7 @@ class BaseIam:
 
     def __set_config(self):
         if os.environ["DFA_SIGNER_TYPE"] == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -52,9 +50,7 @@ class BaseIam:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self.__signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self.__signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -74,9 +70,7 @@ class BaseIam:
         return self.__signer
 
     def __set_client(self):
-        self.__client = oci.identity.IdentityClient(
-            config=self.__get_config(), signer=self.__get_signer()
-        )
+        self.__client = oci.identity.IdentityClient(config=self.__get_config(), signer=self.__get_signer())
 
     def _get_client(self):
         if self.__client is None:
@@ -151,18 +145,13 @@ class DfaFunctionsDynamicGroup(BaseIam):
                     )
                 )
                 self._functions_dynamic_group_id = create_dynamic_group_response.data.id
-                self.logger.info(
-                    "Successfully created the functions dynamic group %s", display_name
-                )
+                self.logger.info("Successfully created the functions dynamic group %s", display_name)
             else:
-                self.logger.info(
-                    "Functions dynamic group with the name %s already exists", display_name
-                )
+                self.logger.info("Functions dynamic group with the name %s already exists", display_name)
         else:
             self.logger.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             self.logger.info(
-                "Please manually create a dynamic group named %s with the following matching rules: "
-                "%s",
+                "Please manually create a dynamic group named %s with the following matching rules: %s",
                 display_name,
                 matching_rule,
             )

@@ -68,9 +68,7 @@ class ApprovalWorkflowEventTransformer(BaseEventTransformer):
             approval_workflow["operation_type"] = self.get_operation_type()
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         aw_list.append(approval_workflow)
         return aw_list

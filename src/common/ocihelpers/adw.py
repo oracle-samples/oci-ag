@@ -22,9 +22,7 @@ class BaseAutonomousDatabase(ABC):
 
     def __set_config(self):
         if self._signer_type == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -53,9 +51,7 @@ class BaseAutonomousDatabase(ABC):
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self.__signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self.__signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -76,9 +72,7 @@ class BaseAutonomousDatabase(ABC):
         return self.__signer
 
     def __set_client(self):
-        self.__client = oci.database.DatabaseClient(
-            config=self.__get_config(), signer=self.__get_signer()
-        )
+        self.__client = oci.database.DatabaseClient(config=self.__get_config(), signer=self.__get_signer())
 
     def _get_client(self):
         if self.__client is None:
@@ -90,9 +84,7 @@ class BaseAutonomousDatabase(ABC):
         self.logger.info("Performing envrionment checks for autonomous database manager")
         try:
             self._signer_type = os.environ["DFA_SIGNER_TYPE"]
-            self.logger.info(
-                "Signer type for autonomous database manager has been set to %s", self._signer_type
-            )
+            self.logger.info("Signer type for autonomous database manager has been set to %s", self._signer_type)
         except KeyError:
             self.logger.info(
                 "Cannot create autonomous database manager - Environment varaible DFA_SIGNER_TYPE does not exist"
@@ -156,11 +148,7 @@ class DfaCreateAutonomousDatabase(BaseAutonomousDatabase):
         display_name = os.environ["RESOURCE_NAME_PREFIX"] + "_database"
         if not self.__adw_exists(display_name):
             db_name = (
-                os.environ["RESOURCE_NAME_PREFIX"]
-                .replace("_", "")
-                .replace("-", "")
-                .replace(" ", "")
-                .lower()
+                os.environ["RESOURCE_NAME_PREFIX"].replace("_", "").replace("-", "").replace(" ", "").lower()
                 + "database"
             )
             create_adw_response = self._get_client().create_autonomous_database(

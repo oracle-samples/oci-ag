@@ -56,8 +56,7 @@ def test_read_object_family_in_compartment_scores_2():
 def test_inspect_specific_with_operation_filter_scores_min_1():
     transformer = CloudPolicyEventTransformer("cloud_policy", "CREATE")
     st = (
-        "allow group devs to inspect buckets in compartment app-dev "
-        "where all { request.operation in {'GetBucket'} }"
+        "allow group devs to inspect buckets in compartment app-dev " "where all { request.operation in {'GetBucket'} }"
     )
     raw_event = {
         "id": "pol-4",
@@ -76,9 +75,7 @@ def test_dynamic_group_without_guardrail_scores_5():
         "id": "pol-5",
         "statement": "Allow dynamic-group dg-ci to manage domains in tenancy",
         "verb": "MANAGE",
-        "subjects": [
-            {"id": "ocid1.dynamicgroup.oc1..xyz", "name": "dg-ci", "type": "dynamic-group"}
-        ],
+        "subjects": [{"id": "ocid1.dynamicgroup.oc1..xyz", "name": "dg-ci", "type": "dynamic-group"}],
     }
     rows = transformer.transform_raw_event(raw_event)
     attrs = json.loads(rows[0].get("attributes") or "{}")
@@ -94,9 +91,7 @@ def test_dynamic_group_with_guardrail_scores_5():
             "where request.principal.type = 'instance' and request.principal.compartment.id = ocid1.compartment.oc1..abc"
         ),
         "verb": "MANAGE",
-        "subjects": [
-            {"id": "ocid1.dynamicgroup.oc1..xyz", "name": "dg-ci", "type": "dynamic-group"}
-        ],
+        "subjects": [{"id": "ocid1.dynamicgroup.oc1..xyz", "name": "dg-ci", "type": "dynamic-group"}],
     }
     rows = transformer.transform_raw_event(raw_event)
     attrs = json.loads(rows[0].get("attributes") or "{}")
@@ -107,14 +102,9 @@ def test_dynamic_group_with_guardrail_reduces_below_5():
     transformer = CloudPolicyEventTransformer("cloud_policy", "CREATE")
     raw_event = {
         "id": "pol-7",
-        "statement": (
-            "Allow dynamic-group dg-ci to manage domains in tenancy "
-            "where request.principal.id = ''"
-        ),
+        "statement": ("Allow dynamic-group dg-ci to manage domains in tenancy " "where request.principal.id = ''"),
         "verb": "MANAGE",
-        "subjects": [
-            {"id": "ocid1.dynamicgroup.oc1..xyz", "name": "dg-ci", "type": "dynamic-group"}
-        ],
+        "subjects": [{"id": "ocid1.dynamicgroup.oc1..xyz", "name": "dg-ci", "type": "dynamic-group"}],
     }
     rows = transformer.transform_raw_event(raw_event)
     attrs = json.loads(rows[0].get("attributes") or "{}")

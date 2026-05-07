@@ -20,9 +20,9 @@ RUN groupadd --system --gid 1001 dfa && \
 COPY --from=build-stage /function/dist /function/dist
 COPY --from=build-stage /function/src/handlers/dispatcher.py /function/.
 ADD constraints.txt /function/constraints.txt
-RUN rm -f /usr/bin/python3 && ln -s /usr/bin/python3.12 /usr/bin/python 
+RUN rm -f /usr/bin/python3 && ln -s /usr/bin/python3.12 /usr/bin/python
 RUN python --version
-RUN python -m pip install --no-cache-dir -c /function/constraints.txt /function/dist/dfa-0.1.0-py3-none-any.whl fdk
+RUN python -m pip install --no-cache-dir -c /function/constraints.txt /function/dist/dfa-*.whl fdk
 
 RUN chown -R dfa /function
 ENV PYTHONPATH="/function"

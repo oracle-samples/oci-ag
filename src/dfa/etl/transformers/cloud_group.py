@@ -88,9 +88,7 @@ class CloudGroupEventTransformer(BaseEventTransformer):
                 group_list.append(base_group)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return group_list
 

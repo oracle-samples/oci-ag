@@ -49,9 +49,7 @@ class RoleEventTransformer(BaseEventTransformer):
                     role["approval_workflow_name"] = raw_event["approvalWorkflow"]["name"]
 
                 if "description" in raw_event["approvalWorkflow"]:
-                    role["approval_workflow_description"] = raw_event["approvalWorkflow"][
-                        "description"
-                    ]
+                    role["approval_workflow_description"] = raw_event["approvalWorkflow"]["description"]
 
             if "createdBy" in raw_event:
                 role["created_by"] = raw_event["createdBy"]
@@ -103,9 +101,7 @@ class RoleEventTransformer(BaseEventTransformer):
                 role_list.append(role)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return role_list
 

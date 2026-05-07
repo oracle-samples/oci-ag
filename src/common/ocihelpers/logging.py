@@ -18,9 +18,7 @@ class BaseOCILogManagement:
 
     def __set_config(self):
         if os.environ["DFA_SIGNER_TYPE"] == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -49,9 +47,7 @@ class BaseOCILogManagement:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self.__signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self.__signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -71,9 +67,7 @@ class BaseOCILogManagement:
         return self.__signer
 
     def __set_client(self):
-        self.__client = oci.logging.LoggingManagementClient(
-            config=self.__get_config(), signer=self.__get_signer()
-        )
+        self.__client = oci.logging.LoggingManagementClient(config=self.__get_config(), signer=self.__get_signer())
 
     def _get_client(self):
         if self.__client is None:
@@ -144,9 +138,7 @@ class DfaFunctionsLogs(BaseOCILogManagement):
                     ),
                 ),
             )
-            self.logger.info(
-                "Successfully enabled logs %s for the functions application", self._get_log_name()
-            )
+            self.logger.info("Successfully enabled logs %s for the functions application", self._get_log_name())
         else:
             self.logger.info(
                 "Logs with the name %s already exists for this log group %s",

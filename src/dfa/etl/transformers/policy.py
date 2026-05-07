@@ -66,15 +66,11 @@ class PolicyEventTransformer(BaseEventTransformer):
 
             if "createdByRef" in raw_event:
                 if "displayName" in raw_event["createdByRef"]:
-                    base_policy["created_by_display_name"] = raw_event["createdByRef"][
-                        "displayName"
-                    ]
+                    base_policy["created_by_display_name"] = raw_event["createdByRef"]["displayName"]
                 if "value" in raw_event["createdByRef"]:
                     base_policy["created_by_value"] = raw_event["createdByRef"]["value"]
                 if "resourceType" in raw_event["createdByRef"]:
-                    base_policy["created_by_resource_type"] = raw_event["createdByRef"][
-                        "resourceType"
-                    ]
+                    base_policy["created_by_resource_type"] = raw_event["createdByRef"]["resourceType"]
 
             if "createdOn" in raw_event:
                 base_policy["created_on"] = raw_event["createdOn"]
@@ -84,15 +80,11 @@ class PolicyEventTransformer(BaseEventTransformer):
 
             if "updatedByRef" in raw_event:
                 if "displayName" in raw_event["updatedByRef"]:
-                    base_policy["updated_by_display_name"] = raw_event["updatedByRef"][
-                        "displayName"
-                    ]
+                    base_policy["updated_by_display_name"] = raw_event["updatedByRef"]["displayName"]
                 if "value" in raw_event["updatedByRef"]:
                     base_policy["updated_by_value"] = raw_event["updatedByRef"]["value"]
                 if "resourceType" in raw_event["updatedByRef"]:
-                    base_policy["updated_by_resource_type"] = raw_event["updatedByRef"][
-                        "resourceType"
-                    ]
+                    base_policy["updated_by_resource_type"] = raw_event["updatedByRef"]["resourceType"]
 
             if "updatedOn" in raw_event:
                 base_policy["updated_on"] = raw_event["updatedOn"]
@@ -161,9 +153,7 @@ class PolicyEventTransformer(BaseEventTransformer):
                 policy_list.append(base_policy)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return policy_list
 

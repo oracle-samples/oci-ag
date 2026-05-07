@@ -47,13 +47,9 @@ class AccessBundleEventTransformer(BaseEventTransformer):
                 if "id" in raw_event["approvalWorkflow"]:
                     base_access_bundle["approval_workflow_id"] = raw_event["approvalWorkflow"]["id"]
                 if "name" in raw_event["approvalWorkflow"]:
-                    base_access_bundle["approval_workflow_name"] = raw_event["approvalWorkflow"][
-                        "name"
-                    ]
+                    base_access_bundle["approval_workflow_name"] = raw_event["approvalWorkflow"]["name"]
                 if "description" in raw_event["approvalWorkflow"]:
-                    base_access_bundle["approval_workflow_description"] = raw_event[
-                        "approvalWorkflow"
-                    ]["description"]
+                    base_access_bundle["approval_workflow_description"] = raw_event["approvalWorkflow"]["description"]
 
             if "targetId" in raw_event:
                 base_access_bundle["target_id"] = raw_event["targetId"]
@@ -69,15 +65,11 @@ class AccessBundleEventTransformer(BaseEventTransformer):
 
             if "createdByRef" in raw_event:
                 if "displayName" in raw_event["createdByRef"]:
-                    base_access_bundle["created_by_display_name"] = raw_event["createdByRef"][
-                        "displayName"
-                    ]
+                    base_access_bundle["created_by_display_name"] = raw_event["createdByRef"]["displayName"]
                 if "value" in raw_event["createdByRef"]:
                     base_access_bundle["created_by_value"] = raw_event["createdByRef"]["value"]
                 if "resourceType" in raw_event["createdByRef"]:
-                    base_access_bundle["created_by_resource_type"] = raw_event["createdByRef"][
-                        "resourceType"
-                    ]
+                    base_access_bundle["created_by_resource_type"] = raw_event["createdByRef"]["resourceType"]
 
             if "createdOn" in raw_event:
                 base_access_bundle["created_on"] = raw_event["createdOn"]
@@ -87,15 +79,11 @@ class AccessBundleEventTransformer(BaseEventTransformer):
 
             if "updatedByRef" in raw_event:
                 if "displayName" in raw_event["updatedByRef"]:
-                    base_access_bundle["updated_by_display_name"] = raw_event["updatedByRef"][
-                        "displayName"
-                    ]
+                    base_access_bundle["updated_by_display_name"] = raw_event["updatedByRef"]["displayName"]
                 if "value" in raw_event["updatedByRef"]:
                     base_access_bundle["updated_by_value"] = raw_event["updatedByRef"]["value"]
                 if "resourceType" in raw_event["updatedByRef"]:
-                    base_access_bundle["updated_by_resource_type"] = raw_event["updatedByRef"][
-                        "resourceType"
-                    ]
+                    base_access_bundle["updated_by_resource_type"] = raw_event["updatedByRef"]["resourceType"]
 
             if "updatedOn" in raw_event:
                 base_access_bundle["updated_on"] = raw_event["updatedOn"]
@@ -128,9 +116,7 @@ class AccessBundleEventTransformer(BaseEventTransformer):
                 base_access_bundle["account_profile_name"] = raw_event["accountProfileName"]
 
             if "autoApproveIfNoViolation" in raw_event:
-                base_access_bundle["auto_approval_if_no_violation"] = raw_event[
-                    "autoApproveIfNoViolation"
-                ]
+                base_access_bundle["auto_approval_if_no_violation"] = raw_event["autoApproveIfNoViolation"]
 
             if "accessLimitType" in raw_event:
                 base_access_bundle["access_limit_type"] = raw_event["accessLimitType"]
@@ -146,22 +132,18 @@ class AccessBundleEventTransformer(BaseEventTransformer):
 
             if "extensionApprovalWorkflow" in raw_event:
                 if "id" in raw_event["extensionApprovalWorkflow"]:
-                    base_access_bundle["extension_approval_workflow_id"] = raw_event[
-                        "extensionApprovalWorkflow"
-                    ]["id"]
+                    base_access_bundle["extension_approval_workflow_id"] = raw_event["extensionApprovalWorkflow"]["id"]
                 if "name" in raw_event["extensionApprovalWorkflow"]:
-                    base_access_bundle["extension_approval_workflow_name"] = raw_event[
-                        "extensionApprovalWorkflow"
-                    ]["name"]
+                    base_access_bundle["extension_approval_workflow_name"] = raw_event["extensionApprovalWorkflow"][
+                        "name"
+                    ]
                 if "description" in raw_event["extensionApprovalWorkflow"]:
                     base_access_bundle["extension_approval_workflow_description"] = raw_event[
                         "extensionApprovalWorkflow"
                     ]["description"]
 
             if "accessGuardrailIds" in raw_event:
-                base_access_bundle["access_guardrail_ids"] = json.dumps(
-                    raw_event["accessGuardrailIds"]
-                )
+                base_access_bundle["access_guardrail_ids"] = json.dumps(raw_event["accessGuardrailIds"])
 
             if "permissionIds" in raw_event:
                 base_access_bundle["permission_ids"] = json.dumps(raw_event["permissionIds"])
@@ -175,9 +157,7 @@ class AccessBundleEventTransformer(BaseEventTransformer):
             access_bundle_list.append(base_access_bundle)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return access_bundle_list
 

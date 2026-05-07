@@ -41,9 +41,7 @@ class AdwConnection:
                 # Write wallet files into the temp directory
                 with open(os.path.join(cls.__wallet_dir, "cwallet.sso"), "wb") as f:
                     f.write(secrets_mgr.get_wallet())
-                with open(
-                    os.path.join(cls.__wallet_dir, "ewallet.pem"), "w", encoding="utf-8"
-                ) as f:
+                with open(os.path.join(cls.__wallet_dir, "ewallet.pem"), "w", encoding="utf-8") as f:
                     f.write(secrets_mgr.get_ewallet_pem())
                 # Cleanup temp wallet directory on process exit
                 atexit.register(shutil.rmtree, cls.__wallet_dir, ignore_errors=True)

@@ -15,9 +15,7 @@ class TestAuditTransformer(unittest.TestCase):
         self.mock_adw_manager = self.adw_patcher.start()
         self.addCleanup(self.adw_patcher.stop)
 
-        self.patcher_stream = patch(
-            "dfa.etl.stream_transformer.DataEnablementStream", autospec=True
-        )
+        self.patcher_stream = patch("dfa.etl.stream_transformer.DataEnablementStream", autospec=True)
         self.mock_stream = self.patcher_stream.start()
         self.addCleanup(self.patcher_stream.stop)
 

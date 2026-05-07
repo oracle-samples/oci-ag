@@ -43,9 +43,7 @@ class CloudGroupStateUpdateQueryBuilder(CloudGroupStateQueryBuilder):
         if len(group_membership_removes) > 0:
             CloudGroupStateDeleteQueryBuilder(group_membership_removes).execute_sql_for_events()
         else:
-            self.logger.info(
-                "No group membership removes found... moving onto group membership adds"
-            )
+            self.logger.info("No group membership removes found... moving onto group membership adds")
 
         if len(group_membership_adds) == 0:
             self.logger.info("No events to process by group membership query builder")

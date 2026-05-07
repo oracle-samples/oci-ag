@@ -102,15 +102,11 @@ class FileTransformer(AbstractTransformer):
                 self._apply_headers(headers)
 
         if not self.is_valid_object_type(self.get_event_object_type()):
-            self.logger.info(
-                "Skipping processing for event of type %s", self.get_event_object_type()
-            )
+            self.logger.info("Skipping processing for event of type %s", self.get_event_object_type())
 
     def extract_data(self):
         self.logger.info("Extracting data from object storage.")
-        event_data = self._object_storage_client.download(
-            self._namespace, self._bucket_name, self._object_name
-        )
+        event_data = self._object_storage_client.download(self._namespace, self._bucket_name, self._object_name)
         self._raw_events = []
         self._prepared_events = []
         self._snapshot_id = None
@@ -136,11 +132,7 @@ class FileTransformer(AbstractTransformer):
         )
 
     def _get_utc_current_event_timestamp(self):
-        return (
-            datetime.fromisoformat(self._event_timestamp)
-            .astimezone(timezone.utc)
-            .strftime("%d-%b-%y %H:%M:%S.%f")
-        )
+        return datetime.fromisoformat(self._event_timestamp).astimezone(timezone.utc).strftime("%d-%b-%y %H:%M:%S.%f")
 
     def transform_data(self):
         if self.is_valid_object_type(self.get_event_object_type()):

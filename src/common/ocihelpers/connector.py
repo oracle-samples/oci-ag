@@ -22,9 +22,7 @@ class BaseConnector:
 
     def __set_config(self):
         if os.environ["DFA_SIGNER_TYPE"] == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -53,9 +51,7 @@ class BaseConnector:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self.__signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self.__signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -75,9 +71,7 @@ class BaseConnector:
         return self.__signer
 
     def __set_client(self):
-        self.__client = oci.sch.ServiceConnectorClient(
-            config=self.__get_config(), signer=self.__get_signer()
-        )
+        self.__client = oci.sch.ServiceConnectorClient(config=self.__get_config(), signer=self.__get_signer())
 
     def _get_client(self):
         if self.__client is None:
@@ -117,14 +111,10 @@ class DfaAuditConnector(BaseConnector):
 
     def deactivate_audit_service_connector(self):
         try:
-            self._get_client().deactivate_service_connector(
-                service_connector_id=self.get_audit_sch_id()
-            )
+            self._get_client().deactivate_service_connector(service_connector_id=self.get_audit_sch_id())
             self.logger.info("Successfully set the audit connector hub to an INACTIVE state")
         except Exception as e:
-            self.logger.exception(
-                "Exception while setting service connector to INACTIVE state - %s", e
-            )
+            self.logger.exception("Exception while setting service connector to INACTIVE state - %s", e)
             raise Exception("Exception while setting service connector to INACTIVE state") from e
 
     def create_audit_sch(self, function_id):
@@ -170,16 +160,10 @@ class DfaStreamToTsConnector(BaseConnector):
 
     def deactivate_stream_to_ts_service_connector(self):
         try:
-            self._get_client().deactivate_service_connector(
-                service_connector_id=self.get_stream_to_ts_sch_id()
-            )
-            self.logger.info(
-                "Successfully set the stream to timeseries connector hub to an INACTIVE state"
-            )
+            self._get_client().deactivate_service_connector(service_connector_id=self.get_stream_to_ts_sch_id())
+            self.logger.info("Successfully set the stream to timeseries connector hub to an INACTIVE state")
         except Exception as e:
-            self.logger.exception(
-                "Exception while setting service connector to INACTIVE state - %s", e
-            )
+            self.logger.exception("Exception while setting service connector to INACTIVE state - %s", e)
             raise Exception("Exception while setting service connector to INACTIVE state") from e
 
     def create_stream_to_ts_sch(self, function_id):
@@ -203,13 +187,9 @@ class DfaStreamToTsConnector(BaseConnector):
                     freeform_tags={"Feature": "Data Feed Analytics(DFA)"},
                 )
             )
-            self.logger.info(
-                "Successfully created the stream to timeseries connector hub %s", display_name
-            )
+            self.logger.info("Successfully created the stream to timeseries connector hub %s", display_name)
         else:
-            self.logger.info(
-                "Stream to timeseries connector hub with the name %s already exists", display_name
-            )
+            self.logger.info("Stream to timeseries connector hub with the name %s already exists", display_name)
         return True
 
 
@@ -230,16 +210,10 @@ class DfaStreamToStateConnector(BaseConnector):
 
     def deactivate_stream_to_state_service_connector(self):
         try:
-            self._get_client().deactivate_service_connector(
-                service_connector_id=self.get_stream_to_state_sch_id()
-            )
-            self.logger.info(
-                "Successfully set the stream to state connector hub to an INACTIVE state"
-            )
+            self._get_client().deactivate_service_connector(service_connector_id=self.get_stream_to_state_sch_id())
+            self.logger.info("Successfully set the stream to state connector hub to an INACTIVE state")
         except Exception as e:
-            self.logger.exception(
-                "Exception while setting service connector to INACTIVE state - %s", e
-            )
+            self.logger.exception("Exception while setting service connector to INACTIVE state - %s", e)
             raise Exception("Exception while setting service connector to INACTIVE state") from e
 
     def create_stream_to_state_sch(self, function_id):
@@ -263,11 +237,7 @@ class DfaStreamToStateConnector(BaseConnector):
                     freeform_tags={"Feature": "Data Feed Analytics(DFA)"},
                 )
             )
-            self.logger.info(
-                "Successfully created the stream to state connector hub %s", display_name
-            )
+            self.logger.info("Successfully created the stream to state connector hub %s", display_name)
         else:
-            self.logger.info(
-                "Stream to state connector hub with the name %s already exists", display_name
-            )
+            self.logger.info("Stream to state connector hub with the name %s already exists", display_name)
         return True
