@@ -5,13 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-    InsertManyQueryBuilder,
-    UpdateManyQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.cloud_policy import CloudPolicyStateTable, CloudPolicyTimeSeriesTable
 
 
@@ -37,47 +31,7 @@ class CloudPolicyStateCreateQueryBuilder(CloudPolicyStateQueryBuilder):
 
 class CloudPolicyStateUpdateQueryBuilder(CloudPolicyStateQueryBuilder):
     def executemany_sql_for_events(self):
-        self.logger.info(
-            "Using bulk insert / update operations for %d cloud policy events", len(self.events)
-        )
-
-        if len(self.events) == 0:
-            self.logger.info("No events to process by tgt access pol stmt query builder")
-            return
-
-        insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            CloudPolicyStateTable().get_column_list_definition_for_table_ddl()
-        )
-        AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
-
-        constraint_violating_rows = []
-        for batch_error in AdwConnection.get_cursor().getbatcherrors():
-            if batch_error.full_code == "ORA-00001":
-                constraint_violating_rows.append(self.events[batch_error.offset])
-
-        if len(constraint_violating_rows) > 0:
-            self.logger.info(
-                "%d tgt access pol stmt creates failed for unique constraint violation - performing bulk updates",
-                len(constraint_violating_rows),
-            )
-            update_sql = UpdateManyQueryBuilder().get_operation_sql(
-                self,
-                constraint_violating_rows,
-                [],
-                self.table_manager.get_unique_contraint_definition_details()["columns"],
-            )
-
-            AdwConnection.get_cursor().setinputsizes(**input_sizes)
-            AdwConnection.get_cursor().executemany(
-                update_sql, constraint_violating_rows, batcherrors=True
-            )
-
-            for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.warning("tgt access pol stmt update failed - %s", batch_error.message)
-
-        AdwConnection.commit()
+        return self.executemany_state_merge_for_events()
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
@@ -85,14 +39,10 @@ class CloudPolicyStateUpdateQueryBuilder(CloudPolicyStateQueryBuilder):
 
 class CloudPolicyStateDeleteQueryBuilder(CloudPolicyStateQueryBuilder):
     def execute_sql_for_events(self):
-        for event in self.events:
-            delete_sql = DeleteQueryBuilder().get_operation_sql(
-                self, event, ["policy_statement_id", "service_instance_id", "tenancy_id"]
-            )
-            AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for tgt access pol stmt delete request")
-
-        AdwConnection.commit()
+        self.logger.info("Bulk delete for tgt access pol stmt delete request")
+        return self.executemany_delete_for_events(
+            ["policy_statement_id", "service_instance_id", "tenancy_id"]
+        )
 
 
 class CloudPolicyTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):

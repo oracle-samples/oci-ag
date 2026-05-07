@@ -3,6 +3,7 @@
 import io
 import json
 import types
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -67,7 +68,7 @@ def test_stream_handler_happy_path(monkeypatch):
 
         @classmethod
         def sort_connector_hub_source_stream_messages(cls, messages):
-            return messages
+            return {"STREAM": {"CREATE": messages}}
 
     monkeypatch.setattr(stream_handler, "DataEnablementStream", DummyStream)
 
@@ -96,7 +97,7 @@ def test_stream_to_timeseries_handler_happy_path(monkeypatch):
 
         @classmethod
         def sort_connector_hub_source_stream_messages(cls, messages):
-            return messages
+            return {"STREAM": {"CREATE": messages}}
 
     monkeypatch.setattr(stream_ts_handler, "DataEnablementStream", DummyStream)
 
@@ -180,3 +181,38 @@ def test_file_to_timeseries_handler_happy_path(monkeypatch):
     data = io.BytesIO(json.dumps(body).encode("utf-8"))
     ctx = FakeCtx({})
     file_ts_handler.handler(ctx, data)
+
+
+def test_stream_handler_rolls_back_and_closes_adw_on_load_failure(monkeypatch):
+    monkeypatch.setattr(stream_handler, "bootstrap_base_environment_variables", lambda cfg: None)
+
+    class DummyStream:
+        @classmethod
+        def decode_connector_hub_source_stream_messages(cls, messages):
+            return messages
+
+        @classmethod
+        def sort_connector_hub_source_stream_messages(cls, messages):
+            return messages
+
+    monkeypatch.setattr(stream_handler, "DataEnablementStream", DummyStream)
+
+    class FailingTransformer:
+        def transform_messages(self, messages):
+            return None
+
+        def load_data(self):
+            raise RuntimeError("db write failed")
+
+    cleanup = MagicMock()
+    monkeypatch.setattr(stream_handler, "StreamTransformer", FailingTransformer)
+    monkeypatch.setattr(stream_handler.AdwConnection, "rollback_and_close", cleanup)
+
+    body = [{"value": json.dumps({"headers": {"messageType": "STREAM", "operation": "CREATE"}})}]
+    data = io.BytesIO(json.dumps(body).encode("utf-8"))
+    ctx = FakeCtx({})
+
+    with pytest.raises(Exception, match="Stream handler exception"):
+        stream_handler.handler(ctx, data)
+
+    cleanup.assert_called_once()

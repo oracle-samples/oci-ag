@@ -61,11 +61,11 @@ class TestAuditTransformer(unittest.TestCase):
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
-            "ocid1.tenancy.oc1..aaaaaaaazp2vvzjsn6newkqrpkwndxpdoixtqfgyhnf4y24h7d5ny2639054",
+            "test-tenancy-0f3a6b0c9e2d4f11",
         )
         self.assertEqual(
             self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
-            "ocid1.agcsgovernanceinstance.oc1.iad.amaaaaaaebkbezqaadpvwolr4raumlz3uxdgczwbqkalpcoo7qcu2r639054",
+            "test-service-instance-5d71a8e3c04b49af",
         )
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:

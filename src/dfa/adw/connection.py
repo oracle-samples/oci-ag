@@ -17,6 +17,17 @@ class AdwConnection:
     __connection = None
     __cursor = None
     __wallet_dir = None
+    MAX_CONN_RETRY_COUNT = 3
+    MAX_CONN_RETRY_DELAY = 3
+    MAX_CONN_TCP_CONNECT_TIMEOUT = 10
+
+    @staticmethod
+    def _get_bounded_int_env(name: str, default: int, maximum: int) -> int:
+        try:
+            value = int(os.environ.get(name, str(default)))
+        except ValueError:
+            value = default
+        return max(0, min(value, maximum))
 
     @classmethod
     def get_connection(cls, username: str | None = None):
@@ -43,8 +54,17 @@ class AdwConnection:
             wallet_password = secrets_mgr.get_wallet_password()
 
             params = {
-                "retry_count": os.environ["DFA_CONN_RETRY_COUNT"],
-                "retry_delay": os.environ["DFA_CONN_RETRY_DELAY"],
+                "retry_count": cls._get_bounded_int_env(
+                    "DFA_CONN_RETRY_COUNT", cls.MAX_CONN_RETRY_COUNT, cls.MAX_CONN_RETRY_COUNT
+                ),
+                "retry_delay": cls._get_bounded_int_env(
+                    "DFA_CONN_RETRY_DELAY", cls.MAX_CONN_RETRY_DELAY, cls.MAX_CONN_RETRY_DELAY
+                ),
+                "tcp_connect_timeout": cls._get_bounded_int_env(
+                    "DFA_CONN_TCP_CONNECT_TIMEOUT",
+                    cls.MAX_CONN_TCP_CONNECT_TIMEOUT,
+                    cls.MAX_CONN_TCP_CONNECT_TIMEOUT,
+                ),
             }
             query = "&".join([f"{k}={v}" for k, v in params.items()])
             dsn = (
@@ -103,6 +123,27 @@ class AdwConnection:
             cls.__cursor.close()
 
         cls.__cursor = None
+
+    @classmethod
+    def rollback(cls):
+        if cls.__connection is not None:
+            try:
+                cls.__connection.rollback()
+            except Exception as e:
+                cls.logger.warning("Failed to roll back connection: %s", e)
+
+        if cls.__cursor is not None:
+            try:
+                cls.__cursor.close()
+            except Exception as e:
+                cls.logger.warning("Failed to close cursor after rollback: %s", e)
+
+        cls.__cursor = None
+
+    @classmethod
+    def rollback_and_close(cls):
+        cls.rollback()
+        cls._close_all()
 
     @classmethod
     def close(cls):

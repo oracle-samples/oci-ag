@@ -55,6 +55,7 @@ def test_audit_transformer():
     transformer.transform_messages(messages)
     transformer.load_data()
 
+
 def test_identity_stream_transformer():
     messages = []
     with open("tests/dfa/etl/test_data/stream/identity_unmatched_created.json", "r") as file:
@@ -84,6 +85,23 @@ def test_identity_stream_transformer():
     transformer.transform_messages(messages)
     transformer.load_data()
 
+
+def test_permission_assignment_stream_transformer():
+    messages = []
+    with open("tests/dfa/etl/test_data/stream/permission_assignment_deleted.json", "r") as file:
+        message = {}
+        message["value"] = file.read()
+        messages.append(message)
+        messages = DataEnablementStream.decode_source_stream_messages(messages)
+        messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
+
+    transformer = StreamTransformer(is_timeseries=False)
+    transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
+
+    transformer.transform_messages(messages)
+    transformer.load_data()
+
+
 def main():
 
     # To run integration tests:
@@ -99,6 +117,7 @@ def main():
 
     test_audit_transformer()
     test_identity_stream_transformer()
+    test_permission_assignment_stream_transformer()
     test_file_transformer(data_type="accessBundle")
     test_file_transformer(data_type="accessGuardrail")
     test_file_transformer(data_type="approvalWorkflow")
@@ -112,6 +131,7 @@ def main():
     test_file_transformer(data_type="policyToResourceMapping")
     test_file_transformer(data_type="resource")
     test_file_transformer(data_type="role")
+    test_file_transformer(data_type="orchestratedSystem")
 
 
 if __name__ == "__main__":

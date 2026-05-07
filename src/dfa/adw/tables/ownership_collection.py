@@ -18,7 +18,7 @@ class OwnershipCollectionTimeSeriesTable(BaseTable):
     {"field_name":"EXTERNAL_ID","column_name":"EXTERNAL_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
     {"field_name":"RESOURCE_NAME","column_name":"RESOURCE_NAME","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
     {"field_name":"CREATED_ON","column_name":"CREATED_ON","column_expression":null,"column_expression_type":null,"source_path":null,"source_column":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
-    {"field_name":"UPDATED_ON","column_name":"UPDATED_ON","column_expression":null,"column_expression_type":null,"source_path":null,"source_column":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},    
+    {"field_name":"UPDATED_ON","column_name":"UPDATED_ON","column_expression":null,"column_expression_type":null,"source_path":null,"source_column":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
     {"field_name":"TENANCY_ID","column_name":"TENANCY_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
     {"field_name":"EVENT_OBJECT_TYPE","column_name":"EVENT_OBJECT_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
     {"field_name":"OPERATION_TYPE","column_name":"OPERATION_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":32767,"data_format":null},
@@ -39,3 +39,11 @@ class OwnershipCollectionStateTable(BaseStateTable, OwnershipCollectionTimeSerie
             "name": "DFA_UNQ_OC_ST_CONST",
             "columns": ["ID", "ENTITY_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
         }
+
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_OC_ST_DEL_IDX",
+                "columns": ["ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            }
+        ]

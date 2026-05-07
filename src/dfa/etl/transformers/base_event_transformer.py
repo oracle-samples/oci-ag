@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 
 from common.logger.logger import Logger
 
@@ -48,7 +48,7 @@ class BaseEventTransformer(ABC):
         return self._service_instance_id
 
     def set_event_timestamp_for_message(self, event_timestamp):
-        date_object = datetime.fromisoformat(event_timestamp)
+        date_object = datetime.fromisoformat(event_timestamp).astimezone(timezone.utc)
         self._event_timestamp = date_object.strftime("%d-%b-%y %I:%M:%S.%f %p")
 
     def _get_event_timestamp(self):

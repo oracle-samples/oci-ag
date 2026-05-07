@@ -5,13 +5,7 @@ from abc import ABC, abstractmethod
 
 from pypika import Table
 
-from dfa.adw.connection import AdwConnection
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    DeleteQueryBuilder,
-    InsertManyQueryBuilder,
-    UpdateManyQueryBuilder,
-)
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
 from dfa.adw.tables.permission_assignment import (
     PermissionAssignmentStateTable,
     PermissionAssignmentTimeSeriesTable,
@@ -58,54 +52,11 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
                 "No permission assignment removes found... moving onto permission assignment adds"
             )
 
-        ## Bulk insert and updates
-        self.logger.info(
-            "Using bulk insert / update operations for %d permission assignment events",
-            len(permission_assignment_adds),
-        )
-
         if len(permission_assignment_adds) == 0:
             self.logger.info("No events to process by permission assignment query builder")
             return
 
-        insert_statement = InsertManyQueryBuilder().get_operation_sql(
-            self, permission_assignment_adds, []
-        )
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            PermissionAssignmentStateTable().get_column_list_definition_for_table_ddl()
-        )
-        AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(
-            insert_statement, permission_assignment_adds, batcherrors=True
-        )
-
-        constraint_violating_rows = []
-        for batch_error in AdwConnection.get_cursor().getbatcherrors():
-            if batch_error.full_code == "ORA-00001":
-                constraint_violating_rows.append(permission_assignment_adds[batch_error.offset])
-
-        if len(constraint_violating_rows) > 0:
-            self.logger.info(
-                "%d permission assignment creates failed for unique constraint violation - performing bulk updates",
-                len(constraint_violating_rows),
-            )
-            update_sql = UpdateManyQueryBuilder().get_operation_sql(
-                self,
-                constraint_violating_rows,
-                [],
-                self.table_manager.get_unique_contraint_definition_details()["columns"],
-                self.table_manager.get_nullable_constraint_columns(),
-            )
-
-            AdwConnection.get_cursor().setinputsizes(**input_sizes)
-            AdwConnection.get_cursor().executemany(
-                update_sql, constraint_violating_rows, batcherrors=True
-            )
-
-            for batch_error in AdwConnection.get_cursor().getbatcherrors():
-                self.logger.warning("permission assignment update failed - %s", batch_error.message)
-
-        AdwConnection.commit()
+        self.executemany_state_merge_for_events(permission_assignment_adds)
 
     def execute_sql_for_events(self):
         self.executemany_sql_for_events()
@@ -113,32 +64,35 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
 
 class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQueryBuilder):
     def execute_sql_for_events(self):
+        self.logger.info("Row delete for permission assignment delete request")
+        events_with_permission = []
+        events_without_permission = []
+
         for event in self.events:
             if event["permission_id"] != "":
-                delete_sql = DeleteQueryBuilder().get_operation_sql(
-                    self,
-                    event,
-                    [
-                        "target_identity_id",
-                        "permission_id",
-                        "service_instance_id",
-                        "tenancy_id",
-                    ],
-                )
+                events_with_permission.append(event)
             else:
-                delete_sql = DeleteQueryBuilder().get_operation_sql(
-                    self,
-                    event,
-                    [
-                        "target_identity_id",
-                        "service_instance_id",
-                        "tenancy_id",
-                    ],
-                )
-            AdwConnection.get_cursor().execute(delete_sql)
-            self.logger.info("Row delete for permission assignment delete request")
+                events_without_permission.append(event)
 
-        AdwConnection.commit()
+        if events_with_permission:
+            self.executemany_delete_for_events(
+                [
+                    "target_identity_id",
+                    "permission_id",
+                    "service_instance_id",
+                    "tenancy_id",
+                ],
+                events=events_with_permission,
+            )
+        if events_without_permission:
+            self.executemany_delete_for_events(
+                [
+                    "target_identity_id",
+                    "service_instance_id",
+                    "tenancy_id",
+                ],
+                events=events_without_permission,
+            )
 
 
 class PermissionAssignmentTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):

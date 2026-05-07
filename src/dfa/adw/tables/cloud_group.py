@@ -49,3 +49,20 @@ class CloudGroupStateTable(BaseStateTable, CloudGroupTimeSeriesTable):
                 "TENANCY_ID",
             ],
         }
+
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_CG_ST_GID_DEL_IDX",
+                "columns": [
+                    "ID",
+                    "IDENTITY_GLOBAL_ID",
+                    "SERVICE_INSTANCE_ID",
+                    "TENANCY_ID",
+                ],
+            },
+            {
+                "name": "DFA_CG_ST_ID_DEL_IDX",
+                "columns": ["ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            },
+        ]

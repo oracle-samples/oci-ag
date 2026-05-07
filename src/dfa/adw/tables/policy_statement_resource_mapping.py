@@ -45,3 +45,16 @@ class PolicyStatementResourceMappingStateTable(
                 "TENANCY_ID",
             ],
         }
+
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_PSRM_ST_DEL_IDX",
+                "columns": [
+                    "POLICY_STATEMENT_ID",
+                    "RESOURCE_ID",
+                    "SERVICE_INSTANCE_ID",
+                    "TENANCY_ID",
+                ],
+            }
+        ]

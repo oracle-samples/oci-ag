@@ -1,7 +1,6 @@
 # Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
-from dfa.adw.connection import AdwConnection
 from dfa.adw.tables.base_table import BaseStateTable, BaseTable
 
 
@@ -57,14 +56,14 @@ class IdentityStateTable(BaseStateTable, IdentityTimeSeriesTable):
     def get_nullable_constraint_columns(self):
         return ["ID"]
 
-    def _after_create(self):
-        super()._after_create()
-        self.logger.info(
-            "Generating DDL to add additional index to table %s", self.get_table_name()
-        )
-
-        ti_id_index_ddl = f"""
-            CREATE INDEX {self.get_schema()}.DFA_TI_ID_ST_CONST ON \
-{self.get_schema()}.{self.get_table_name()} ("TI_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID")
-        """
-        AdwConnection.get_cursor().execute(ti_id_index_ddl)
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_TI_ID_ST_CONST",
+                "columns": ["TI_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            },
+            {
+                "name": "DFA_ID_ST_ID_DEL_IDX",
+                "columns": ["ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            },
+        ]

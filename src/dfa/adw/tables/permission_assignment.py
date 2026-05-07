@@ -66,3 +66,20 @@ class PermissionAssignmentStateTable(BaseStateTable, PermissionAssignmentTimeSer
 
     def get_nullable_constraint_columns(self):
         return ["ACCESS_BUNDLE_ID"]
+
+    def get_delete_index_definition_details(self):
+        return [
+            {
+                "name": "DFA_PA_ST_PERM_DEL_IDX",
+                "columns": [
+                    "TARGET_IDENTITY_ID",
+                    "PERMISSION_ID",
+                    "SERVICE_INSTANCE_ID",
+                    "TENANCY_ID",
+                ],
+            },
+            {
+                "name": "DFA_PA_ST_TI_DEL_IDX",
+                "columns": ["TARGET_IDENTITY_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            },
+        ]

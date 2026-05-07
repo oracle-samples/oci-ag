@@ -31,11 +31,17 @@ class AuditEventsStateCreateQueryBuilder(AuditEventsStateQueryBuilder):
             return
 
         insert_statement = InsertManyQueryBuilder().get_operation_sql(self, self.events, [])
-        input_sizes = InsertManyQueryBuilder().get_input_sizes(
-            AuditEventsTable().get_column_list_definition_for_table_ddl()
+        input_sizes = self.get_input_sizes_for_events(
+            AuditEventsTable().get_column_list_definition_for_table_ddl(),
+            self.events,
         )
+        input_sizes = self._filter_input_sizes_for_sql(input_sizes, insert_statement)
         AdwConnection.get_cursor().setinputsizes(**input_sizes)
-        AdwConnection.get_cursor().executemany(insert_statement, self.events, batcherrors=True)
+        AdwConnection.get_cursor().executemany(
+            insert_statement,
+            self._bind_rows_for_sql(self.events, insert_statement),
+            batcherrors=True,
+        )
 
         if len(AdwConnection.get_cursor().getbatcherrors()) > 0:
             self.logger.info(

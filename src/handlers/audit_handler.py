@@ -7,6 +7,7 @@ from typing import Optional
 
 from common.logger.logger import Logger
 from common.ocihelpers.stream import DataEnablementStream
+from dfa.adw.connection import AdwConnection
 from dfa.bootstrap.envvars import bootstrap_base_environment_variables
 from dfa.etl.audit_transformer import AuditTransformer
 
@@ -33,5 +34,6 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
         transformer.load_data()
 
     except Exception as e:
+        AdwConnection.rollback_and_close()
         logger.exception("Audit handler caught exception - %s", e)
         raise Exception("Audit handler exception") from e
