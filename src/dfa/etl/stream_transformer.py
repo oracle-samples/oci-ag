@@ -42,10 +42,8 @@ class StreamTransformer(AbstractTransformer):
             event_operation_found = False
             for prepared_event_operation in self._prepared_events:
                 if (
-                    prepared_event_operation["event_object_type"]
-                    == prepared_events["event_object_type"]
-                    and prepared_event_operation["operation_type"]
-                    == prepared_events["operation_type"]
+                    prepared_event_operation["event_object_type"] == prepared_events["event_object_type"]
+                    and prepared_event_operation["operation_type"] == prepared_events["operation_type"]
                 ):
 
                     event_operation_found = True

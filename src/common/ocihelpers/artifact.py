@@ -6,6 +6,7 @@ import os
 import oci
 
 from common.logger.logger import Logger
+from dfa.bootstrap.image_version import resolve_image_version
 
 
 class BaseArtifact:
@@ -16,9 +17,7 @@ class BaseArtifact:
 
     def __set_config(self):
         if os.environ["DFA_SIGNER_TYPE"] == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -47,9 +46,7 @@ class BaseArtifact:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -70,9 +67,7 @@ class BaseArtifact:
         return self._signer
 
     def __set_client(self):
-        self.__client = oci.artifacts.ArtifactsClient(
-            config=self.__get_config(), signer=self.__get_signer()
-        )
+        self.__client = oci.artifacts.ArtifactsClient(config=self.__get_config(), signer=self.__get_signer())
 
     def _get_client(self):
         if self.__client is None:
@@ -91,11 +86,13 @@ class DfaTransformerArtifacts(BaseArtifact):
         return images.items[0]
 
     def __get_image_by_repository_name_and_version(self):
+        image_version = resolve_image_version()
+        self.logger.info("Looking up transformer image version %s", image_version)
         list_container_images_response = self._get_client().list_container_images(
             compartment_id=os.environ["DFA_COMPARTMENT_ID"],
             compartment_id_in_subtree=False,
             repository_name=os.environ["REPOSITORY_NAME"],
-            version=os.environ["IMAGE_VERSION"],
+            version=image_version,
         )
 
         return list_container_images_response.data

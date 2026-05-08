@@ -42,9 +42,7 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
                     base_gic["risk"] = raw_event["agRisk"]["value"]
 
             if "identityCollectionDescription" in raw_event:
-                base_gic["identity_collection_description"] = raw_event[
-                    "identityCollectionDescription"
-                ]
+                base_gic["identity_collection_description"] = raw_event["identityCollectionDescription"]
 
             if "identityCollectionType" in raw_event:
                 base_gic["identity_collection_type"] = raw_event["identityCollectionType"]
@@ -96,11 +94,7 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
                 base_gic["ownership_collection_id"] = raw_event["ownerShipCollectionId"]
 
             if "tags" in raw_event:
-                if (
-                    raw_event["tags"] is not None
-                    and isinstance(raw_event["tags"], list)
-                    and len(raw_event["tags"]) > 0
-                ):
+                if raw_event["tags"] is not None and isinstance(raw_event["tags"], list) and len(raw_event["tags"]) > 0:
                     base_gic["tags"] = ",".join(raw_event["tags"])
                 else:
                     base_gic["tags"] = json.dumps(raw_event["tags"])
@@ -154,9 +148,7 @@ class GlobalIdentityCollectionEventTransformer(BaseEventTransformer):
                         gic_list.append(gic_copy)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return gic_list
 

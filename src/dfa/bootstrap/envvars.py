@@ -13,13 +13,9 @@ logger = Logger(__name__).get_logger()
 def bootstrap_base_environment_variables(cfg):
     try:
         logger.info("Setting base environment variables")
-        os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"] = cfg[
-            "DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"
-        ]
+        os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"] = cfg["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"]
         os.environ["DFA_ADW_WALLET_SECRET_NAME"] = cfg["DFA_ADW_WALLET_SECRET_NAME"]
-        os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"] = cfg[
-            "DFA_ADW_WALLET_PASSWORD_SECRET_NAME"
-        ]
+        os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"] = cfg["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"]
         os.environ["DFA_ADW_EWALLET_PEM_SECRET_NAME"] = cfg["DFA_ADW_EWALLET_PEM_SECRET_NAME"]
         os.environ["DFA_CONN_PROTOCOL"] = cfg["DFA_CONN_PROTOCOL"]
         os.environ["DFA_CONN_HOST"] = cfg["DFA_CONN_HOST"]
@@ -65,7 +61,5 @@ def bootstrap_local_machine_environment_variables(
         env_var_name = key.upper()
 
         os.environ[env_var_name] = value
-        logger.info(
-            "Overriding %s with custom value (%s) from ini", env_var_name, os.environ[env_var_name]
-        )
+        logger.info("Overriding %s with custom value (%s) from ini", env_var_name, os.environ[env_var_name])
     os.environ["DFA_SIGNER_TYPE"] = "user"

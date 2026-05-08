@@ -118,9 +118,7 @@ class MergeManyQueryBuilder:
         nullable_cols = [c.lower() for c in (nullable_columns or [])]
 
         # Columns used in UPDATE SET (exclude keys and date columns)
-        updatable_cols = [
-            c for c in all_cols if c.lower() not in key_cols and c.lower() not in date_cols
-        ]
+        updatable_cols = [c for c in all_cols if c.lower() not in key_cols and c.lower() not in date_cols]
 
         # Qualify table name with schema
         schema = query_builder.table_manager.get_schema().upper()
@@ -210,12 +208,7 @@ class StreamOffsetTrackerQueryBuilder(Table):
 
     def get_insert_statement_for_stream_offset(self, offset, end_offset, application):
         offset_data = (offset, end_offset, application)
-        statement = (
-            Query.into(self)
-            .columns("OFFSET", "END_OFFSET", "APPLICATION")
-            .insert(*offset_data)
-            .get_sql()
-        )
+        statement = Query.into(self).columns("OFFSET", "END_OFFSET", "APPLICATION").insert(*offset_data).get_sql()
         return statement
 
     def get_statement_for_latest_unfinished_stream_offset_range(self, application):
@@ -228,10 +221,7 @@ class StreamOffsetTrackerQueryBuilder(Table):
             .select(self.ID, self.OFFSET, self.END_OFFSET)
             .where(self.END_DATE.isnull())
             .where(self.APPLICATION == application)
-            .where(
-                self.START_DATE
-                < ToDate(start_date.strftime("%d-%b-%y %H:%M:%S"), "DD-MON-RR HH24:MI:SS")
-            )
+            .where(self.START_DATE < ToDate(start_date.strftime("%d-%b-%y %H:%M:%S"), "DD-MON-RR HH24:MI:SS"))
             .orderby("ID", order=Order.desc)
             .get_sql()
         )
@@ -668,20 +658,14 @@ class BaseQueryBuilder:
                     service_instance_id=service_instance_id,
                     commit=True,
                 )
-                self._delete_snapshot_batch_tracking(
-                    snapshot_id, tenancy_id, service_instance_id, commit=True
-                )
+                self._delete_snapshot_batch_tracking(snapshot_id, tenancy_id, service_instance_id, commit=True)
                 return
             except Exception as exc:
                 if self._is_retryable_cleanup_error(exc):
                     AdwConnection.rollback_and_close()
-                    if (
-                        self._get_database_error_code(exc) == 60
-                        and attempt < self.STALE_ROW_DELETE_MAX_ATTEMPTS
-                    ):
+                    if self._get_database_error_code(exc) == 60 and attempt < self.STALE_ROW_DELETE_MAX_ATTEMPTS:
                         retry_message = (
-                            "Retrying stale row cleanup for %s snapshot %s after ORA-00060 deadlock "
-                            "(attempt %d/%d)"
+                            "Retrying stale row cleanup for %s snapshot %s after ORA-00060 deadlock (attempt %d/%d)"
                         )
                         self.logger.warning(
                             retry_message,

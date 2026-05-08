@@ -24,21 +24,15 @@ class PolicyStatementResourceMappingStateQueryBuilder(Table, ABC, BaseQueryBuild
         pass
 
 
-class PolicyStatementResourceMappingStateCreateQueryBuilder(
-    PolicyStatementResourceMappingStateQueryBuilder
-):
+class PolicyStatementResourceMappingStateCreateQueryBuilder(PolicyStatementResourceMappingStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return PolicyStatementResourceMappingStateUpdateQueryBuilder(
-            self.events
-        ).executemany_sql_for_events()
+        return PolicyStatementResourceMappingStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
 
 
-class PolicyStatementResourceMappingStateUpdateQueryBuilder(
-    PolicyStatementResourceMappingStateQueryBuilder
-):
+class PolicyStatementResourceMappingStateUpdateQueryBuilder(PolicyStatementResourceMappingStateQueryBuilder):
     def executemany_sql_for_events(self):
         return self.executemany_state_merge_for_events()
 
@@ -46,9 +40,7 @@ class PolicyStatementResourceMappingStateUpdateQueryBuilder(
         return self.executemany_sql_for_events()
 
 
-class PolicyStatementResourceMappingStateDeleteQueryBuilder(
-    PolicyStatementResourceMappingStateQueryBuilder
-):
+class PolicyStatementResourceMappingStateDeleteQueryBuilder(PolicyStatementResourceMappingStateQueryBuilder):
     def execute_sql_for_events(self):
         self.logger.info("Bulk delete for policy statement resource mapping delete request")
         return self.executemany_delete_for_events(
@@ -68,22 +60,16 @@ class PolicyStatementResourceMappingTimeSeriesQueryBuilder(Table, ABC, BaseQuery
         pass
 
 
-class PolicyStatementResourceMappingTimeSeriesCreateQueryBuilder(
-    PolicyStatementResourceMappingTimeSeriesQueryBuilder
-):
+class PolicyStatementResourceMappingTimeSeriesCreateQueryBuilder(PolicyStatementResourceMappingTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
 
 
-class PolicyStatementResourceMappingTimeSeriesUpdateQueryBuilder(
-    PolicyStatementResourceMappingTimeSeriesQueryBuilder
-):
+class PolicyStatementResourceMappingTimeSeriesUpdateQueryBuilder(PolicyStatementResourceMappingTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
 
 
-class PolicyStatementResourceMappingTimeSeriesDeleteQueryBuilder(
-    PolicyStatementResourceMappingTimeSeriesQueryBuilder
-):
+class PolicyStatementResourceMappingTimeSeriesDeleteQueryBuilder(PolicyStatementResourceMappingTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

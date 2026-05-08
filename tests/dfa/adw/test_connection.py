@@ -47,9 +47,7 @@ def test_rollback_and_close_rolls_back_then_closes_connection():
 
 @patch("dfa.adw.connection.oracledb.connect")
 @patch("dfa.adw.connection.AdwSecrets")
-def test_get_connection_includes_bounded_connect_parameters(
-    mock_secrets_cls, mock_connect, tmp_path
-):
+def test_get_connection_includes_bounded_connect_parameters(mock_secrets_cls, mock_connect, tmp_path):
     _reset_adw_connection_state()
     mock_secrets = mock_secrets_cls.return_value
     mock_secrets.get_wallet.return_value = b"wallet"

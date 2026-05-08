@@ -83,10 +83,8 @@ def test_vault_clients_use_retry_strategy(monkeypatch):
 
 
 # 2) Bootstrap envvars tests
-from dfa.bootstrap.envvars import (
-    bootstrap_base_environment_variables,
-    bootstrap_local_machine_environment_variables,
-)
+from dfa.bootstrap.envvars import bootstrap_base_environment_variables, bootstrap_local_machine_environment_variables
+from dfa.bootstrap.image_version import get_package_version, resolve_image_version
 
 
 def test_bootstrap_base_environment_variables_sets_expected_keys(monkeypatch):
@@ -131,6 +129,32 @@ dfa_signer_type=user
     assert os.environ.get("REGION") == "phx"
     assert os.environ.get("NAMESPACE") == "testns"
     assert os.environ.get("DFA_SIGNER_TYPE") == "user"
+
+
+def test_resolve_image_version_prefers_explicit_env(monkeypatch):
+    monkeypatch.setenv("DFA_IMAGE_VERSION", "1.2.3-explicit")
+    assert resolve_image_version() == "1.2.3-explicit"
+
+
+def test_resolve_image_version_uses_package_version_and_git_commit(monkeypatch):
+    import dfa.bootstrap.image_version as image_version
+
+    monkeypatch.delenv("DFA_IMAGE_VERSION", raising=False)
+    monkeypatch.setattr(image_version, "get_git_commit", lambda project_root=None: "abcdef1")
+
+    package_version = get_package_version()
+    assert resolve_image_version() == f"{package_version}-abcdef1"
+
+
+def test_resolve_image_version_ignores_image_version_env(monkeypatch):
+    import dfa.bootstrap.image_version as image_version
+
+    monkeypatch.delenv("DFA_IMAGE_VERSION", raising=False)
+    monkeypatch.setenv("IMAGE_VERSION", "1.2.3-custom")
+    monkeypatch.setattr(image_version, "get_git_commit", lambda project_root=None: "abcdef1")
+
+    package_version = get_package_version()
+    assert resolve_image_version() == f"{package_version}-abcdef1"
 
 
 # 3) Dispatcher tests with stubbed handlers and response
@@ -223,9 +247,7 @@ def test_file_transformer_chunking_uses_env(monkeypatch):
 
         return json.dumps(obj)
 
-    monkeypatch.setattr(
-        ft_mod, "BaseObjectStorage", lambda: FakeObjectStorage(json_dumps(payload).encode("utf-8"))
-    )
+    monkeypatch.setattr(ft_mod, "BaseObjectStorage", lambda: FakeObjectStorage(json_dumps(payload).encode("utf-8")))
 
     t = FileTransformer("ns", "bucket", "object.json")
     # Set batch size env to 10

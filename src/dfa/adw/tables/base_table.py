@@ -28,9 +28,7 @@ class BaseTable(ABC):
     def get_schema(self):
         if self._schema is None:
             if "DFA_ADW_DFA_SCHEMA" not in os.environ:
-                raise Exception(
-                    "DFA_ADW_DFA_SCHEMA environment variable not set - cannot process storage link"
-                )
+                raise Exception("DFA_ADW_DFA_SCHEMA environment variable not set - cannot process storage link")
             self._schema = os.environ["DFA_ADW_DFA_SCHEMA"]
 
         return self._schema.upper()
@@ -245,9 +243,7 @@ class BaseStateTable(BaseTable, ABC):
 
     def ensure_delete_indexes(self):
         for index_definition in self.get_delete_index_definition_details():
-            index_cache_key = (
-                f"{self.get_schema()}.{self.get_table_name()}.{index_definition['name']}"
-            )
+            index_cache_key = f"{self.get_schema()}.{self.get_table_name()}.{index_definition['name']}"
             if index_cache_key in self._ensured_delete_index_names:
                 continue
             if self._index_exists(index_definition["name"]):

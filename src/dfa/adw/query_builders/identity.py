@@ -71,9 +71,7 @@ class IdentityStateDeleteQueryBuilder(IdentityStateQueryBuilder):
 
         for event in self.events:
             # if delete target identity, id (global id) must be empty
-            if ((event.get("id") is None) or (event.get("id") == "")) and (
-                event.get("ti_id") is not None
-            ):
+            if ((event.get("id") is None) or (event.get("id") == "")) and (event.get("ti_id") is not None):
                 target_identity_deletes.append(event)
             elif (event.get("id") is not None) and (event.get("id") != ""):
                 global_identity_deletes.append(event)

@@ -52,8 +52,6 @@ def dispatch(ctx, data: Optional[io.BytesIO] = None):
 
     return response.Response(
         ctx,
-        response_data={
-            "message": "Data has been transformed and loaded into the data store successfully!"
-        },
+        response_data={"message": "Data has been transformed and loaded into the data store successfully!"},
         headers={"Content-Type": "application/json"},
     )

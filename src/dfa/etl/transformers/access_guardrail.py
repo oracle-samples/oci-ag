@@ -36,36 +36,28 @@ class AccessGuardrailEventTransformer(BaseEventTransformer):
 
             if "actionOnFailure" in raw_event:
                 if "actionType" in raw_event["actionOnFailure"]:
-                    base_access_guardrail["action_on_failure_action_type"] = raw_event[
-                        "actionOnFailure"
-                    ]["actionType"]
+                    base_access_guardrail["action_on_failure_action_type"] = raw_event["actionOnFailure"]["actionType"]
 
                 if "revokeLaterAfterNumberOfDays" in raw_event["actionOnFailure"]:
-                    base_access_guardrail["action_on_failure_revoke_after_number_of_days"] = (
-                        raw_event["actionOnFailure"]["revokeLaterAfterNumberOfDays"]
-                    )
+                    base_access_guardrail["action_on_failure_revoke_after_number_of_days"] = raw_event[
+                        "actionOnFailure"
+                    ]["revokeLaterAfterNumberOfDays"]
 
                 if "risk" in raw_event["actionOnFailure"]:
-                    base_access_guardrail["action_on_failure_risk"] = raw_event["actionOnFailure"][
-                        "risk"
-                    ]
+                    base_access_guardrail["action_on_failure_risk"] = raw_event["actionOnFailure"]["risk"]
 
                 if "shouldUserManagerBeNotified" in raw_event["actionOnFailure"]:
-                    base_access_guardrail["action_on_failure_should_user_manager_be_notified"] = (
-                        str(raw_event["actionOnFailure"]["shouldUserManagerBeNotified"])
+                    base_access_guardrail["action_on_failure_should_user_manager_be_notified"] = str(
+                        raw_event["actionOnFailure"]["shouldUserManagerBeNotified"]
                     )
 
             if "createdByRef" in raw_event:
                 if "displayName" in raw_event["createdByRef"]:
-                    base_access_guardrail["created_by_display_name"] = raw_event["createdByRef"][
-                        "displayName"
-                    ]
+                    base_access_guardrail["created_by_display_name"] = raw_event["createdByRef"]["displayName"]
                 if "value" in raw_event["createdByRef"]:
                     base_access_guardrail["created_by_value"] = raw_event["createdByRef"]["value"]
                 if "resourceType" in raw_event["createdByRef"]:
-                    base_access_guardrail["created_by_resource_type"] = raw_event["createdByRef"][
-                        "resourceType"
-                    ]
+                    base_access_guardrail["created_by_resource_type"] = raw_event["createdByRef"]["resourceType"]
 
             if "createdOn" in raw_event:
                 base_access_guardrail["created_on"] = raw_event["createdOn"]
@@ -89,21 +81,15 @@ class AccessGuardrailEventTransformer(BaseEventTransformer):
                     base_access_guardrail["owner_value"] = raw_event["owner"]["value"]
 
             if "ownerShipCollectionId" in raw_event:
-                base_access_guardrail["ownership_collection_id"] = str(
-                    raw_event["ownerShipCollectionId"]
-                )
+                base_access_guardrail["ownership_collection_id"] = str(raw_event["ownerShipCollectionId"])
 
             if "updatedByRef" in raw_event:
                 if "displayName" in raw_event["updatedByRef"]:
-                    base_access_guardrail["updated_by_display_name"] = raw_event["updatedByRef"][
-                        "displayName"
-                    ]
+                    base_access_guardrail["updated_by_display_name"] = raw_event["updatedByRef"]["displayName"]
                 if "value" in raw_event["updatedByRef"]:
                     base_access_guardrail["updated_by_value"] = raw_event["updatedByRef"]["value"]
                 if "resourceType" in raw_event["updatedByRef"]:
-                    base_access_guardrail["updated_by_resource_type"] = raw_event["updatedByRef"][
-                        "resourceType"
-                    ]
+                    base_access_guardrail["updated_by_resource_type"] = raw_event["updatedByRef"]["resourceType"]
 
             if "updatedOn" in raw_event:
                 base_access_guardrail["updated_on"] = raw_event["updatedOn"]
@@ -123,9 +109,7 @@ class AccessGuardrailEventTransformer(BaseEventTransformer):
             access_guardrail_list.append(base_access_guardrail)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return access_guardrail_list
 

@@ -132,9 +132,7 @@ class AbstractTransformer(ABC):
 
     def transformer_factory(self):
         try:
-            transformer_class = self._resolve_transformer_class(
-                self.get_event_object_type(), self.get_operation_type()
-            )
+            transformer_class = self._resolve_transformer_class(self.get_event_object_type(), self.get_operation_type())
             if transformer_class is not None:
                 return transformer_class(
                     self.get_event_object_type(),

@@ -21,10 +21,7 @@ from dfa.adw.query_builders.base_query_builder import (
 )
 from dfa.adw.query_builders.cloud_group import CloudGroupStateUpdateQueryBuilder
 from dfa.adw.query_builders.cloud_policy import CloudPolicyStateDeleteQueryBuilder
-from dfa.adw.query_builders.identity import (
-    IdentityStateDeleteQueryBuilder,
-    IdentityStateUpdateQueryBuilder,
-)
+from dfa.adw.query_builders.identity import IdentityStateDeleteQueryBuilder, IdentityStateUpdateQueryBuilder
 from dfa.adw.query_builders.orchestrated_system import OrchestratedSystemStateDeleteQueryBuilder
 from dfa.adw.query_builders.permission import PermissionStateDeleteQueryBuilder
 from dfa.adw.query_builders.permission_assignment import PermissionAssignmentStateDeleteQueryBuilder
@@ -45,9 +42,7 @@ from dfa.adw.tables.ownership_collection import OwnershipCollectionStateTable
 from dfa.adw.tables.permission import PermissionStateTable
 from dfa.adw.tables.permission_assignment import PermissionAssignmentStateTable
 from dfa.adw.tables.policy import PolicyStateTable
-from dfa.adw.tables.policy_statement_resource_mapping import (
-    PolicyStatementResourceMappingStateTable,
-)
+from dfa.adw.tables.policy_statement_resource_mapping import PolicyStatementResourceMappingStateTable
 from dfa.adw.tables.resource import ResourceStateTable
 from dfa.adw.tables.role import RoleStateTable
 
@@ -69,9 +64,7 @@ def test_update_many_nullable_none_uses_equality():
 
     events = [{"id": 1, "name": "Alice"}]
     # where on id, update should set NAME only; nullable_columns is None
-    sql = builder.get_operation_sql(
-        qb, events, date_columns=[], where_columns=["id"], nullable_columns=None
-    )
+    sql = builder.get_operation_sql(qb, events, date_columns=[], where_columns=["id"], nullable_columns=None)
 
     assert sql is not None
     norm = _normalize_sql(sql).lower()
@@ -87,9 +80,7 @@ def test_update_many_nullable_lowercase_uses_decode_for_where():
 
     events = [{"id": None, "name": "Bob"}]
     # mark id as nullable via lowercase spelling
-    sql = builder.get_operation_sql(
-        qb, events, date_columns=[], where_columns=["id"], nullable_columns=["id"]
-    )
+    sql = builder.get_operation_sql(qb, events, date_columns=[], where_columns=["id"], nullable_columns=["id"])
 
     assert sql is not None
     norm = _normalize_sql(sql).upper()
@@ -104,9 +95,7 @@ def test_update_many_nullable_uppercase_uses_decode_for_where():
 
     events = [{"ID": None, "NAME": "Carol"}]
     # where uses lowercase, nullable passed in uppercase to verify case-insensitivity
-    sql = builder.get_operation_sql(
-        qb, events, date_columns=[], where_columns=["id"], nullable_columns=["ID"]
-    )
+    sql = builder.get_operation_sql(qb, events, date_columns=[], where_columns=["id"], nullable_columns=["ID"])
 
     assert sql is not None
     norm = _normalize_sql(sql).upper()
@@ -625,9 +614,7 @@ def test_base_query_builder_event_sized_clob_uses_clob_bind_for_large_values():
 
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
-def test_permission_assignment_delete_with_permission_filters_input_sizes_to_sql_binds(
-    mock_get_cursor, mock_commit
-):
+def test_permission_assignment_delete_with_permission_filters_input_sizes_to_sql_binds(mock_get_cursor, mock_commit):
     cursor = MagicMock()
     cursor.getbatcherrors.return_value = []
     mock_get_cursor.return_value = cursor
@@ -683,9 +670,7 @@ def test_permission_assignment_delete_with_permission_filters_input_sizes_to_sql
 
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
-def test_permission_assignment_delete_without_permission_filters_input_sizes_to_sql_binds(
-    mock_get_cursor, mock_commit
-):
+def test_permission_assignment_delete_without_permission_filters_input_sizes_to_sql_binds(mock_get_cursor, mock_commit):
     cursor = MagicMock()
     cursor.getbatcherrors.return_value = []
     mock_get_cursor.return_value = cursor
@@ -824,9 +809,7 @@ def test_merge_unique_constraint_races_log_info_and_retry_update(mock_get_cursor
 
 @patch("dfa.adw.connection.AdwConnection.get_cursor")
 @patch("dfa.adw.connection.AdwConnection.commit")
-def test_delete_rows_older_than_event_timestamp_scopes_by_tenant_and_service(
-    mock_commit, mock_get_cursor
-):
+def test_delete_rows_older_than_event_timestamp_scopes_by_tenant_and_service(mock_commit, mock_get_cursor):
     cursor = MagicMock()
     mock_get_cursor.return_value = cursor
 
@@ -884,9 +867,7 @@ def test_snapshot_get_earliest_batch_timestamp_uses_scope_and_formats_datetime(m
     qb._snapshot_batch_tracker_table.get_schema.return_value = "DFA"
     qb._snapshot_batch_tracker_table.get_table_name.return_value = "SNAPSHOT_BATCH_TRACKER"
 
-    earliest_timestamp = qb._snapshot_get_earliest_batch_timestamp(
-        "snapshot-1", "tenant-1", "svc-1"
-    )
+    earliest_timestamp = qb._snapshot_get_earliest_batch_timestamp("snapshot-1", "tenant-1", "svc-1")
 
     assert earliest_timestamp == "14-Apr-26 21:40:20.331306"
     first_bind = cursor.execute.call_args_list[0].args[1]
@@ -973,9 +954,7 @@ def test_finalize_snapshot_cleanup_if_ready_returns_when_completed_count_not_rea
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback_and_close")
 def test_finalize_snapshot_cleanup_if_ready_raises_transient_tracker_error(mock_rollback_and_close):
     qb = AccessBundleStateUpdateQueryBuilder([])
-    qb._snapshot_get_completed_batch_count = MagicMock(
-        side_effect=oracledb.DatabaseError("transient")
-    )
+    qb._snapshot_get_completed_batch_count = MagicMock(side_effect=oracledb.DatabaseError("transient"))
     qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=True)
     qb._snapshot_get_earliest_batch_timestamp = MagicMock(return_value="14-Apr-26 21:40:20.331306")
     qb.delete_rows_older_than_event_timestamp = MagicMock()
@@ -1051,9 +1030,7 @@ def test_finalize_snapshot_cleanup_if_ready_raises_transient_delete_error(mock_r
     qb._snapshot_get_completed_batch_count = MagicMock(return_value=3)
     qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=True)
     qb._snapshot_get_earliest_batch_timestamp = MagicMock(return_value="14-Apr-26 21:40:20.331306")
-    qb.delete_rows_older_than_event_timestamp = MagicMock(
-        side_effect=oracledb.DatabaseError("transient")
-    )
+    qb.delete_rows_older_than_event_timestamp = MagicMock(side_effect=oracledb.DatabaseError("transient"))
     qb._delete_snapshot_batch_tracking = MagicMock()
 
     with pytest.raises(oracledb.DatabaseError):
@@ -1084,9 +1061,7 @@ def test_finalize_snapshot_cleanup_if_ready_retries_deadlock_delete(
     qb._snapshot_get_completed_batch_count = MagicMock(return_value=3)
     qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=True)
     qb._snapshot_get_earliest_batch_timestamp = MagicMock(return_value="14-Apr-26 21:40:20.331306")
-    qb.delete_rows_older_than_event_timestamp = MagicMock(
-        side_effect=[oracledb.DatabaseError(OracleError()), None]
-    )
+    qb.delete_rows_older_than_event_timestamp = MagicMock(side_effect=[oracledb.DatabaseError(OracleError()), None])
     qb._delete_snapshot_batch_tracking = MagicMock()
 
     qb.finalize_snapshot_cleanup_if_ready(

@@ -31,9 +31,7 @@ class BaseFunction:
 
     def __set_config(self):
         if os.environ["DFA_SIGNER_TYPE"] == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -70,9 +68,7 @@ class BaseFunction:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -93,9 +89,7 @@ class BaseFunction:
         return self._signer
 
     def __set_client(self):
-        self.__client = oci.functions.FunctionsManagementClient(
-            config=self.__get_config(), signer=self.__get_signer()
-        )
+        self.__client = oci.functions.FunctionsManagementClient(config=self.__get_config(), signer=self.__get_signer())
 
     def _get_client(self):
         if self.__client is None:
@@ -104,9 +98,7 @@ class BaseFunction:
         return self.__client
 
     def set_application_name(self):
-        self._function_application_name = (
-            os.environ["RESOURCE_NAME_PREFIX"] + "_transformer_functions"
-        )
+        self._function_application_name = os.environ["RESOURCE_NAME_PREFIX"] + "_transformer_functions"
 
     def get_function_application_name(self):
         if self._function_application_name is None:
@@ -163,21 +155,15 @@ class DfaApplication(BaseFunction):
                         "DFA_STREAM_ID": os.environ["DFA_STREAM_ID"],
                         "DFA_CONN_RETRY_DELAY": "3",
                         "DFA_SIGNER_TYPE": "principal",
-                        "DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME": os.environ[
-                            "DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"
-                        ],
+                        "DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME": os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"],
                         "DFA_CONN_SERVICE_NAME": "to-be-set",
                         "DFA_CONN_PROTOCOL": "tcps",
                         "DFA_CONN_PORT": "1522",
                         "DFA_NAMESPACE": os.environ["DFA_NAMESPACE"],
                         "DFA_TENANCY_ID": os.environ["DFA_TENANCY_ID"],
                         "DFA_ADW_WALLET_SECRET_NAME": os.environ["DFA_ADW_WALLET_SECRET_NAME"],
-                        "DFA_ADW_WALLET_PASSWORD_SECRET_NAME": os.environ[
-                            "DFA_ADW_WALLET_PASSWORD_SECRET_NAME"
-                        ],
-                        "DFA_ADW_EWALLET_PEM_SECRET_NAME": os.environ[
-                            "DFA_ADW_EWALLET_PEM_SECRET_NAME"
-                        ],
+                        "DFA_ADW_WALLET_PASSWORD_SECRET_NAME": os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"],
+                        "DFA_ADW_EWALLET_PEM_SECRET_NAME": os.environ["DFA_ADW_EWALLET_PEM_SECRET_NAME"],
                         "DFA_ADW_DFA_SCHEMA": os.environ["DFA_ADW_DFA_SCHEMA"],
                         "DFA_COMPARTMENT_ID": os.environ["DFA_COMPARTMENT_ID"],
                         "DFA_VAULT_ID": os.environ["DFA_VAULT_ID"],
@@ -272,9 +258,7 @@ class DfaFileToStateFunction(BaseFunction):
             self._file_to_state_transformer_function_id = create_function_response.data.id
             self.logger.info("Successfully created the file_to_state_transformer function")
         else:
-            self.logger.info(
-                "file_to_state_transformer function already exists in this application"
-            )
+            self.logger.info("file_to_state_transformer function already exists in this application")
         return True
 
 
@@ -342,9 +326,7 @@ class DfaStreamToStateFunction(BaseFunction):
                         if int(os.environ["STREAM_TO_STATE_FUNCTION_PROVISIONED_CONCURRENCY"]) == 0
                         else oci.functions.models.ConstantProvisionedConcurrencyConfig(
                             strategy="CONSTANT",
-                            count=int(
-                                os.environ["STREAM_TO_STATE_FUNCTION_PROVISIONED_CONCURRENCY"]
-                            ),
+                            count=int(os.environ["STREAM_TO_STATE_FUNCTION_PROVISIONED_CONCURRENCY"]),
                         )
                     ),
                     config={"DFA_FUNCTION_NAME": "stream"},
@@ -354,9 +336,7 @@ class DfaStreamToStateFunction(BaseFunction):
             self._stream_to_state_transformer_function_id = create_function_response.data.id
             self.logger.info("Successfully created the stream_to_state_transformer function")
         else:
-            self.logger.info(
-                "stream_to_state_transformer function already exists in this application"
-            )
+            self.logger.info("stream_to_state_transformer function already exists in this application")
         return True
 
 
@@ -403,9 +383,7 @@ class DfaSetupADWFunctionConfigs(BaseFunction):
     def add_adw_connection_string_to_configuration(self, application_ocid):
         self.logger.info("Pulling details for configured ADW instance")
         adw_details = BaseAutonomousDatabase().get_details(os.environ["DFA_ADW_INSTANCE_OCID"])
-        connection_host_and_service_name = adw_details.connection_strings.all_connection_strings[
-            "HIGH"
-        ].split("/")
+        connection_host_and_service_name = adw_details.connection_strings.all_connection_strings["HIGH"].split("/")
 
         self.logger.info("Parsing connection host and service name for configured ADW instance")
         connection_host_and_port = connection_host_and_service_name[0].split(":")
@@ -420,9 +398,7 @@ class DfaSetupADWFunctionConfigs(BaseFunction):
         if len(application_details.data.config) > 0:
             dfa_configs = application_details.data.config
 
-        self.logger.info(
-            "Adding connection host and service name configurations for DFA OCI Function application"
-        )
+        self.logger.info("Adding connection host and service name configurations for DFA OCI Function application")
         dfa_configs["DFA_CONN_SERVICE_NAME"] = connection_service_name
         dfa_configs["DFA_CONN_HOST"] = connection_host
 
@@ -431,9 +407,7 @@ class DfaSetupADWFunctionConfigs(BaseFunction):
 
         update_application_response = self._get_client().update_application(
             application_id=application_ocid,
-            update_application_details=oci.functions.models.UpdateApplicationDetails(
-                config=dfa_configs
-            ),
+            update_application_details=oci.functions.models.UpdateApplicationDetails(config=dfa_configs),
         )
 
         return update_application_response.data

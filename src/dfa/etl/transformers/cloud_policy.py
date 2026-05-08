@@ -106,9 +106,7 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             else:
                 policies.append(base_policy_statement)
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return policies
 

@@ -26,9 +26,7 @@ class GlobalIdentityCollectionStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class GlobalIdentityCollectionStateCreateQueryBuilder(GlobalIdentityCollectionStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return GlobalIdentityCollectionStateUpdateQueryBuilder(
-            self.events
-        ).executemany_sql_for_events()
+        return GlobalIdentityCollectionStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
@@ -103,22 +101,16 @@ class GlobalIdentityCollectionTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilde
         pass
 
 
-class GlobalIdentityCollectionTimeSeriesCreateQueryBuilder(
-    GlobalIdentityCollectionTimeSeriesQueryBuilder
-):
+class GlobalIdentityCollectionTimeSeriesCreateQueryBuilder(GlobalIdentityCollectionTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
 
 
-class GlobalIdentityCollectionTimeSeriesUpdateQueryBuilder(
-    GlobalIdentityCollectionTimeSeriesQueryBuilder
-):
+class GlobalIdentityCollectionTimeSeriesUpdateQueryBuilder(GlobalIdentityCollectionTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
 
 
-class GlobalIdentityCollectionTimeSeriesDeleteQueryBuilder(
-    GlobalIdentityCollectionTimeSeriesQueryBuilder
-):
+class GlobalIdentityCollectionTimeSeriesDeleteQueryBuilder(GlobalIdentityCollectionTimeSeriesQueryBuilder):
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

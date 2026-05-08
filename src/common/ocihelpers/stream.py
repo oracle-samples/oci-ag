@@ -46,9 +46,7 @@ class BaseStream:
         self._config = {}
 
         if self._signer_type == "user":
-            self._config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self._config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
 
     def _get_config(self):
         if self._config is None:
@@ -74,9 +72,7 @@ class BaseStream:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -169,9 +165,7 @@ class BaseStream:
             self._get_stream_client()
             .get_messages(
                 stream_id=self._stream_id,
-                cursor=self._get_cursor(
-                    oci.streaming.models.CreateCursorDetails.TYPE_AFTER_OFFSET
-                ).data.value,
+                cursor=self._get_cursor(oci.streaming.models.CreateCursorDetails.TYPE_AFTER_OFFSET).data.value,
                 limit=int(os.environ["AUDIT_FILE_SIZE"]),
             )
             .data
@@ -184,9 +178,7 @@ class BaseStream:
             self._get_stream_client()
             .get_messages(
                 stream_id=self._stream_id,
-                cursor=self._get_cursor(
-                    oci.streaming.models.CreateCursorDetails.TYPE_TRIM_HORIZON
-                ).data.value,
+                cursor=self._get_cursor(oci.streaming.models.CreateCursorDetails.TYPE_TRIM_HORIZON).data.value,
                 limit=int(os.environ["AUDIT_FILE_SIZE"]),
             )
             .data
@@ -196,9 +188,7 @@ class BaseStream:
 
     def decode_data_feed_messages(self, messages):
         for encoded_message in messages:
-            decoded_value = base64.b64decode(
-                base64.b64decode(encoded_message.value.encode()).decode()
-            ).decode()
+            decoded_value = base64.b64decode(base64.b64decode(encoded_message.value.encode()).decode()).decode()
             encoded_message.value = json.loads(decoded_value)
             if "data" in encoded_message.value:
                 encoded_message.value["data"] = json.loads(encoded_message.value["data"])
@@ -240,9 +230,7 @@ class DataEnablementStream(BaseStream):
                 "Cannot retrieve any messages from stream. Lost track of the offset %s?",
                 service_exception.message,
             )
-            self.logger.info(
-                "The system will need to get a time horizon cursor to reset the offset in the system."
-            )
+            self.logger.info("The system will need to get a time horizon cursor to reset the offset in the system.")
             self.logger.info("Retrieve the messages - then switch back to an after_offset cursor")
             self._messages = self._get_messages_by_trim_horizon()
 
@@ -286,12 +274,10 @@ class DataEnablementStream(BaseStream):
 
     def complete_offset_range_processing(self):
         self.logger.info("Completing open offset now...")
-        offset_completion_update = (
-            StreamOffsetTrackerQueryBuilder().get_statement_for_offset_range_completion(
-                self._latest_batch_start_offset,
-                self._latest_batch_end_offset,
-                self._transformer_name,
-            )
+        offset_completion_update = StreamOffsetTrackerQueryBuilder().get_statement_for_offset_range_completion(
+            self._latest_batch_start_offset,
+            self._latest_batch_end_offset,
+            self._transformer_name,
         )
         AdwConnection.get_cursor().execute(offset_completion_update)
         AdwConnection.commit()
@@ -376,9 +362,7 @@ class DataEnablementStream(BaseStream):
     @classmethod
     def decode_connector_hub_source_stream_messages(cls, messages):
         for encoded_message in messages:
-            decoded_value = base64.b64decode(
-                base64.b64decode(encoded_message["value"].encode()).decode()
-            ).decode()
+            decoded_value = base64.b64decode(base64.b64decode(encoded_message["value"].encode()).decode()).decode()
             encoded_message["value"] = json.loads(decoded_value)
             if "data" in encoded_message["value"]:
                 encoded_message["value"]["data"] = json.loads(encoded_message["value"]["data"])

@@ -108,17 +108,13 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
 
                 if "remove" in raw_event:
                     remove_identities = raw_event["remove"]
-                    self.__process_permission_assignments(
-                        remove_identities, "remove", base_pa, pa_list
-                    )
+                    self.__process_permission_assignments(remove_identities, "remove", base_pa, pa_list)
 
                 if not add_identities and not remove_identities:
                     pa_list.append(base_pa)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return pa_list
 

@@ -59,9 +59,7 @@ class OwnershipCollectionEventTransformer(BaseEventTransformer):
             ownership_collection_list.append(ownership_collection)
 
         except KeyError as e:
-            self.logger.error(
-                "Cannot process event due to KeyError - %s is missing from event data", e
-            )
+            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
 
         return ownership_collection_list
 

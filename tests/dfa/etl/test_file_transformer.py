@@ -47,9 +47,7 @@ class TestFileTransformer(unittest.TestCase):
         self.addCleanup(self.storage_patcher.stop)
         self.mock_storage = self.mock_storage_cls.return_value
 
-        self.transformer = FileTransformer(
-            "test_namespace", "test_bucket", "test_object.jsonl", False
-        )
+        self.transformer = FileTransformer("test_namespace", "test_bucket", "test_object.jsonl", False)
 
     def test_chunk_prepared_events(self):
         self.transformer._prepared_events = list(range(25))
@@ -116,9 +114,7 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._get_batch_id_for_batch(), "identity.snapshot-1.batch-11")
 
     @patch("dfa.etl.file_transformer.get_query_builder")
-    def test_load_data_tracks_snapshot_batch_and_attempts_non_blocking_finalize(
-        self, mock_get_query_builder
-    ):
+    def test_load_data_tracks_snapshot_batch_and_attempts_non_blocking_finalize(self, mock_get_query_builder):
         mock_query_builder = MagicMock()
         mock_get_query_builder.return_value = mock_query_builder
 
@@ -270,9 +266,7 @@ class TestFileTransformer(unittest.TestCase):
             self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))
 
     def test_global_identity_collection(self):
-        content = self.read_file_content(
-            "tests/dfa/etl/test_data/file/global_identity_collection.jsonl"
-        )
+        content = self.read_file_content("tests/dfa/etl/test_data/file/global_identity_collection.jsonl")
         mock_object = MagicMock()
         mock_object.data.content.decode.return_value = content
         self.mock_storage.download.return_value = mock_object
@@ -362,9 +356,7 @@ class TestFileTransformer(unittest.TestCase):
             self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))
 
     def test_policy_to_resource_mapping(self):
-        content = self.read_file_content(
-            "tests/dfa/etl/test_data/file/policy_to_resource_mapping.jsonl"
-        )
+        content = self.read_file_content("tests/dfa/etl/test_data/file/policy_to_resource_mapping.jsonl")
         mock_object = MagicMock()
         mock_object.data.content.decode.return_value = content
         self.mock_storage.download.return_value = mock_object

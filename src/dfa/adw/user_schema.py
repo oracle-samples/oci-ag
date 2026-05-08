@@ -44,9 +44,7 @@ class UserSchema:
             dfa_user_password = adw_secrets_mgr.get_dfa_user_password()
 
             self.logger.info("Creating user...")
-            AdwConnection.get_cursor(username="ADMIN").execute(
-                self._get_create_user_sql(dfa_user_password)
-            )
+            AdwConnection.get_cursor(username="ADMIN").execute(self._get_create_user_sql(dfa_user_password))
 
             grant_role_statements = self._get_roles_statements()
             self.logger.info("granting necessary roles...")
@@ -59,9 +57,7 @@ class UserSchema:
             AdwConnection.get_cursor(username="ADMIN").execute(self._get_enable_oml())
             self.logger.info("alter schema for unlimited quota on data...")
             AdwConnection.get_cursor(username="ADMIN").execute(self._get_unlimited_quota_plsql())
-            self.logger.info(
-                "DFA_USER user and schema successfully created - the DFA_USER schema is ready for setup"
-            )
+            self.logger.info("DFA_USER user and schema successfully created - the DFA_USER schema is ready for setup")
         else:
             self.logger.info("DFA_USER user found - the DFA_USER schema is ready for setup")
 

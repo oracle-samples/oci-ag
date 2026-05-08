@@ -25,9 +25,7 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
             raise Exception("Cannot process file - no data provided")
 
         if "additionalDetails" not in body["data"]:
-            raise Exception(
-                "Cannot process file - not all of the necessary details have been provided."
-            )
+            raise Exception("Cannot process file - not all of the necessary details have been provided.")
 
         if "resourceName" not in body["data"]:
             raise Exception("Cannot process file - no object name provded.")

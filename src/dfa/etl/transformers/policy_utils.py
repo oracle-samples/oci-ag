@@ -216,12 +216,8 @@ def remediation_for(row: Dict[str, Any]) -> str:
             "Replace any-user/any-group with specific group; "
             "add networkSource or tag conditions; scope to specific compartments"
         )
-    if "manage all-resources" in reasons.lower() or (
-        verb == "manage" and "all-resources" in resource.lower()
-    ):
-        recs.append(
-            "Replace manage all-resources with least-privilege resource types; scope to compartments"
-        )
+    if "manage all-resources" in reasons.lower() or (verb == "manage" and "all-resources" in resource.lower()):
+        recs.append("Replace manage all-resources with least-privilege resource types; scope to compartments")
     if "Service principal manage all-resources" in reasons:
         recs.append("Constrain service principal to compartments and minimal verbs (read/inspect)")
     if "cross-tenancy" in reasons.lower() or rel in ORG_LEVEL_RELATIONS:

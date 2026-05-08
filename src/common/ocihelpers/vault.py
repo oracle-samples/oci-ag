@@ -36,9 +36,7 @@ class DfaVault:
 
     def __set_config(self):
         if os.environ["DFA_SIGNER_TYPE"] == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -67,9 +65,7 @@ class DfaVault:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -122,9 +118,7 @@ class DfaVault:
         return vault_details.data
 
     def get_master_encryption_key(self):
-        keys = self._get_kms_mgmt_client().list_keys(
-            compartment_id=os.environ["DFA_COMPARTMENT_ID"]
-        )
+        keys = self._get_kms_mgmt_client().list_keys(compartment_id=os.environ["DFA_COMPARTMENT_ID"])
 
         master_key = None
         for key in keys.data:
@@ -202,9 +196,7 @@ class DfaCreateVault(DfaVault):
         return response
 
     def key_exists(self, display_name):
-        list_keys_response = self._get_kms_mgmt_client().list_keys(
-            compartment_id=os.environ["DFA_COMPARTMENT_ID"]
-        )
+        list_keys_response = self._get_kms_mgmt_client().list_keys(compartment_id=os.environ["DFA_COMPARTMENT_ID"])
 
         for key in list_keys_response.data:
             if display_name == key.display_name:
@@ -228,13 +220,9 @@ class DfaCreateVault(DfaVault):
             )
             self.master_key_id = create_key_response.data.id
             self.wait_for_active_key()
-            self.logger.info(
-                "Successfully created the master encryption key %s for the vault", display_name
-            )
+            self.logger.info("Successfully created the master encryption key %s for the vault", display_name)
         else:
-            self.logger.info(
-                "Master encryption key with the name %s already exists for this vault", display_name
-            )
+            self.logger.info("Master encryption key with the name %s already exists for this vault", display_name)
         return True
 
 
@@ -252,9 +240,7 @@ class DfaBaseSecret:
     def _secret_exists(self, secret_name):
         exists_flag = False
 
-        secrets_list = self.__get_vault_client().list_secrets(
-            os.environ["DFA_COMPARTMENT_ID"], name=secret_name
-        )
+        secrets_list = self.__get_vault_client().list_secrets(os.environ["DFA_COMPARTMENT_ID"], name=secret_name)
 
         if len(secrets_list.data) > 0:
             exists_flag = True
@@ -328,9 +314,7 @@ class DfaBaseSecret:
 
     def __set_config(self):
         if os.environ["DFA_SIGNER_TYPE"] == "user":
-            self.__config = oci.config.from_file(
-                os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"]
-            )
+            self.__config = oci.config.from_file(os.environ["DFA_CONFIG_LOCATION"], os.environ["DFA_CONFIG_PROFILE"])
         else:
             self.__config = {}
 
@@ -359,9 +343,7 @@ class DfaBaseSecret:
                 token_file = config["delegation_token_file"]
                 with open(token_file, "r", encoding="utf-8") as f:
                     token = f.read()
-                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(
-                    delegation_token=token
-                )
+                self._signer = oci.auth.signers.InstancePrincipalsDelegationTokenSigner(delegation_token=token)
 
             else:
                 self.logger.exception(
@@ -419,9 +401,7 @@ class AdwSecrets(DfaBaseSecret):
             "Pulling ADW password using secret name %s from the OCI vault",
             os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"],
         )
-        password_secret_ocid = self._get_secret_ocid(
-            os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"]
-        )
+        password_secret_ocid = self._get_secret_ocid(os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"])
         password = self._get_secret_value(password_secret_ocid)
 
         return password
@@ -494,18 +474,14 @@ class AdwSecrets(DfaBaseSecret):
 
     def get_password(self):
         self.logger.info("Pulling ADW password from the OCI vault")
-        password_secret_ocid = self._get_secret_ocid(
-            os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"]
-        )
+        password_secret_ocid = self._get_secret_ocid(os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"])
         password = self._get_secret_value(password_secret_ocid)
 
         return password
 
     def get_wallet_password(self):
         self.logger.info("Pulling ADW WALLET password using from the OCI vault")
-        password_secret_ocid = self._get_secret_ocid(
-            os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"]
-        )
+        password_secret_ocid = self._get_secret_ocid(os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"])
         password = self._get_secret_value(password_secret_ocid)
 
         return password

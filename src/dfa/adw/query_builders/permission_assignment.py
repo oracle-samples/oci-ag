@@ -6,10 +6,7 @@ from abc import ABC, abstractmethod
 from pypika import Table
 
 from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
-from dfa.adw.tables.permission_assignment import (
-    PermissionAssignmentStateTable,
-    PermissionAssignmentTimeSeriesTable,
-)
+from dfa.adw.tables.permission_assignment import PermissionAssignmentStateTable, PermissionAssignmentTimeSeriesTable
 
 
 class PermissionAssignmentStateQueryBuilder(Table, ABC, BaseQueryBuilder):
@@ -44,13 +41,9 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
                 permission_assignment_adds.append(pa_event)
 
         if len(permission_assignment_removes) > 0:
-            PermissionAssignmentStateDeleteQueryBuilder(
-                permission_assignment_removes
-            ).execute_sql_for_events()
+            PermissionAssignmentStateDeleteQueryBuilder(permission_assignment_removes).execute_sql_for_events()
         else:
-            self.logger.info(
-                "No permission assignment removes found... moving onto permission assignment adds"
-            )
+            self.logger.info("No permission assignment removes found... moving onto permission assignment adds")
 
         if len(permission_assignment_adds) == 0:
             self.logger.info("No events to process by permission assignment query builder")

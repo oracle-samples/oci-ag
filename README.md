@@ -7,61 +7,61 @@ Data Feed Analytics (DFA) is an implementation to extract, transform, and load (
 ### Prerequisites
 
 Please verify the following resources can be created in your OCI tenancy (ensuring access and permissions to list, create, and manage the resource as well as availability of resource limits):
-    - VCN  
-    - Vault  
-    - Master Encryption Key  
-    - Secrets  
-    - Autonomous Database  
-    - Functions Application  
-    - Concurrency for Functions (70 units required by default)  
-    - Event Rules  
-    - Connector Hubs  
-    - Dynamic Group  
-    - Policy  
+    - VCN
+    - Vault
+    - Master Encryption Key
+    - Secrets
+    - Autonomous Database
+    - Functions Application
+    - Concurrency for Functions (70 units required by default)
+    - Event Rules
+    - Connector Hubs
+    - Dynamic Group
+    - Policy
 
-Install OCI CLI: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm  
-Install Python: https://www.python.org/downloads/. Python version 3.12.x is required.  
-Install Docker/Podman in order to build images: https://www.docker.com/get-started https://podman.io/get-started  
-Set up a virtual environment for Python: https://docs.python.org/3/library/venv.html  
+Install OCI CLI: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm
+Install Python: https://www.python.org/downloads/. Python version 3.12.x is required.
+Install Docker/Podman in order to build images: https://www.docker.com/get-started https://podman.io/get-started
+Set up a virtual environment for Python: https://docs.python.org/3/library/venv.html
 
 
 ### Run Unit Tests
 
-To execute DFA's unit tests, ensure the tox package is installed in your virtual environment, and python version is set to 3.11.x. 
+To execute DFA's unit tests, ensure the tox package is installed in your virtual environment, and python version is set to 3.11.x.
 Navigate to the project's root, and run: `tox`
 
 ### Build and Upload Docker Image
 
-The following article describes a quick tutorial on how to build and upload Docker images -  
+The following article describes a quick tutorial on how to build and upload Docker images -
 https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/registry/index.html
 
-1. Log in to your OCI tenancy. 
-2. Navigate to the Container Registry. 
-3. Create a new repo in the target compartment (i.e dfa-images/dfa). This name must be unique across the tenancy. Update the REPOSITORY_NAME variable value in config.ini to match the new repo name if needed. 
-4. Build the DFA image. If using podman, replace 'docker' with 'podman' for the following commands. 
+1. Log in to your OCI tenancy.
+2. Navigate to the Container Registry.
+3. Create a new repo in the target compartment (i.e dfa-images/dfa). This name must be unique across the tenancy. Update the REPOSITORY_NAME variable value in config.ini to match the new repo name if needed.
+4. Build the DFA image. The build script reads the package version from `pyproject.toml`, appends the current git commit, labels the image with the full commit SHA, and writes `dist/image-manifest.json`. If using podman, set `CONTAINER_TOOL=podman`.
 ```shell
-docker build --platform linux/amd64 -t <region-key>.ocir.io/<tenancy-namespace>/<oci-repo-name>:0.1.0 -f Dockerfile .
+scripts/build_image.sh <region-key>.ocir.io/<tenancy-namespace> <oci-repo-name>
 ```
 Example:
 ```shell
-docker build --platform linux/amd64 -t iad.ocir.io/iwxyzlmkmn63/dfa-images/dfa:0.1.0 -f Dockerfile .
+scripts/build_image.sh iad.ocir.io/iwxyzlmkmn63 dfa-images/dfa
 ```
-5. Log in to Docker. 
+5. Log in to Docker.
 
 ```shell
 docker login <region-key>.ocir.io
 Username: <docker-username>
 Password: <oci-auth-token>
 ```
-Note: The username may be <tenancy-namespace>/<identity-domain>/<username> for service accounts. 
+Note: The username may be <tenancy-namespace>/<identity-domain>/<username> for service accounts.
 
-6. Push the image to your OCI tenancy. 
+6. Push the image to your OCI tenancy. The script prints the full image name after building.
 ```shell
-docker push <region-key>.ocir.io/<tenancy-namespace>/<oci-repo-name>:0.1.0
+PUSH_IMAGE=true scripts/build_image.sh <region-key>.ocir.io/<tenancy-namespace> <oci-repo-name>
 ```
 Example:
 ```shell
-docker push iad.ocir.io/iwxyzlmkmn63/dfa-images/dfa:0.1.0
+PUSH_IMAGE=true scripts/build_image.sh iad.ocir.io/iwxyzlmkmn63 dfa-images/dfa
 ```
 
 ### Configure and Run Installer
@@ -80,7 +80,7 @@ As part of the installation process, the installer script will create the follow
 - Dynamic Group
 - Policy
 
-Login to your OCI tenancy to get the following values. These are added to the repository's config.ini file and are utilized by the installer script - 
+Login to your OCI tenancy to get the following values. These are added to the repository's config.ini file and are utilized by the installer script -
 
 **1. Tenancy ID**
 1. Click on your profile icon in the upper right corner. Then click on Tenancy.
@@ -94,7 +94,7 @@ Login to your OCI tenancy to get the following values. These are added to the re
 5. Copy and paste the corresponding Realm Key to the `DFA_REALM_KEY` variable in `config.ini`.
 
 **3. Data Feed Stream ID and Service Endpoint**
-1. Click on the OCI hamburger menu in the upper left corner. 
+1. Click on the OCI hamburger menu in the upper left corner.
 2. Select Storage. Under Object Storage & Archive Storage, select Buckets.
 3. From the list of buckets, select the bucket configured with AG Data Feed. (Note: Ensure that the Emit Objects Events feature is Enabled)
 4. Copy and paste the bucket name to the DFA_BUCKET_NAME variable in the config.ini file.
@@ -104,7 +104,7 @@ Login to your OCI tenancy to get the following values. These are added to the re
 
 **4. Data Feed Stream ID and Service Endpoint**
 1. Click on the OCI hamburger menu in the upper left corner.
-2. Select Analytics & AI. Under Messaging, select Streaming. 
+2. Select Analytics & AI. Under Messaging, select Streaming.
 3. From the list of streams, select the stream configured with AGCS Data Feed.
 4. Copy and paste the Stream OCID to the DFA_STREAM_ID variable in the config.ini file.
 5. Copy and paste the Messages endpoint to the DFA_STREAM_SERVICE_ENDPOINT variable in the config.ini file.
@@ -115,27 +115,27 @@ The installer uses the OCI CLI config created for an API key or a temporary sess
 - API signing key: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#apisigningkey_topic_How_to_Generate_an_API_Signing_Key_Console
 - Temporary session token: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/clitoken.htm
 
-If you are using command line, follow this link to generate a temporary security token: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/clitoken.htm 
-Keep in mind that this is a temporary token and will expire 1 hour from creation. The token can be re-authenticated or refreshed as seen here: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/clitoken.htm#Refreshing_a_Token 
+If you are using command line, follow this link to generate a temporary security token: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/clitoken.htm
+Keep in mind that this is a temporary token and will expire 1 hour from creation. The token can be re-authenticated or refreshed as seen here: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/clitoken.htm#Refreshing_a_Token
 
-If you are using OCI Cloud Shell, follow this link: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#apisigningkey_topic_How_to_Generate_an_API_Signing_Key_Console  
+If you are using OCI Cloud Shell, follow this link: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#apisigningkey_topic_How_to_Generate_an_API_Signing_Key_Console
 Then add the following line to your new config:
 `delegation_token_file=/etc/oci/delegation_token`
 
 Once the configuration file is ready:
-1. Replace the value of DFA_CONFIG_LOCATION in the config.ini file with the path to your config file. 
-2. Replace the value of DFA_CONFIG_PROFILE in the config.ini file with the profile name. 
-3. Replace the value of OCI_AUTH_TYPE in the config.ini file with security_token_file if you are using a temporary session token or delegation_token_file if using Cloud Shell. 
+1. Replace the value of DFA_CONFIG_LOCATION in the config.ini file with the path to your config file.
+2. Replace the value of DFA_CONFIG_PROFILE in the config.ini file with the profile name.
+3. Replace the value of OCI_AUTH_TYPE in the config.ini file with security_token_file if you are using a temporary session token or delegation_token_file if using Cloud Shell.
 
 
 ### Run the Installer
 
 To run the installer:
-1. Clone the DFA repository. 
-2. Make sure you are authenticated to OCI. 
+1. Clone the DFA repository.
+2. Make sure you are authenticated to OCI.
 3. Ensure Docker images are pushed to OCI.
-4. In a terminal or IDE, navigate to the DFA project's root. 
-5. Create and activate the virtual environment. 
+4. In a terminal or IDE, navigate to the DFA project's root.
+5. Create and activate the virtual environment.
 6. Install the following packages in the virtual environment using `pip install`
     - fdk
     - oci
@@ -143,17 +143,17 @@ To run the installer:
     - pandas
     - pypika
 7. Run `export PYTHONPATH=/Users/yourName/oci-ag/src`
-Paste the full path to DFA's source directory for the PYTHONPATH. 
+Paste the full path to DFA's source directory for the PYTHONPATH.
 8. Run `python installer.py installer.log 2>&1`
 
-Note: The creation of the Vault and Master Key can take time, the script will wait a max of 20 minutes for an Active state before timing out. In the case of a timeout, please run the script again once the resource is in an active state in OCI. 
+Note: The creation of the Vault and Master Key can take time, the script will wait a max of 20 minutes for an Active state before timing out. In the case of a timeout, please run the script again once the resource is in an active state in OCI.
 
 ### Final Steps and Validation
-1. To enable logging for your transformer functions, navigate to the newly created OCI function application. Click on Monitoring. Under Logs, click on the 3 dots next to Function Invocation Logs. Click Enable log. Choose a log group and provide a name for your logs. 
-2. Navigate to your Data Feed bucket in OCI object storage. Ensure that the 'Emit Objects Events' feature is Enabled. Else, the file data will not be processed by DFA. 
-3. If `MANUALLY_CREATE_DYNAMIC_GROUP` was set to True, navigate to the Identity Domain and create a new dynamic group called `dfa-functions` with the values given at the end of the script execution. This dynamic group will contain all the function OCIDs. 
+1. To enable logging for your transformer functions, navigate to the newly created OCI function application. Click on Monitoring. Under Logs, click on the 3 dots next to Function Invocation Logs. Click Enable log. Choose a log group and provide a name for your logs.
+2. Navigate to your Data Feed bucket in OCI object storage. Ensure that the 'Emit Objects Events' feature is Enabled. Else, the file data will not be processed by DFA.
+3. If `MANUALLY_CREATE_DYNAMIC_GROUP` was set to True, navigate to the Identity Domain and create a new dynamic group called `dfa-functions` with the values given at the end of the script execution. This dynamic group will contain all the function OCIDs.
 
-The script can take a few minutes to complete. Once it's done, you can navigate to the OCI console and see all the new resources that were created. All the resources created with the script will have the following tag 
+The script can take a few minutes to complete. Once it's done, you can navigate to the OCI console and see all the new resources that were created. All the resources created with the script will have the following tag
 
 {'Feature' : 'Data Feed Analytics(DFA)'}
 
@@ -172,49 +172,49 @@ The script will create the required OCI Policies, but for reference the followin
 - Allow any-user to use fn-invocation in compartment id &lt;compartment-ocid&gt; where all {request.principal.type='serviceconnector', request.principal.compartment.id='&lt;compartment-ocid&gt;'}
 
 ### Config.ini Variables Explained
-There are a few variables in the config.ini file that can be replaced if you choose to and some that are required. 
+There are a few variables in the config.ini file that can be replaced if you choose to and some that are required.
 </br>
 
-The installer will create a new vault in OCI by default. If you would prefer to reuse an existing vault, paste the vault OCID to the `DFA_VAULT_ID` variable in the config.ini file. Note that a vault is required. The script will create secrets and the DFA code will reference these secrets. 
+The installer will create a new vault in OCI by default. If you would prefer to reuse an existing vault, paste the vault OCID to the `DFA_VAULT_ID` variable in the config.ini file. Note that a vault is required. The script will create secrets and the DFA code will reference these secrets.
 </br>
 
-The installer will by default download the DB wallet to the /tmp location in your local file system. To change this, please assign the desired location to the `DFA_LOCAL_SAVE_DIRECTORY` variable in the config.ini file. 
+The installer will by default download the DB wallet to the /tmp location in your local file system. To change this, please assign the desired location to the `DFA_LOCAL_SAVE_DIRECTORY` variable in the config.ini file.
 </br>
 
-The installer will create State tables but will not create Time Series tables in the database by default. While State tables are a current snapshot of the AG data, Time Series tables show a history of all the events. To create the required resources for the Time Series, set the `CREATE_TIME_SERIES` variable in the config.ini file to True. 
+The installer will create State tables but will not create Time Series tables in the database by default. While State tables are a current snapshot of the AG data, Time Series tables show a history of all the events. To create the required resources for the Time Series, set the `CREATE_TIME_SERIES` variable in the config.ini file to True.
 </br>
 
-The `OCI_AUTH_TYPE` variable accepts the values 'security_token_file' or 'delegation_token_file' based on how you've decided to authenticate. 
+The `OCI_AUTH_TYPE` variable accepts the values 'security_token_file' or 'delegation_token_file' based on how you've decided to authenticate.
 </br>
 
-If your OCI tenancy has restrictions on creating dynamic groups at the tenancy level, set the `MANUALLY_CREATE_DYNAMIC_GROUP` variable in config.ini to True. Please manually create a dynamic group in your desired domain using the statement printed out at the end of the script. Replace the `DYNAMIC_GROUP_DOMAIN` variable in config.ini with the domain name where the dynamic group will be created. 
+If your OCI tenancy has restrictions on creating dynamic groups at the tenancy level, set the `MANUALLY_CREATE_DYNAMIC_GROUP` variable in config.ini to True. Please manually create a dynamic group in your desired domain using the statement printed out at the end of the script. Replace the `DYNAMIC_GROUP_DOMAIN` variable in config.ini with the domain name where the dynamic group will be created.
 </br>
 
-By default, the installer script will create the resources with prefix 'dfa'. This can be changed by updating the `RESOURCE_NAME_PREFIX` variable in config.ini. 
+By default, the installer script will create the resources with prefix 'dfa'. This can be changed by updating the `RESOURCE_NAME_PREFIX` variable in config.ini.
 </br>
 
-Any variable ending in *_FUNCTION_PROVISIONED_CONCURRENCY is related to the provisioned concurrency units used by the OCI Functions. Adjust these values in config.ini as needed based on tenancy limits and amount of AG data. The concurrency units can be changed in OCI once the functions have been created by the script. 
+Any variable ending in *_FUNCTION_PROVISIONED_CONCURRENCY is related to the provisioned concurrency units used by the OCI Functions. Adjust these values in config.ini as needed based on tenancy limits and amount of AG data. The concurrency units can be changed in OCI once the functions have been created by the script.
 </br>
 
-Any variable ending in *_SECRET_NAME is related to secrets in the vault. The installer script creates secrets in an OCI vault to store the DB's ewallet.pem file contents, wallet.sso file contents, user schema name, and user schema password. The secrets will be named based off the values assigned to the *_SECRET_NAME variables. Once the script has created the secrets in the vault, changing the names in the config.ini file will not update the secret names in the OCI Vault, they must be manually changed. 
+Any variable ending in *_SECRET_NAME is related to secrets in the vault. The installer script creates secrets in an OCI vault to store the DB's ewallet.pem file contents, wallet.sso file contents, user schema name, and user schema password. The secrets will be named based off the values assigned to the *_SECRET_NAME variables. Once the script has created the secrets in the vault, changing the names in the config.ini file will not update the secret names in the OCI Vault, they must be manually changed.
 </br>
 
-The `REPOSITORY_NAME` and `IMAGE_VERSION` variables should match the name and version tag of the Docker image built in Step 2. If necessary, update them in the config.ini file to ensure consistency.
+The `REPOSITORY_NAME` variable should match the OCI repository name used by the build script. The installer derives the image version from `pyproject.toml` and the current git commit, producing tags like `1.0-a1b2c3d`. To deploy a specific prebuilt image tag, set `DFA_IMAGE_VERSION` in the shell before running the installer.
 </br>
 
-The `DFA_RECREATE_DFA_ADW_TABLES` variable should be set to false when running the script for the first time. This variable should be set to true if a table's schema or unique constraints have changed. Setting this variable to true will delete the existing DFA tables and will re-create them. 
+The `DFA_RECREATE_DFA_ADW_TABLES` variable should be set to false when running the script for the first time. This variable should be set to true if a table's schema or unique constraints have changed. Setting this variable to true will delete the existing DFA tables and will re-create them.
 </br>
 
 
-### Delete OCI Resources 
+### Delete OCI Resources
 
-In the case you need to delete the OCI resources created by the installer script, search for the tag `'Data Feed Analytics(DFA)'` in OCI. Then, delete all the resources associated with that tag as all the OCI resources created by the script will contain the tag. 
+In the case you need to delete the OCI resources created by the installer script, search for the tag `'Data Feed Analytics(DFA)'` in OCI. Then, delete all the resources associated with that tag as all the OCI resources created by the script will contain the tag.
 
 ### Relevant Documentation
-- Applications and Functions: https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionscreatingapps.htm#top  
-- Connector Hub: https://docs.oracle.com/en-us/iaas/Content/connector-hub/create-service-connector.htm  
-- Event Rules: https://docs.oracle.com/en-us/iaas/Content/Events/Concepts/eventsgetstarted.htm#Console  
-- Using Cloud Shell Private Networking (for databases on private endpoint): https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cloudshellintro_topic-Cloud_Shell_Networking.htm#Cloud_Shell_Private_Access:~:text=Using%20Cloud%20Shell%20Private%20Networking 
+- Applications and Functions: https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionscreatingapps.htm#top
+- Connector Hub: https://docs.oracle.com/en-us/iaas/Content/connector-hub/create-service-connector.htm
+- Event Rules: https://docs.oracle.com/en-us/iaas/Content/Events/Concepts/eventsgetstarted.htm#Console
+- Using Cloud Shell Private Networking (for databases on private endpoint): https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cloudshellintro_topic-Cloud_Shell_Networking.htm#Cloud_Shell_Private_Access:~:text=Using%20Cloud%20Shell%20Private%20Networking
 
 ## Examples
 
