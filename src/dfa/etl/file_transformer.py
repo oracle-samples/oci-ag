@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timezone
 
 from common.ocihelpers.storage import BaseObjectStorage
+from dfa.adw.connection import AdwConnection
 from dfa.adw.query_builders.base_query_builder import get_query_builder
 from dfa.etl.abstract_transformer import AbstractTransformer
 
@@ -160,7 +161,7 @@ class FileTransformer(AbstractTransformer):
         self._prepared_events = chunks
 
     def load_data(self):
-        self.logger.info("Loading transformed data to data store...")
+        self.logger.info("Loading %d transformed data to data store...", len(self._prepared_events))
         current_query_builder = None
         snapshot_query_builder = None
         should_track_snapshot = (
@@ -214,3 +215,5 @@ class FileTransformer(AbstractTransformer):
                     tenancy_id=self._tenancy_id,
                     service_instance_id=self._service_instance_id,
                 )
+
+        AdwConnection.close()
