@@ -2,6 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
 from common.ocihelpers.stream import DataEnablementStream
+from dfa.adw.connection import AdwConnection
 from dfa.adw.query_builders.base_query_builder import get_query_builder
 from dfa.etl.abstract_transformer import AbstractTransformer
 
@@ -84,7 +85,7 @@ class StreamTransformer(AbstractTransformer):
         self.logger.info("Transformed %d events", len(self._prepared_events))
 
     def load_data(self):
-        self.logger.info("Loading transformed data to data store...")
+        self.logger.info("Loading %d transformed data to data store...", len(self._prepared_events))
         for prepared_events in self._prepared_events:
             self.logger.info(
                 "Building queries for %s events for %s operation",
@@ -100,4 +101,4 @@ class StreamTransformer(AbstractTransformer):
             query_builder.execute_sql_for_events()
         self.logger.info("We executed all of the queries")
 
-        # Keep the connection warm for subsequent invocations in the same process.
+        AdwConnection.close()

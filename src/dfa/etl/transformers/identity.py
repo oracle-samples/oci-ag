@@ -72,6 +72,7 @@ class IdentityEventTransformer(BaseEventTransformer):
                 if len(target_identity_list) > 0:
                     for ti in target_identity_list:
                         target_identity = identity.copy()
+                        target_identity["identity_attributes"] = json.dumps({})
                         if self._get_event_timestamp():
                             target_identity["ti_event_timestamp"] = self._get_event_timestamp()
                         if "externalId" in ti:

@@ -32,9 +32,7 @@ def test_file_transformer(data_type: str):
     namespace = os.getenv("DFA_NAMESPACE")
     bucket_name = os.getenv("DFA_BUCKET_NAME")
     object_name_prefix = "integration-tests"
-    transformer = FileTransformer(
-        namespace, bucket_name, object_name=f"{object_name_prefix}/{data_type}.jsonl"
-    )
+    transformer = FileTransformer(namespace, bucket_name, object_name=f"{object_name_prefix}/{data_type}.jsonl")
     transformer.extract_data()
     transformer.transform_data()
     transformer.load_data()
@@ -124,6 +122,7 @@ def main():
     test_file_transformer(data_type="cloudGroup")
     test_file_transformer(data_type="cloudPolicy")
     test_file_transformer(data_type="globalIdentity")
+    test_file_transformer(data_type="globalIdentityLarge")
     test_file_transformer(data_type="globalIdentityCollection")
     test_file_transformer(data_type="permission")
     test_file_transformer(data_type="permissionAssignment")
