@@ -45,6 +45,47 @@ def test_rollback_and_close_rolls_back_then_closes_connection():
         _reset_adw_connection_state()
 
 
+def test_get_cursor_reconnects_when_cached_connection_ping_fails():
+    stale_connection = MagicMock()
+    stale_connection.ping.side_effect = Exception("DPY-4011")
+    stale_cursor = MagicMock()
+    new_cursor = MagicMock()
+    new_connection = MagicMock()
+    new_connection.cursor.return_value = new_cursor
+
+    AdwConnection._AdwConnection__connection = stale_connection
+    AdwConnection._AdwConnection__cursor = stale_cursor
+
+    try:
+        with patch.object(AdwConnection, "get_connection", return_value=new_connection) as mock_get_connection:
+            assert AdwConnection.get_cursor() is new_cursor
+
+        stale_cursor.close.assert_called_once()
+        stale_connection.close.assert_called_once()
+        mock_get_connection.assert_called_once_with(None)
+        assert AdwConnection._AdwConnection__connection is None
+        assert AdwConnection._AdwConnection__cursor is new_cursor
+    finally:
+        _reset_adw_connection_state()
+
+
+def test_get_cursor_reuses_cached_cursor_when_connection_ping_succeeds():
+    connection = MagicMock()
+    cursor = MagicMock()
+
+    AdwConnection._AdwConnection__connection = connection
+    AdwConnection._AdwConnection__cursor = cursor
+
+    try:
+        assert AdwConnection.get_cursor() is cursor
+
+        connection.ping.assert_called_once()
+        cursor.close.assert_not_called()
+        connection.close.assert_not_called()
+    finally:
+        _reset_adw_connection_state()
+
+
 @patch("dfa.adw.connection.oracledb.connect")
 @patch("dfa.adw.connection.AdwSecrets")
 def test_get_connection_includes_bounded_connect_parameters(mock_secrets_cls, mock_connect, tmp_path):

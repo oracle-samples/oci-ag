@@ -4,6 +4,7 @@
 
 fdk>=0.1,<1
 oci>=2.120,<3
+urllib3>=2.6.3,<3
 oracledb>=2.1,<3
 pandas>=2.2,<3
 pypika>=0.48,<1

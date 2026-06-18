@@ -72,13 +72,17 @@ class IdentityEventTransformer(BaseEventTransformer):
                 if len(target_identity_list) > 0:
                     for ti in target_identity_list:
                         target_identity = identity.copy()
-                        target_identity["identity_attributes"] = json.dumps({})
                         if self._get_event_timestamp():
                             target_identity["ti_event_timestamp"] = self._get_event_timestamp()
                         if "externalId" in ti:
                             target_identity["ti_external_id"] = ti["externalId"]
                         if "id" in ti:
                             target_identity["ti_id"] = ti["id"]
+                            if (target_identity["ti_id"] is not None) and (
+                                target_identity["ti_id"].startswith("targetId.account")
+                            ):
+                                # retain identity attributes for target identity, for target account, set to empty
+                                target_identity["identity_attributes"] = json.dumps({})
                         if "targetId" in ti:
                             target_identity["ti_target_id"] = ti["targetId"]
                         if "identity" in ti:
