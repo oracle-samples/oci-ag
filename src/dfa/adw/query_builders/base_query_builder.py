@@ -458,6 +458,7 @@ class BaseQueryBuilder:
             )
             AdwConnection.commit()
         except Exception as e:
+            AdwConnection.rollback()
             self.logger.warning(
                 "Failed to insert snapshot batch completion for snapshot_id=%s, batch_id=%s: %s",
                 snapshot_id,
