@@ -251,7 +251,7 @@ class BaseQueryBuilder:
     events: Optional[list[Any]] = None
     table_manager: Any = None
     MAX_DIRECT_STRING_BIND_SIZE = 32767
-    MAX_DIRECT_CLOB_STRING_BIND_SIZE = 4000
+    MAX_DIRECT_CLOB_STRING_BIND_SIZE = 32767
     STALE_ROW_DELETE_MAX_ATTEMPTS = 3
     STALE_ROW_DELETE_RETRY_DELAY_SECONDS = 30
     _snapshot_batch_tracker_table = SnapshotBatchTrackerTable()
@@ -451,11 +451,20 @@ class BaseQueryBuilder:
             "BATCH_ID": batch_id,
             "UPDATED_AT": event_timestamp,
         }
-        AdwConnection.get_cursor().execute(
-            insert_sql,
-            bind_values,
-        )
-        AdwConnection.commit()
+        try:
+            AdwConnection.get_cursor().execute(
+                insert_sql,
+                bind_values,
+            )
+            AdwConnection.commit()
+        except Exception as e:
+            AdwConnection.rollback()
+            self.logger.warning(
+                "Failed to insert snapshot batch completion for snapshot_id=%s, batch_id=%s: %s",
+                snapshot_id,
+                batch_id,
+                e,
+            )
 
     def register_snapshot_batch_completed(
         self,

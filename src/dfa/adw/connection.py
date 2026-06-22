@@ -21,6 +21,35 @@ class AdwConnection:
     MAX_CONN_RETRY_DELAY = 3
     MAX_CONN_TCP_CONNECT_TIMEOUT = 10
 
+    @classmethod
+    def _reset_connection(cls):
+        if cls.__cursor is not None:
+            try:
+                cls.__cursor.close()
+            except Exception as e:
+                cls.logger.warning("Failed to close stale cursor: %s", e)
+            finally:
+                cls.__cursor = None
+
+        if cls.__connection is not None:
+            try:
+                cls.__connection.close()
+            except Exception as e:
+                cls.logger.warning("Failed to close stale connection: %s", e)
+            finally:
+                cls.__connection = None
+
+    @classmethod
+    def _ensure_connection_is_usable(cls):
+        if cls.__connection is None:
+            return
+
+        try:
+            cls.__connection.ping()
+        except Exception as e:
+            cls.logger.warning("ADW connection is no longer usable; reconnecting: %s", e)
+            cls._reset_connection()
+
     @staticmethod
     def _get_bounded_int_env(name: str, default: int, maximum: int) -> int:
         try:
@@ -31,6 +60,7 @@ class AdwConnection:
 
     @classmethod
     def get_connection(cls, username: str | None = None):
+        cls._ensure_connection_is_usable()
         if cls.__connection is None:
             cls.logger.info("Initializing ADW connection (loading wallet and secrets)")
 
@@ -86,6 +116,7 @@ class AdwConnection:
 
     @classmethod
     def get_cursor(cls, username: str | None = None):
+        cls._ensure_connection_is_usable()
         if cls.__cursor is None:
             cls.__cursor = cls.get_connection(username).cursor()
 

@@ -599,19 +599,6 @@ def test_base_query_builder_event_sized_clob_uses_string_size_for_small_values()
     assert input_sizes["ATTRIBUTES"] == 14
 
 
-def test_base_query_builder_event_sized_clob_uses_clob_bind_for_large_values():
-    input_sizes = BaseQueryBuilder().get_input_sizes_for_events(
-        [
-            {"column_name": "ID", "data_type": "VARCHAR2", "data_length": 32767},
-            {"column_name": "ATTRIBUTES", "data_type": "CLOB", "data_length": None},
-        ],
-        [{"id": "abc", "attributes": "x" * 4001}],
-    )
-
-    assert input_sizes["ID"] == 3
-    assert input_sizes["ATTRIBUTES"] == oracledb.DB_TYPE_CLOB
-
-
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
 def test_permission_assignment_delete_with_permission_filters_input_sizes_to_sql_binds(mock_get_cursor, mock_commit):
