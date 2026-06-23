@@ -802,6 +802,9 @@ class BaseQueryBuilder:
         merge_sql = MergeManyQueryBuilder().get_operation_sql(
             self, active_events, date_columns, where_columns, nullable_columns
         )
+
+        AdwConnection.get_cursor().execute("ALTER SESSION DISABLE PARALLEL DML")
+
         input_sizes = self.get_input_sizes_for_events(
             self.table_manager.get_column_list_definition_for_table_ddl(),
             active_events,
@@ -847,6 +850,7 @@ class BaseQueryBuilder:
                     self.logger.warning("batch error: %s", m)
 
             if constraint_violating_rows:
+                AdwConnection.commit()
                 self.logger.info(
                     "%d %s merge row(s) hit unique constraint races; retrying as bulk updates",
                     len(constraint_violating_rows),
