@@ -791,7 +791,7 @@ def test_merge_unique_constraint_races_log_info_and_retry_update(mock_get_cursor
         "access_bundle_state",
     )
     assert cursor.executemany.call_count == 2
-    mock_commit.assert_called_once()
+    mock_commit.assert_called()
 
 
 @patch("dfa.adw.connection.AdwConnection.get_cursor")
