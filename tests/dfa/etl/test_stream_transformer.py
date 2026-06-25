@@ -1,6 +1,8 @@
 # Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
+import base64
+import json
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -87,6 +89,28 @@ class TestStreamTransformer(unittest.TestCase):
             if expected_message in log:
                 return True
         return False
+
+    def _encode_without_padding(self, value):
+        return base64.b64encode(value).decode().rstrip("=")
+
+    def test_decode_source_stream_messages_accepts_unpadded_base64(self):
+        payload = {"headers": {"messageType": "IDENTITY"}, "data": json.dumps({"id": "identity-1"})}
+        messages = [{"value": self._encode_without_padding(json.dumps(payload).encode())}]
+
+        decoded_messages = DataEnablementStream.decode_source_stream_messages(messages)
+
+        self.assertEqual(decoded_messages[0]["value"]["headers"]["messageType"], "IDENTITY")
+        self.assertEqual(decoded_messages[0]["value"]["data"]["id"], "identity-1")
+
+    def test_decode_connector_hub_source_stream_messages_accepts_unpadded_base64_layers(self):
+        payload = {"headers": {"messageType": "IDENTITY"}, "data": json.dumps({"id": "identity-1"})}
+        inner_encoded = self._encode_without_padding(json.dumps(payload).encode()).encode()
+        messages = [{"value": self._encode_without_padding(inner_encoded)}]
+
+        decoded_messages = DataEnablementStream.decode_connector_hub_source_stream_messages(messages)
+
+        self.assertEqual(decoded_messages[0]["value"]["headers"]["messageType"], "IDENTITY")
+        self.assertEqual(decoded_messages[0]["value"]["data"]["id"], "identity-1")
 
     def test_access_bundle_changed(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/access_bundle_changed.json")

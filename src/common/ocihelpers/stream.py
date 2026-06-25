@@ -13,6 +13,12 @@ from dfa.adw.connection import AdwConnection
 from dfa.adw.query_builders.base_query_builder import StreamOffsetTrackerQueryBuilder
 
 
+def _b64decode_padded(value):
+    if isinstance(value, str):
+        value = value.encode()
+    return base64.b64decode(value + b"=" * (-len(value) % 4))
+
+
 class BaseStream:
     logger = Logger(__name__).get_logger()
     _stream_client = None
@@ -188,7 +194,7 @@ class BaseStream:
 
     def decode_data_feed_messages(self, messages):
         for encoded_message in messages:
-            decoded_value = base64.b64decode(base64.b64decode(encoded_message.value.encode()).decode()).decode()
+            decoded_value = _b64decode_padded(_b64decode_padded(encoded_message.value).decode()).decode()
             encoded_message.value = json.loads(decoded_value)
             if "data" in encoded_message.value:
                 encoded_message.value["data"] = json.loads(encoded_message.value["data"])
@@ -362,7 +368,7 @@ class DataEnablementStream(BaseStream):
     @classmethod
     def decode_connector_hub_source_stream_messages(cls, messages):
         for encoded_message in messages:
-            decoded_value = base64.b64decode(base64.b64decode(encoded_message["value"].encode()).decode()).decode()
+            decoded_value = _b64decode_padded(_b64decode_padded(encoded_message["value"]).decode()).decode()
             encoded_message["value"] = json.loads(decoded_value)
             if "data" in encoded_message["value"]:
                 encoded_message["value"]["data"] = json.loads(encoded_message["value"]["data"])
@@ -372,7 +378,7 @@ class DataEnablementStream(BaseStream):
     @classmethod
     def decode_source_stream_messages(cls, messages):
         for encoded_message in messages:
-            decoded_value = base64.b64decode(encoded_message["value"])
+            decoded_value = _b64decode_padded(encoded_message["value"])
             encoded_message["value"] = json.loads(decoded_value)
             if "data" in encoded_message["value"]:
                 encoded_message["value"]["data"] = json.loads(encoded_message["value"]["data"])
