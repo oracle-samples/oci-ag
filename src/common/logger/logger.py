@@ -11,6 +11,8 @@ OCI_SDK_LOGGER_NAMES = (
     "oci.circuit_breaker",
     "oci.circuit_breaker.circuit_breaker",
     "oci.retry",
+    "urllib3",
+    "urllib3.connectionpool",
 )
 
 

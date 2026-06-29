@@ -50,7 +50,7 @@ class IdentityStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class IdentityStateCreateQueryBuilder(IdentityStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return IdentityStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(IdentityStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

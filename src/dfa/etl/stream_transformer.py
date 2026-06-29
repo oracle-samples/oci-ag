@@ -86,19 +86,24 @@ class StreamTransformer(AbstractTransformer):
 
     def load_data(self):
         self.logger.info("Loading %d transformed data to data store...", len(self._prepared_events))
-        for prepared_events in self._prepared_events:
-            self.logger.info(
-                "Building queries for %s events for %s operation",
-                prepared_events["event_object_type"],
-                prepared_events["operation_type"],
-            )
-            query_builder = get_query_builder(
-                prepared_events["event_object_type"],
-                prepared_events["operation_type"],
-                prepared_events["data"],
-                self.is_timeseries,
-            )
-            query_builder.execute_sql_for_events()
-        self.logger.info("We executed all of the queries")
+        try:
+            for prepared_events in self._prepared_events:
+                self.logger.info(
+                    "Building queries for %s events for %s operation",
+                    prepared_events["event_object_type"],
+                    prepared_events["operation_type"],
+                )
+                query_builder = get_query_builder(
+                    prepared_events["event_object_type"],
+                    prepared_events["operation_type"],
+                    prepared_events["data"],
+                    self.is_timeseries,
+                    retry_merge_conflicts=False,
+                )
+                query_builder.execute_sql_for_events()
+            self.logger.info("We executed all of the queries")
+        except Exception:
+            AdwConnection.rollback_and_close()
+            raise
 
         AdwConnection.close()

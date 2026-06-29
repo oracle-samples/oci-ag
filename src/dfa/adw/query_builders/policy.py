@@ -23,7 +23,7 @@ class PolicyStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class PolicyStateCreateQueryBuilder(PolicyStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return PolicyStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(PolicyStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

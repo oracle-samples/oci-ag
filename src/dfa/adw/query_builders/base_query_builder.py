@@ -5,6 +5,7 @@
 import importlib.util
 import inspect
 import os
+import random
 import re
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache, wraps
@@ -250,6 +251,10 @@ class BaseQueryBuilder:
     logger = Logger(__name__).get_logger()
     events: Optional[list[Any]] = None
     table_manager: Any = None
+    RETRY_MERGE_CONFLICTS = False
+    MAX_MERGE_CONFLICT_RETRY_ATTEMPTS = 3
+    MERGE_CONFLICT_RETRY_BASE_DELAY_SECONDS = 0.5
+    MERGE_CONFLICT_RETRY_MAX_DELAY_SECONDS = 5.0
     MAX_DIRECT_STRING_BIND_SIZE = 32767
     MAX_DIRECT_CLOB_STRING_BIND_SIZE = 32767
     STALE_ROW_DELETE_MAX_ATTEMPTS = 3
@@ -402,11 +407,12 @@ class BaseQueryBuilder:
             if hasattr(table_manager, "ensure_supporting_objects"):
                 table_manager.ensure_supporting_objects()
             AdwConnection.commit()
-        except oracledb.DatabaseError as exc:
-            error = exc.args[0] if exc.args else None
-            if getattr(error, "code", None) != 955:
-                raise
-            AdwConnection.close()
+        except oracledb.DatabaseError as e:
+            AdwConnection.rollback()
+            self.logger.warning(
+                "Failed to create snapshot batch tracker table %s",
+                e,
+            )
 
     @staticmethod
     def _is_retryable_cleanup_error(exc: Exception) -> bool:
@@ -416,6 +422,28 @@ class BaseQueryBuilder:
     def _get_database_error_code(exc: Exception) -> int | None:
         error = exc.args[0] if exc.args else None
         return getattr(error, "code", None)
+
+    def _sleep_before_merge_conflict_retry(self, attempt: int):
+        base_delay = self.MERGE_CONFLICT_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
+        delay_cap = min(base_delay, self.MERGE_CONFLICT_RETRY_MAX_DELAY_SECONDS)
+        delay_seconds = random.uniform(0, delay_cap)
+        self.logger.info(
+            "Sleeping %.3fs before MERGE conflict retry attempt %d/%d",
+            delay_seconds,
+            attempt,
+            self.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS,
+        )
+        sleep(delay_seconds)
+
+    @staticmethod
+    def _get_sample_keys_for_rows(rows: list[dict[str, Any]], key_columns: list[str], limit: int = 1):
+        return [
+            {
+                column.lower(): row[column.lower()] if column.lower() in row else row.get(column.upper())
+                for column in key_columns
+            }
+            for row in rows[:limit]
+        ]
 
     def _insert_snapshot_batch_completed(
         self,
@@ -665,13 +693,19 @@ class BaseQueryBuilder:
                     completion_timestamp,
                     tenancy_id=tenancy_id,
                     service_instance_id=service_instance_id,
-                    commit=True,
+                    commit=False,
                 )
-                self._delete_snapshot_batch_tracking(snapshot_id, tenancy_id, service_instance_id, commit=True)
+                self._delete_snapshot_batch_tracking(
+                    snapshot_id,
+                    tenancy_id,
+                    service_instance_id,
+                    commit=False,
+                )
+                AdwConnection.commit()
                 return
             except Exception as exc:
                 if self._is_retryable_cleanup_error(exc):
-                    AdwConnection.rollback_and_close()
+                    AdwConnection.rollback()
                     if self._get_database_error_code(exc) == 60 and attempt < self.STALE_ROW_DELETE_MAX_ATTEMPTS:
                         retry_message = (
                             "Retrying stale row cleanup for %s snapshot %s after ORA-00060 deadlock (attempt %d/%d)"
@@ -818,9 +852,9 @@ class BaseQueryBuilder:
         )
 
         # MERGE is not immune to concurrent insert races. Two workers can both evaluate
-        # “not matched” at about the same time. One inserts first; the other then tries its
-        # insert branch and gets ORA-00001. At that point the row exists,
-        # so retrying as UPDATE is a reasonable recovery.
+        # "not matched" at about the same time. One inserts first; the other then tries its
+        # insert branch and gets ORA-00001. Retrying MERGE for those rows lets Oracle either
+        # update the now-existing row or insert it if the first failure did not persist a row.
         batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
         if batch_errors:
             constraint_violating_rows = []
@@ -850,36 +884,73 @@ class BaseQueryBuilder:
                     self.logger.warning("batch error: %s", m)
 
             if constraint_violating_rows:
-                AdwConnection.commit()
-                self.logger.info(
-                    "%d %s merge row(s) hit unique constraint races; retrying as bulk updates",
-                    len(constraint_violating_rows),
-                    self.table_manager.get_table_name().lower(),
-                )
-                update_sql = UpdateManyQueryBuilder().get_operation_sql(
-                    self,
-                    constraint_violating_rows,
-                    date_columns,
-                    where_columns,
-                    nullable_columns,
-                )
-                if update_sql is not None:
-                    update_input_sizes = self._filter_input_sizes_for_sql(input_sizes, update_sql)
-                    AdwConnection.get_cursor().setinputsizes(**update_input_sizes)
+                if not self.RETRY_MERGE_CONFLICTS:
+                    self.logger.info(
+                        "%d %s merge row(s) hit unique constraint races; skipping merge retry",
+                        len(constraint_violating_rows),
+                        self.table_manager.get_table_name().lower(),
+                    )
+                    AdwConnection.commit()
+                    return
+
+                retry_rows = constraint_violating_rows
+                for attempt in range(1, self.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS + 1):
+                    self.logger.info(
+                        "%d %s merge row(s) hit unique constraint races; retrying MERGE attempt %d/%d; sample keys: %s",
+                        len(retry_rows),
+                        self.table_manager.get_table_name().lower(),
+                        attempt,
+                        self.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS,
+                        self._get_sample_keys_for_rows(retry_rows, where_columns),
+                    )
+                    AdwConnection.commit()
+                    self._sleep_before_merge_conflict_retry(attempt)
+                    AdwConnection.get_cursor().setinputsizes(**input_sizes)
                     AdwConnection.get_cursor().executemany(
-                        update_sql,
-                        self._bind_rows_for_sql(constraint_violating_rows, update_sql),
+                        merge_sql,
+                        self._bind_rows_for_sql(retry_rows, merge_sql),
                         batcherrors=True,
                     )
-                    update_batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
-                    for batch_error in update_batch_errors[:5]:
+
+                    retry_batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
+                    if not retry_batch_errors:
+                        retry_rows = []
+                        break
+
+                    next_retry_rows = []
+                    retry_other_errors = []
+                    for be in retry_batch_errors:
+                        if getattr(be, "full_code", None) == "ORA-00001":
+                            next_retry_rows.append(retry_rows[be.offset])
+                        else:
+                            retry_other_errors.append(be)
+
+                    if retry_other_errors:
                         self.logger.warning(
-                            "%s update retry failed - %s",
+                            "%s merge retry encountered %d unhandled batch error(s)",
                             self.table_manager.get_table_name().lower(),
-                            getattr(batch_error, "message", str(batch_error)),
+                            len(retry_other_errors),
+                        )
+                        raise RuntimeError(
+                            f"{self.table_manager.get_table_name().lower()} merge retry failed with "
+                            f"{len(retry_other_errors)} unhandled batch error(s)"
                         )
 
+                    retry_rows = next_retry_rows
+
+                if retry_rows:
+                    missed_keys = self._get_sample_keys_for_rows(retry_rows, where_columns)
+                    raise RuntimeError(
+                        f"{self.table_manager.get_table_name().lower()} merge retry still hit "
+                        f"unique constraint conflicts for {len(retry_rows)} row(s) after "
+                        f"{self.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS} attempt(s); sample keys: {missed_keys}"
+                    )
         AdwConnection.commit()
+
+    def execute_delegated_query_builder(self, query_builder):
+        query_builder.RETRY_MERGE_CONFLICTS = self.RETRY_MERGE_CONFLICTS
+        query_builder.logger = self.logger
+        return query_builder.executemany_sql_for_events()
 
     def executemany_state_merge_for_events(
         self,
@@ -980,7 +1051,13 @@ State{operation.lower().title().replace('_', '')}QueryBuilder"
     return None
 
 
-def get_query_builder(event_object_type, operation, events, is_timeseries=False):
+def get_query_builder(
+    event_object_type,
+    operation,
+    events,
+    is_timeseries=False,
+    retry_merge_conflicts=False,
+):
     logger = Logger(__name__).get_logger()
     query_builders = Path(__file__).parent
     logger.info(
@@ -996,7 +1073,9 @@ def get_query_builder(event_object_type, operation, events, is_timeseries=False)
             is_timeseries,
         )
         if query_builder_class is not None:
-            return query_builder_class(events)
+            query_builder = query_builder_class(events)
+            query_builder.RETRY_MERGE_CONFLICTS = retry_merge_conflicts
+            return query_builder
     except Exception as e:
         logger.error("Error finding query builder for %s/%s: %s", event_object_type, operation, e)
     return None

@@ -6,10 +6,7 @@ from abc import ABC, abstractmethod
 from pypika import Table
 
 from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
-from dfa.adw.tables.approval_workflow import (
-    ApprovalWorkflowStateTable,
-    ApprovalWorkflowTimeSeriesTable,
-)
+from dfa.adw.tables.approval_workflow import ApprovalWorkflowStateTable, ApprovalWorkflowTimeSeriesTable
 
 
 class ApprovalWorkflowStateQueryBuilder(Table, ABC, BaseQueryBuilder):
@@ -26,7 +23,7 @@ class ApprovalWorkflowStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class ApprovalWorkflowStateCreateQueryBuilder(ApprovalWorkflowStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return ApprovalWorkflowStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(ApprovalWorkflowStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

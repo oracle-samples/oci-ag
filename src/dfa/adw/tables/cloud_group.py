@@ -50,6 +50,9 @@ class CloudGroupStateTable(BaseStateTable, CloudGroupTimeSeriesTable):
             ],
         }
 
+    def get_nullable_constraint_columns(self):
+        return ["IDENTITY_GLOBAL_ID", "IDENTITY_TARGET_IDENTITY_ID"]
+
     def get_delete_index_definition_details(self):
         return [
             {
