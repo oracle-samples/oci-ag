@@ -6,10 +6,7 @@ from abc import ABC, abstractmethod
 from pypika import Table
 
 from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
-from dfa.adw.tables.ownership_collection import (
-    OwnershipCollectionStateTable,
-    OwnershipCollectionTimeSeriesTable,
-)
+from dfa.adw.tables.ownership_collection import OwnershipCollectionStateTable, OwnershipCollectionTimeSeriesTable
 
 
 class OwnershipCollectionStateQueryBuilder(Table, ABC, BaseQueryBuilder):
@@ -26,7 +23,7 @@ class OwnershipCollectionStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class OwnershipCollectionStateCreateQueryBuilder(OwnershipCollectionStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return OwnershipCollectionStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(OwnershipCollectionStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

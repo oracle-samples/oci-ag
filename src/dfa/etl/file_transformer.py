@@ -162,58 +162,63 @@ class FileTransformer(AbstractTransformer):
 
     def load_data(self):
         self.logger.info("Loading %d transformed data to data store...", len(self._prepared_events))
-        current_query_builder = None
-        snapshot_query_builder = None
-        should_track_snapshot = (
-            not self.is_timeseries
-            and self.get_operation_type() == "CREATE"
-            and self.is_valid_object_type(self.get_event_object_type())
-        )
-        is_snapshot_completion_marker = self._is_snapshot_completion_marker()
-        should_track_snapshot_batch = should_track_snapshot and not is_snapshot_completion_marker
-        should_finalize_snapshot = should_track_snapshot and is_snapshot_completion_marker
-        if should_track_snapshot_batch or should_finalize_snapshot:
-            snapshot_query_builder = get_query_builder(
-                self.get_event_object_type(),
-                self.get_operation_type(),
-                [],
-                self.is_timeseries,
+        try:
+            current_query_builder = None
+            snapshot_query_builder = None
+            should_track_snapshot = (
+                not self.is_timeseries
+                and self.get_operation_type() == "CREATE"
+                and self.is_valid_object_type(self.get_event_object_type())
             )
-            self.query_builder = snapshot_query_builder
-
-        if len(self._prepared_events) > 0:
-            self.chunk_prepared_events()
-            for batched_events in self._prepared_events:
-                self.logger.info(
-                    "Building queries for %d %s %s",
-                    len(batched_events),
+            is_snapshot_completion_marker = self._is_snapshot_completion_marker()
+            should_track_snapshot_batch = should_track_snapshot and not is_snapshot_completion_marker
+            should_finalize_snapshot = should_track_snapshot and is_snapshot_completion_marker
+            if should_track_snapshot_batch or should_finalize_snapshot:
+                snapshot_query_builder = get_query_builder(
                     self.get_event_object_type(),
                     self.get_operation_type(),
-                )
-                current_query_builder = get_query_builder(
-                    self.get_event_object_type(),
-                    self.get_operation_type(),
-                    batched_events,
+                    [],
                     self.is_timeseries,
                 )
-                self.query_builder = current_query_builder
-                self.query_builder.execute_sql_for_events()
+                self.query_builder = snapshot_query_builder
 
-        if should_track_snapshot_batch and snapshot_query_builder is not None:
-            snapshot_query_builder.register_snapshot_batch_completed(
-                snapshot_id=self._get_snapshot_id_for_batch(),
-                batch_id=self._get_batch_id_for_batch(),
-                event_timestamp=self._get_utc_current_event_timestamp(),
-                tenancy_id=self._tenancy_id,
-                service_instance_id=self._service_instance_id,
-            )
-        if should_finalize_snapshot and snapshot_query_builder is not None:
-            if self._num_of_batches is not None:
-                snapshot_query_builder.finalize_snapshot_cleanup_if_ready(
+            if len(self._prepared_events) > 0:
+                self.chunk_prepared_events()
+                for batched_events in self._prepared_events:
+                    self.logger.info(
+                        "Building queries for %d %s %s",
+                        len(batched_events),
+                        self.get_event_object_type(),
+                        self.get_operation_type(),
+                    )
+                    current_query_builder = get_query_builder(
+                        self.get_event_object_type(),
+                        self.get_operation_type(),
+                        batched_events,
+                        self.is_timeseries,
+                        retry_merge_conflicts=not self.is_timeseries,
+                    )
+                    self.query_builder = current_query_builder
+                    self.query_builder.execute_sql_for_events()
+
+            if should_track_snapshot_batch and snapshot_query_builder is not None:
+                snapshot_query_builder.register_snapshot_batch_completed(
                     snapshot_id=self._get_snapshot_id_for_batch(),
-                    num_of_batches=self._num_of_batches,
+                    batch_id=self._get_batch_id_for_batch(),
+                    event_timestamp=self._get_utc_current_event_timestamp(),
                     tenancy_id=self._tenancy_id,
                     service_instance_id=self._service_instance_id,
                 )
+            if should_finalize_snapshot and snapshot_query_builder is not None:
+                if self._num_of_batches is not None:
+                    snapshot_query_builder.finalize_snapshot_cleanup_if_ready(
+                        snapshot_id=self._get_snapshot_id_for_batch(),
+                        num_of_batches=self._num_of_batches,
+                        tenancy_id=self._tenancy_id,
+                        service_instance_id=self._service_instance_id,
+                    )
+        except Exception:
+            AdwConnection.rollback_and_close()
+            raise
 
         AdwConnection.close()

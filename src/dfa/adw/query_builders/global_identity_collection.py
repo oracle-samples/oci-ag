@@ -26,7 +26,7 @@ class GlobalIdentityCollectionStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class GlobalIdentityCollectionStateCreateQueryBuilder(GlobalIdentityCollectionStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return GlobalIdentityCollectionStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(GlobalIdentityCollectionStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

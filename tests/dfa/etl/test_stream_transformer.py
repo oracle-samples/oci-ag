@@ -33,6 +33,10 @@ class TestStreamTransformer(unittest.TestCase):
         self.mock_adw_close = self.adw_close_patcher.start()
         self.addCleanup(self.adw_close_patcher.stop)
 
+        self.adw_rollback_and_close_patcher = patch("dfa.adw.connection.AdwConnection.rollback_and_close")
+        self.mock_adw_rollback_and_close = self.adw_rollback_and_close_patcher.start()
+        self.addCleanup(self.adw_rollback_and_close_patcher.stop)
+
         self.patcher_stream = patch("dfa.etl.stream_transformer.DataEnablementStream", autospec=True)
         self.mock_stream = self.patcher_stream.start()
         self.addCleanup(self.patcher_stream.stop)
@@ -69,6 +73,48 @@ class TestStreamTransformer(unittest.TestCase):
         self.transformer.transform_messages(messages)
         self.transformer._set_raw_event_data.assert_called_once_with(messages)
         self.transformer.transform_data.assert_called_once()
+
+    @patch("dfa.etl.stream_transformer.get_query_builder")
+    def test_load_data_disables_merge_conflict_update_retry(self, mock_get_query_builder):
+        mock_query_builder = MagicMock()
+        mock_get_query_builder.return_value = mock_query_builder
+        self.transformer._prepared_events = [
+            {
+                "event_object_type": "IDENTITY",
+                "operation_type": "UPDATE",
+                "data": [{"id": "identity-1"}],
+            }
+        ]
+
+        self.transformer.load_data()
+
+        mock_get_query_builder.assert_called_once_with(
+            "IDENTITY",
+            "UPDATE",
+            [{"id": "identity-1"}],
+            False,
+            retry_merge_conflicts=False,
+        )
+        mock_query_builder.execute_sql_for_events.assert_called_once()
+
+    @patch("dfa.etl.stream_transformer.get_query_builder")
+    def test_load_data_rolls_back_and_closes_on_failure(self, mock_get_query_builder):
+        mock_query_builder = MagicMock()
+        mock_query_builder.execute_sql_for_events.side_effect = RuntimeError("load failed")
+        mock_get_query_builder.return_value = mock_query_builder
+        self.transformer._prepared_events = [
+            {
+                "event_object_type": "IDENTITY",
+                "operation_type": "UPDATE",
+                "data": [{"id": "identity-1"}],
+            }
+        ]
+
+        with self.assertRaisesRegex(RuntimeError, "load failed"):
+            self.transformer.load_data()
+
+        self.mock_adw_rollback_and_close.assert_called_once()
+        self.mock_adw_close.assert_not_called()
 
     def read_file_content(self, jsonl_file_path):
         messages = []

@@ -23,7 +23,7 @@ class ResourceStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class ResourceStateCreateQueryBuilder(ResourceStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return ResourceStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(ResourceStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

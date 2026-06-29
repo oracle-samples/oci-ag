@@ -42,6 +42,10 @@ class TestFileTransformer(unittest.TestCase):
         self.mock_adw_close = self.adw_close_patcher.start()
         self.addCleanup(self.adw_close_patcher.stop)
 
+        self.adw_rollback_and_close_patcher = patch("dfa.adw.connection.AdwConnection.rollback_and_close")
+        self.mock_adw_rollback_and_close = self.adw_rollback_and_close_patcher.start()
+        self.addCleanup(self.adw_rollback_and_close_patcher.stop)
+
         self.storage_patcher = patch("dfa.etl.file_transformer.BaseObjectStorage", autospec=True)
         self.mock_storage_cls = self.storage_patcher.start()
         self.addCleanup(self.storage_patcher.stop)
@@ -142,6 +146,42 @@ class TestFileTransformer(unittest.TestCase):
         mock_query_builder.finalize_snapshot_cleanup_if_ready.assert_not_called()
 
     @patch("dfa.etl.file_transformer.get_query_builder")
+    def test_load_data_enables_merge_conflict_retry_for_file_to_state(self, mock_get_query_builder):
+        mock_query_builder = MagicMock()
+        mock_get_query_builder.return_value = mock_query_builder
+
+        self.transformer._object_name = "snapshots/access_bundle.snapshot-1.batch-1.jsonl"
+        self.transformer._event_object_type = "ACCESS_BUNDLE"
+        self.transformer._operation_type = "CREATE"
+        self.transformer._event_timestamp = "2025-08-15T17:38:23.645616585Z"
+        self.transformer._snapshot_id = "snapshot-1"
+        self.transformer._tenancy_id = "tenant-1"
+        self.transformer._service_instance_id = "svc-1"
+        self.transformer._prepared_events = [{"id": "ab-1"}]
+        self.transformer._snapshot_status = "IN_PROGRESS"
+
+        self.transformer.load_data()
+
+        current_builder_call = mock_get_query_builder.call_args_list[1]
+        self.assertEqual(current_builder_call.kwargs["retry_merge_conflicts"], True)
+
+    @patch("dfa.etl.file_transformer.get_query_builder")
+    def test_load_data_disables_merge_conflict_retry_for_file_to_timeseries(self, mock_get_query_builder):
+        mock_query_builder = MagicMock()
+        mock_get_query_builder.return_value = mock_query_builder
+        transformer = FileTransformer("test_namespace", "test_bucket", "test_object.jsonl", True)
+
+        transformer._event_object_type = "ACCESS_BUNDLE"
+        transformer._operation_type = "CREATE"
+        transformer._event_timestamp = "2025-08-15T17:38:23.645616585Z"
+        transformer._prepared_events = [{"id": "ab-1"}]
+
+        transformer.load_data()
+
+        current_builder_call = mock_get_query_builder.call_args_list[0]
+        self.assertEqual(current_builder_call.kwargs["retry_merge_conflicts"], False)
+
+    @patch("dfa.etl.file_transformer.get_query_builder")
     def test_load_data_does_not_finalize_snapshot_for_normal_batch(self, mock_get_query_builder):
         mock_query_builder = MagicMock()
         mock_get_query_builder.return_value = mock_query_builder
@@ -160,6 +200,24 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.load_data()
 
         mock_query_builder.finalize_snapshot_cleanup_if_ready.assert_not_called()
+
+    @patch("dfa.etl.file_transformer.get_query_builder")
+    def test_load_data_rolls_back_and_closes_on_failure(self, mock_get_query_builder):
+        mock_query_builder = MagicMock()
+        mock_query_builder.execute_sql_for_events.side_effect = RuntimeError("load failed")
+        mock_get_query_builder.return_value = mock_query_builder
+
+        self.transformer._object_name = "snapshots/access_bundle.snapshot-1.batch-2.jsonl"
+        self.transformer._event_object_type = "ACCESS_BUNDLE"
+        self.transformer._operation_type = "UPDATE"
+        self.transformer._event_timestamp = "2025-08-15T17:38:23.645616585Z"
+        self.transformer._prepared_events = [{"id": "ab-2"}]
+
+        with self.assertRaisesRegex(RuntimeError, "load failed"):
+            self.transformer.load_data()
+
+        self.mock_adw_rollback_and_close.assert_called_once()
+        self.mock_adw_close.assert_not_called()
 
     @patch("dfa.etl.file_transformer.get_query_builder")
     def test_load_data_uses_completion_marker_to_finalize_snapshot(self, mock_get_query_builder):

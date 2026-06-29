@@ -23,7 +23,7 @@ class PermissionStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class PermissionStateCreateQueryBuilder(PermissionStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return PermissionStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(PermissionStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

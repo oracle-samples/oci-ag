@@ -23,7 +23,7 @@ class CloudGroupStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class CloudGroupStateCreateQueryBuilder(CloudGroupStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return CloudGroupStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(CloudGroupStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

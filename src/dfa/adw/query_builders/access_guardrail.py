@@ -6,10 +6,7 @@ from abc import ABC, abstractmethod
 from pypika import Table
 
 from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
-from dfa.adw.tables.access_guardrail import (
-    AccessGuardrailStateTable,
-    AccessGuardrailTimeSeriesTable,
-)
+from dfa.adw.tables.access_guardrail import AccessGuardrailStateTable, AccessGuardrailTimeSeriesTable
 
 
 class AccessGuardrailStateQueryBuilder(Table, ABC, BaseQueryBuilder):
@@ -26,7 +23,7 @@ class AccessGuardrailStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class AccessGuardrailStateCreateQueryBuilder(AccessGuardrailStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return AccessGuardrailStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(AccessGuardrailStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()

@@ -21,7 +21,11 @@ from dfa.adw.query_builders.base_query_builder import (
 )
 from dfa.adw.query_builders.cloud_group import CloudGroupStateUpdateQueryBuilder
 from dfa.adw.query_builders.cloud_policy import CloudPolicyStateDeleteQueryBuilder
-from dfa.adw.query_builders.identity import IdentityStateDeleteQueryBuilder, IdentityStateUpdateQueryBuilder
+from dfa.adw.query_builders.identity import (
+    IdentityStateCreateQueryBuilder,
+    IdentityStateDeleteQueryBuilder,
+    IdentityStateUpdateQueryBuilder,
+)
 from dfa.adw.query_builders.orchestrated_system import OrchestratedSystemStateDeleteQueryBuilder
 from dfa.adw.query_builders.permission import PermissionStateDeleteQueryBuilder
 from dfa.adw.query_builders.permission_assignment import PermissionAssignmentStateDeleteQueryBuilder
@@ -741,9 +745,18 @@ def test_audit_events_insert_uses_event_sized_input_sizes(mock_get_cursor, mock_
     mock_commit.assert_called_once()
 
 
+@patch("dfa.adw.query_builders.base_query_builder.sleep")
+@patch("dfa.adw.query_builders.base_query_builder.random.uniform", return_value=0.25)
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_connection")
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
-def test_merge_unique_constraint_races_log_info_and_retry_update(mock_get_cursor, mock_commit):
+def test_merge_unique_constraint_races_log_info_and_retry_merge(
+    mock_get_cursor,
+    mock_get_connection,
+    mock_commit,
+    mock_uniform,
+    mock_sleep,
+):
     class BatchError:
         def __init__(self, offset, full_code, message):
             self.offset = offset
@@ -756,6 +769,7 @@ def test_merge_unique_constraint_races_log_info_and_retry_update(mock_get_cursor
         [],
     ]
     mock_get_cursor.return_value = cursor
+    mock_get_connection.return_value = MagicMock()
 
     qb = AccessBundleStateUpdateQueryBuilder(
         [
@@ -767,6 +781,7 @@ def test_merge_unique_constraint_races_log_info_and_retry_update(mock_get_cursor
             }
         ]
     )
+    qb.RETRY_MERGE_CONFLICTS = True
     qb.logger = MagicMock()
     qb.table_manager = MagicMock()
     qb.table_manager.get_table_name.return_value = "access_bundle_state"
@@ -786,11 +801,187 @@ def test_merge_unique_constraint_races_log_info_and_retry_update(mock_get_cursor
 
     qb.logger.warning.assert_not_called()
     qb.logger.info.assert_any_call(
-        "%d %s merge row(s) hit unique constraint races; retrying as bulk updates",
+        "%d %s merge row(s) hit unique constraint races; retrying MERGE attempt %d/%d; sample keys: %s",
+        1,
+        "access_bundle_state",
+        1,
+        qb.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS,
+        [{"id": "ab-1", "tenancy_id": "tenant-1", "service_instance_id": "svc-1"}],
+    )
+    assert cursor.executemany.call_count == 2
+    assert "MERGE INTO" in cursor.executemany.call_args_list[1].args[0]
+    mock_uniform.assert_called_once_with(0, qb.MERGE_CONFLICT_RETRY_BASE_DELAY_SECONDS)
+    mock_sleep.assert_called_once_with(0.25)
+    mock_commit.assert_called()
+
+
+@patch("dfa.adw.query_builders.base_query_builder.sleep")
+@patch("dfa.adw.query_builders.base_query_builder.random.uniform", return_value=0.25)
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_connection")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
+def test_merge_unique_constraint_retry_raises_after_repeated_merge_conflicts(
+    mock_get_cursor,
+    mock_get_connection,
+    _mock_commit,
+    mock_uniform,
+    mock_sleep,
+):
+    class BatchError:
+        def __init__(self, offset, full_code, message):
+            self.offset = offset
+            self.full_code = full_code
+            self.message = message
+
+    cursor = MagicMock()
+    cursor.getbatcherrors.side_effect = [
+        [BatchError(0, "ORA-00001", "ORA-00001: unique constraint violated")],
+        [BatchError(0, "ORA-00001", "ORA-00001: unique constraint violated")],
+        [BatchError(0, "ORA-00001", "ORA-00001: unique constraint violated")],
+        [BatchError(0, "ORA-00001", "ORA-00001: unique constraint violated")],
+    ]
+    mock_get_cursor.return_value = cursor
+    mock_get_connection.return_value = MagicMock()
+
+    qb = AccessBundleStateUpdateQueryBuilder(
+        [
+            {
+                "id": "ab-1",
+                "external_id": "ext-1",
+                "tenancy_id": "tenant-1",
+                "service_instance_id": "svc-1",
+            }
+        ]
+    )
+    qb.RETRY_MERGE_CONFLICTS = True
+    qb.logger = MagicMock()
+    qb.table_manager = MagicMock()
+    qb.table_manager.get_table_name.return_value = "access_bundle_state"
+    qb.table_manager.get_schema.return_value = "DFA"
+    qb.table_manager.get_unique_contraint_definition_details.return_value = {
+        "columns": ["ID", "TENANCY_ID", "SERVICE_INSTANCE_ID"]
+    }
+    qb.table_manager.get_nullable_constraint_columns.return_value = []
+    qb.table_manager.get_column_list_definition_for_table_ddl.return_value = [
+        {"column_name": "ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "EXTERNAL_ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "TENANCY_ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "SERVICE_INSTANCE_ID", "data_type": "VARCHAR2", "data_length": 32767},
+    ]
+
+    with pytest.raises(RuntimeError, match="merge retry still hit unique constraint conflicts"):
+        qb.executemany_state_merge_for_events()
+    assert cursor.executemany.call_count == qb.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS + 1
+    assert mock_sleep.call_count == qb.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS
+    assert mock_uniform.call_args_list[0].args == (0, qb.MERGE_CONFLICT_RETRY_BASE_DELAY_SECONDS)
+    assert mock_uniform.call_args_list[1].args == (0, qb.MERGE_CONFLICT_RETRY_BASE_DELAY_SECONDS * 2)
+    assert mock_uniform.call_args_list[2].args == (0, qb.MERGE_CONFLICT_RETRY_BASE_DELAY_SECONDS * 4)
+
+
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_connection")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
+def test_merge_unique_constraint_races_skip_merge_retry_when_disabled(
+    mock_get_cursor, mock_get_connection, mock_commit
+):
+    class BatchError:
+        def __init__(self, offset, full_code, message):
+            self.offset = offset
+            self.full_code = full_code
+            self.message = message
+
+    cursor = MagicMock()
+    cursor.getbatcherrors.return_value = [BatchError(0, "ORA-00001", "ORA-00001: unique constraint violated")]
+    mock_get_cursor.return_value = cursor
+    mock_get_connection.return_value = MagicMock()
+
+    qb = AccessBundleStateUpdateQueryBuilder(
+        [
+            {
+                "id": "ab-1",
+                "external_id": "ext-1",
+                "tenancy_id": "tenant-1",
+                "service_instance_id": "svc-1",
+            }
+        ]
+    )
+    qb.RETRY_MERGE_CONFLICTS = False
+    qb.logger = MagicMock()
+    qb.table_manager = MagicMock()
+    qb.table_manager.get_table_name.return_value = "access_bundle_state"
+    qb.table_manager.get_schema.return_value = "DFA"
+    qb.table_manager.get_unique_contraint_definition_details.return_value = {
+        "columns": ["ID", "TENANCY_ID", "SERVICE_INSTANCE_ID"]
+    }
+    qb.table_manager.get_nullable_constraint_columns.return_value = []
+    qb.table_manager.get_column_list_definition_for_table_ddl.return_value = [
+        {"column_name": "ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "EXTERNAL_ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "TENANCY_ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "SERVICE_INSTANCE_ID", "data_type": "VARCHAR2", "data_length": 32767},
+    ]
+
+    qb.executemany_state_merge_for_events()
+
+    qb.logger.info.assert_any_call(
+        "%d %s merge row(s) hit unique constraint races; skipping merge retry",
         1,
         "access_bundle_state",
     )
-    assert cursor.executemany.call_count == 2
+    assert cursor.executemany.call_count == 1
+    mock_commit.assert_called()
+
+
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_connection")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
+def test_merge_batch_errors_are_logged_when_retry_disabled(mock_get_cursor, mock_get_connection, mock_commit):
+    class BatchError:
+        def __init__(self, offset, full_code, message):
+            self.offset = offset
+            self.full_code = full_code
+            self.message = message
+
+    cursor = MagicMock()
+    cursor.getbatcherrors.return_value = [BatchError(0, "ORA-12899", "ORA-12899: value too large")]
+    mock_get_cursor.return_value = cursor
+    mock_get_connection.return_value = MagicMock()
+
+    qb = AccessBundleStateUpdateQueryBuilder(
+        [
+            {
+                "id": "ab-1",
+                "external_id": "ext-1",
+                "tenancy_id": "tenant-1",
+                "service_instance_id": "svc-1",
+            }
+        ]
+    )
+    qb.RETRY_MERGE_CONFLICTS = False
+    qb.logger = MagicMock()
+    qb.table_manager = MagicMock()
+    qb.table_manager.get_table_name.return_value = "access_bundle_state"
+    qb.table_manager.get_schema.return_value = "DFA"
+    qb.table_manager.get_unique_contraint_definition_details.return_value = {
+        "columns": ["ID", "TENANCY_ID", "SERVICE_INSTANCE_ID"]
+    }
+    qb.table_manager.get_nullable_constraint_columns.return_value = []
+    qb.table_manager.get_column_list_definition_for_table_ddl.return_value = [
+        {"column_name": "ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "EXTERNAL_ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "TENANCY_ID", "data_type": "VARCHAR2", "data_length": 32767},
+        {"column_name": "SERVICE_INSTANCE_ID", "data_type": "VARCHAR2", "data_length": 32767},
+    ]
+
+    qb.executemany_state_merge_for_events()
+
+    qb.logger.warning.assert_any_call(
+        "%s merge encountered %d unhandled batch error(s)",
+        "access_bundle_state",
+        1,
+    )
+    qb.logger.warning.assert_any_call("batch error: %s", "ORA-12899: value too large")
+    assert cursor.executemany.call_count == 1
     mock_commit.assert_called()
 
 
@@ -938,27 +1129,6 @@ def test_finalize_snapshot_cleanup_if_ready_returns_when_completed_count_not_rea
     mock_rollback.assert_called_once()
 
 
-@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback_and_close")
-def test_finalize_snapshot_cleanup_if_ready_raises_transient_tracker_error(mock_rollback_and_close):
-    qb = AccessBundleStateUpdateQueryBuilder([])
-    qb._snapshot_get_completed_batch_count = MagicMock(side_effect=oracledb.DatabaseError("transient"))
-    qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=True)
-    qb._snapshot_get_earliest_batch_timestamp = MagicMock(return_value="14-Apr-26 21:40:20.331306")
-    qb.delete_rows_older_than_event_timestamp = MagicMock()
-    qb._delete_snapshot_batch_tracking = MagicMock()
-
-    with pytest.raises(oracledb.DatabaseError):
-        qb.finalize_snapshot_cleanup_if_ready(
-            "snapshot-1",
-            num_of_batches=3,
-            tenancy_id="tenant-1",
-            service_instance_id="svc-1",
-        )
-
-    mock_rollback_and_close.assert_called_once()
-    qb.delete_rows_older_than_event_timestamp.assert_not_called()
-
-
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
 def test_finalize_snapshot_cleanup_if_ready_runs_delete_and_clears_tracking(mock_commit):
     qb = AccessBundleStateUpdateQueryBuilder([])
@@ -979,14 +1149,48 @@ def test_finalize_snapshot_cleanup_if_ready_runs_delete_and_clears_tracking(mock
         "14-Apr-26 21:40:20.331306",
         tenancy_id="tenant-1",
         service_instance_id="svc-1",
-        commit=True,
+        commit=False,
     )
     qb._delete_snapshot_batch_tracking.assert_called_once_with(
         "snapshot-1",
         "tenant-1",
         "svc-1",
-        commit=True,
+        commit=False,
     )
+    mock_commit.assert_called_once()
+
+
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback")
+def test_finalize_snapshot_cleanup_if_ready_rolls_back_when_tracker_cleanup_fails(mock_rollback, mock_commit):
+    qb = AccessBundleStateUpdateQueryBuilder([])
+    qb._snapshot_get_completed_batch_count = MagicMock(return_value=3)
+    qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=True)
+    qb._snapshot_get_earliest_batch_timestamp = MagicMock(return_value="14-Apr-26 21:40:20.331306")
+    qb.delete_rows_older_than_event_timestamp = MagicMock()
+    qb._delete_snapshot_batch_tracking = MagicMock(side_effect=RuntimeError("tracker delete failed"))
+
+    with pytest.raises(RuntimeError, match="tracker delete failed"):
+        qb.finalize_snapshot_cleanup_if_ready(
+            "snapshot-1",
+            num_of_batches=3,
+            tenancy_id="tenant-1",
+            service_instance_id="svc-1",
+        )
+
+    qb.delete_rows_older_than_event_timestamp.assert_called_once_with(
+        "14-Apr-26 21:40:20.331306",
+        tenancy_id="tenant-1",
+        service_instance_id="svc-1",
+        commit=False,
+    )
+    qb._delete_snapshot_batch_tracking.assert_called_once_with(
+        "snapshot-1",
+        "tenant-1",
+        "svc-1",
+        commit=False,
+    )
+    mock_rollback.assert_called_once()
     mock_commit.assert_not_called()
 
 
@@ -1011,33 +1215,11 @@ def test_finalize_snapshot_cleanup_if_ready_returns_without_earliest_timestamp(m
     mock_rollback.assert_called_once()
 
 
-@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback_and_close")
-def test_finalize_snapshot_cleanup_if_ready_raises_transient_delete_error(mock_rollback_and_close):
-    qb = AccessBundleStateUpdateQueryBuilder([])
-    qb._snapshot_get_completed_batch_count = MagicMock(return_value=3)
-    qb._try_acquire_snapshot_cleanup_lock = MagicMock(return_value=True)
-    qb._snapshot_get_earliest_batch_timestamp = MagicMock(return_value="14-Apr-26 21:40:20.331306")
-    qb.delete_rows_older_than_event_timestamp = MagicMock(side_effect=oracledb.DatabaseError("transient"))
-    qb._delete_snapshot_batch_tracking = MagicMock()
-
-    with pytest.raises(oracledb.DatabaseError):
-        qb.finalize_snapshot_cleanup_if_ready(
-            "snapshot-1",
-            num_of_batches=3,
-            tenancy_id="tenant-1",
-            service_instance_id="svc-1",
-        )
-
-    mock_rollback_and_close.assert_called_once()
-    assert qb.delete_rows_older_than_event_timestamp.call_count == 1
-    qb._delete_snapshot_batch_tracking.assert_not_called()
-
-
 @patch("dfa.adw.query_builders.base_query_builder.sleep")
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
-@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback_and_close")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback")
 def test_finalize_snapshot_cleanup_if_ready_retries_deadlock_delete(
-    mock_rollback_and_close,
+    mock_rollback,
     mock_commit,
     mock_sleep,
 ):
@@ -1059,10 +1241,16 @@ def test_finalize_snapshot_cleanup_if_ready_retries_deadlock_delete(
     )
 
     assert qb.delete_rows_older_than_event_timestamp.call_count == 2
+    qb.delete_rows_older_than_event_timestamp.assert_called_with(
+        "14-Apr-26 21:40:20.331306",
+        tenancy_id="tenant-1",
+        service_instance_id="svc-1",
+        commit=False,
+    )
     assert qb._delete_snapshot_batch_tracking.call_count == 1
-    mock_rollback_and_close.assert_called_once()
+    mock_rollback.assert_called_once()
     mock_sleep.assert_called_once_with(qb.STALE_ROW_DELETE_RETRY_DELAY_SECONDS)
-    mock_commit.assert_not_called()
+    mock_commit.assert_called_once()
 
 
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.rollback")

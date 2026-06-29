@@ -6,10 +6,7 @@ from abc import ABC, abstractmethod
 from pypika import Table
 
 from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder
-from dfa.adw.tables.orchestrated_system import (
-    OrchestratedSystemStateTable,
-    OrchestratedSystemTimeSeriesTable,
-)
+from dfa.adw.tables.orchestrated_system import OrchestratedSystemStateTable, OrchestratedSystemTimeSeriesTable
 
 
 class OrchestratedSystemStateQueryBuilder(Table, ABC, BaseQueryBuilder):
@@ -26,7 +23,7 @@ class OrchestratedSystemStateQueryBuilder(Table, ABC, BaseQueryBuilder):
 
 class OrchestratedSystemStateCreateQueryBuilder(OrchestratedSystemStateQueryBuilder):
     def executemany_sql_for_events(self):
-        return OrchestratedSystemStateUpdateQueryBuilder(self.events).executemany_sql_for_events()
+        return self.execute_delegated_query_builder(OrchestratedSystemStateUpdateQueryBuilder(self.events))
 
     def execute_sql_for_events(self):
         return self.executemany_sql_for_events()
