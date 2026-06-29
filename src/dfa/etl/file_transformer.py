@@ -196,7 +196,6 @@ class FileTransformer(AbstractTransformer):
                         self.get_operation_type(),
                         batched_events,
                         self.is_timeseries,
-                        retry_merge_conflicts=not self.is_timeseries,
                     )
                     self.query_builder = current_query_builder
                     self.query_builder.execute_sql_for_events()

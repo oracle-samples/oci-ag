@@ -75,7 +75,7 @@ class TestStreamTransformer(unittest.TestCase):
         self.transformer.transform_data.assert_called_once()
 
     @patch("dfa.etl.stream_transformer.get_query_builder")
-    def test_load_data_disables_merge_conflict_update_retry(self, mock_get_query_builder):
+    def test_load_data_builds_query_builder_for_prepared_events(self, mock_get_query_builder):
         mock_query_builder = MagicMock()
         mock_get_query_builder.return_value = mock_query_builder
         self.transformer._prepared_events = [
@@ -93,7 +93,6 @@ class TestStreamTransformer(unittest.TestCase):
             "UPDATE",
             [{"id": "identity-1"}],
             False,
-            retry_merge_conflicts=False,
         )
         mock_query_builder.execute_sql_for_events.assert_called_once()
 
@@ -181,7 +180,7 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))
+            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
 
     def test_approval_workflow_changed(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/approval_workflow_changed.json")
@@ -210,7 +209,7 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))
+            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
 
     def test_identity_delete(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/identity_deleted.json")
@@ -302,4 +301,4 @@ class TestStreamTransformer(unittest.TestCase):
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using MERGE into"))
+            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))

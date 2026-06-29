@@ -5,7 +5,6 @@
 import importlib.util
 import inspect
 import os
-import random
 import re
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache, wraps
@@ -251,10 +250,6 @@ class BaseQueryBuilder:
     logger = Logger(__name__).get_logger()
     events: Optional[list[Any]] = None
     table_manager: Any = None
-    RETRY_MERGE_CONFLICTS = False
-    MAX_MERGE_CONFLICT_RETRY_ATTEMPTS = 3
-    MERGE_CONFLICT_RETRY_BASE_DELAY_SECONDS = 0.5
-    MERGE_CONFLICT_RETRY_MAX_DELAY_SECONDS = 5.0
     MAX_DIRECT_STRING_BIND_SIZE = 32767
     MAX_DIRECT_CLOB_STRING_BIND_SIZE = 32767
     STALE_ROW_DELETE_MAX_ATTEMPTS = 3
@@ -422,18 +417,6 @@ class BaseQueryBuilder:
     def _get_database_error_code(exc: Exception) -> int | None:
         error = exc.args[0] if exc.args else None
         return getattr(error, "code", None)
-
-    def _sleep_before_merge_conflict_retry(self, attempt: int):
-        base_delay = self.MERGE_CONFLICT_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
-        delay_cap = min(base_delay, self.MERGE_CONFLICT_RETRY_MAX_DELAY_SECONDS)
-        delay_seconds = random.uniform(0, delay_cap)
-        self.logger.info(
-            "Sleeping %.3fs before MERGE conflict retry attempt %d/%d",
-            delay_seconds,
-            attempt,
-            self.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS,
-        )
-        sleep(delay_seconds)
 
     @staticmethod
     def _get_sample_keys_for_rows(rows: list[dict[str, Any]], key_columns: list[str], limit: int = 1):
@@ -813,48 +796,40 @@ class BaseQueryBuilder:
         events: list[dict[str, Any]] | None = None,
     ):
         """
-        Generic helper to perform MERGE (upsert) for current events using the
-        provided unique key columns. Intended for state tables
+        Generic helper to perform INSERT-first upserts for current events using the
+        provided unique key columns. Intended for state tables.
         """
         date_columns = date_columns or []
 
         active_events = self.events if events is None else events
         if not active_events or len(active_events) == 0:
             self.logger.info(
-                "No events to process by %s merge query builder",
+                "No events to process by %s state upsert query builder",
                 self.table_manager.get_table_name().lower(),
             )
             return
 
         self.logger.info(
-            "Using MERGE into %s for %d events (keys: %s)",
+            "Using bulk insert into %s for %d events with duplicate-key update fallback (keys: %s)",
             self.table_manager.get_table_name().lower(),
             len(active_events),
             ",".join([c.lower() for c in where_columns]),
         )
 
-        merge_sql = MergeManyQueryBuilder().get_operation_sql(
-            self, active_events, date_columns, where_columns, nullable_columns
-        )
-
-        AdwConnection.get_cursor().execute("ALTER SESSION DISABLE PARALLEL DML")
+        insert_sql = InsertManyQueryBuilder().get_operation_sql(self, active_events, date_columns)
 
         input_sizes = self.get_input_sizes_for_events(
             self.table_manager.get_column_list_definition_for_table_ddl(),
             active_events,
         )
-        input_sizes = self._filter_input_sizes_for_sql(input_sizes, merge_sql)
-        AdwConnection.get_cursor().setinputsizes(**input_sizes)
+        insert_input_sizes = self._filter_input_sizes_for_sql(input_sizes, insert_sql)
+        AdwConnection.get_cursor().setinputsizes(**insert_input_sizes)
         AdwConnection.get_cursor().executemany(
-            merge_sql,
-            self._bind_rows_for_sql(active_events, merge_sql),
+            insert_sql,
+            self._bind_rows_for_sql(active_events, insert_sql),
             batcherrors=True,
         )
 
-        # MERGE is not immune to concurrent insert races. Two workers can both evaluate
-        # "not matched" at about the same time. One inserts first; the other then tries its
-        # insert branch and gets ORA-00001. Retrying MERGE for those rows lets Oracle either
-        # update the now-existing row or insert it if the first failure did not persist a row.
         batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
         if batch_errors:
             constraint_violating_rows = []
@@ -867,7 +842,7 @@ class BaseQueryBuilder:
 
             if other_batch_errors:
                 self.logger.warning(
-                    "%s merge encountered %d unhandled batch error(s)",
+                    "%s insert encountered %d unhandled batch error(s)",
                     self.table_manager.get_table_name().lower(),
                     len(other_batch_errors),
                 )
@@ -884,71 +859,38 @@ class BaseQueryBuilder:
                     self.logger.warning("batch error: %s", m)
 
             if constraint_violating_rows:
-                if not self.RETRY_MERGE_CONFLICTS:
-                    self.logger.info(
-                        "%d %s merge row(s) hit unique constraint races; skipping merge retry",
-                        len(constraint_violating_rows),
-                        self.table_manager.get_table_name().lower(),
-                    )
-                    AdwConnection.commit()
-                    return
-
-                retry_rows = constraint_violating_rows
-                for attempt in range(1, self.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS + 1):
-                    self.logger.info(
-                        "%d %s merge row(s) hit unique constraint races; retrying MERGE attempt %d/%d; sample keys: %s",
-                        len(retry_rows),
-                        self.table_manager.get_table_name().lower(),
-                        attempt,
-                        self.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS,
-                        self._get_sample_keys_for_rows(retry_rows, where_columns),
-                    )
-                    AdwConnection.commit()
-                    self._sleep_before_merge_conflict_retry(attempt)
-                    AdwConnection.get_cursor().setinputsizes(**input_sizes)
+                self.logger.info(
+                    "%d %s insert row(s) hit unique constraints; retrying as bulk updates; sample keys: %s",
+                    len(constraint_violating_rows),
+                    self.table_manager.get_table_name().lower(),
+                    self._get_sample_keys_for_rows(constraint_violating_rows, where_columns),
+                )
+                AdwConnection.commit()
+                update_sql = UpdateManyQueryBuilder().get_operation_sql(
+                    self,
+                    constraint_violating_rows,
+                    date_columns,
+                    where_columns,
+                    nullable_columns,
+                )
+                if update_sql is not None:
+                    update_input_sizes = self._filter_input_sizes_for_sql(input_sizes, update_sql)
+                    AdwConnection.get_cursor().setinputsizes(**update_input_sizes)
                     AdwConnection.get_cursor().executemany(
-                        merge_sql,
-                        self._bind_rows_for_sql(retry_rows, merge_sql),
+                        update_sql,
+                        self._bind_rows_for_sql(constraint_violating_rows, update_sql),
                         batcherrors=True,
                     )
-
-                    retry_batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
-                    if not retry_batch_errors:
-                        retry_rows = []
-                        break
-
-                    next_retry_rows = []
-                    retry_other_errors = []
-                    for be in retry_batch_errors:
-                        if getattr(be, "full_code", None) == "ORA-00001":
-                            next_retry_rows.append(retry_rows[be.offset])
-                        else:
-                            retry_other_errors.append(be)
-
-                    if retry_other_errors:
+                    update_batch_errors = list(AdwConnection.get_cursor().getbatcherrors())
+                    for batch_error in update_batch_errors[:5]:
                         self.logger.warning(
-                            "%s merge retry encountered %d unhandled batch error(s)",
+                            "%s update fallback failed - %s",
                             self.table_manager.get_table_name().lower(),
-                            len(retry_other_errors),
+                            getattr(batch_error, "message", str(batch_error)),
                         )
-                        raise RuntimeError(
-                            f"{self.table_manager.get_table_name().lower()} merge retry failed with "
-                            f"{len(retry_other_errors)} unhandled batch error(s)"
-                        )
-
-                    retry_rows = next_retry_rows
-
-                if retry_rows:
-                    missed_keys = self._get_sample_keys_for_rows(retry_rows, where_columns)
-                    raise RuntimeError(
-                        f"{self.table_manager.get_table_name().lower()} merge retry still hit "
-                        f"unique constraint conflicts for {len(retry_rows)} row(s) after "
-                        f"{self.MAX_MERGE_CONFLICT_RETRY_ATTEMPTS} attempt(s); sample keys: {missed_keys}"
-                    )
         AdwConnection.commit()
 
     def execute_delegated_query_builder(self, query_builder):
-        query_builder.RETRY_MERGE_CONFLICTS = self.RETRY_MERGE_CONFLICTS
         query_builder.logger = self.logger
         return query_builder.executemany_sql_for_events()
 
@@ -1056,7 +998,6 @@ def get_query_builder(
     operation,
     events,
     is_timeseries=False,
-    retry_merge_conflicts=False,
 ):
     logger = Logger(__name__).get_logger()
     query_builders = Path(__file__).parent
@@ -1073,9 +1014,7 @@ def get_query_builder(
             is_timeseries,
         )
         if query_builder_class is not None:
-            query_builder = query_builder_class(events)
-            query_builder.RETRY_MERGE_CONFLICTS = retry_merge_conflicts
-            return query_builder
+            return query_builder_class(events)
     except Exception as e:
         logger.error("Error finding query builder for %s/%s: %s", event_object_type, operation, e)
     return None
