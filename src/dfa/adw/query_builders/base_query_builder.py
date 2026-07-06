@@ -251,7 +251,6 @@ class BaseQueryBuilder:
     events: Optional[list[Any]] = None
     table_manager: Any = None
     MAX_DIRECT_STRING_BIND_SIZE = 32767
-    MAX_DIRECT_CLOB_STRING_BIND_SIZE = 32767
     STALE_ROW_DELETE_MAX_ATTEMPTS = 3
     STALE_ROW_DELETE_RETRY_DELAY_SECONDS = 30
     _snapshot_batch_tracker_table = SnapshotBatchTrackerTable()
@@ -328,11 +327,8 @@ class BaseQueryBuilder:
                     ),
                     default=1,
                 )
-                if data_type == "CLOB" and max_value_length > self.MAX_DIRECT_CLOB_STRING_BIND_SIZE:
-                    bind_size = oracledb.DB_TYPE_CLOB
-                else:
-                    max_column_length = column["data_length"] or self.MAX_DIRECT_STRING_BIND_SIZE
-                    bind_size = max(1, min(max_value_length, max_column_length))
+                max_column_length = column["data_length"] or self.MAX_DIRECT_STRING_BIND_SIZE
+                bind_size = max(1, min(max_value_length, max_column_length))
             elif data_type == "NUMBER":
                 bind_size = oracledb.NUMBER
             else:
