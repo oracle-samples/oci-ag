@@ -90,7 +90,7 @@ def parse_policy_statement(line: str) -> Optional[Dict[str, Any]]:
     cross_tenancy = bool(re.search(r"\bof\s+(any-)?tenancy\b", subject_raw, flags=re.IGNORECASE))
 
     # Risk evaluation -> numeric score 1 (least permissive) to 5 (overly permissive)
-    risk_reasons: List[str] = []
+    reasons: List[str] = []
 
     res_l = resource_phrase.lower()
     scope_l = scope_phrase.lower()
@@ -100,23 +100,17 @@ def parse_policy_statement(line: str) -> Optional[Dict[str, Any]]:
     resource_breadth = 0
     if "all-resources" in res_l:
         resource_breadth = 2
-    elif re.search(r"\b(iam|secret|key|log|virtual-network)-family\b", res_l):
+    elif "-family" in res_l:
         resource_breadth = 1
 
     # classify scope
     scope_kind = 0
     if re.search(r"\btenancy\b", scope_l):
         scope_kind = 2
-    elif re.search(r"\bcompartment\b", scope_l):
-        scope_kind = 1
 
     # classify action
     action = 0
-    if primary_verb == "inspect":
-        action = 0
-    elif primary_verb == "read":
-        action = 1
-    elif primary_verb == "use":
+    if primary_verb == "use":
         action = 2
     elif primary_verb == "manage":
         action = 3
@@ -124,7 +118,7 @@ def parse_policy_statement(line: str) -> Optional[Dict[str, Any]]:
     # base score from action/resource/scope per guideline
     score = min(5, action + resource_breadth + scope_kind)
     if score >= 4:
-        risk_reasons.append(
+        reasons.append(
             f"High score from action/resource/scope "
             f'(action={primary_verb},resource="{resource_phrase}", scope="{scope_phrase}")'
         )
@@ -133,57 +127,49 @@ def parse_policy_statement(line: str) -> Optional[Dict[str, Any]]:
     if subject_type in ("any-user", "any-group"):
         if "any-tenancy" in subj_l:
             score = 5
-            risk_reasons.append("Any-user/group of any-tenancy")
+            reasons.append("Any-user/group of any-tenancy")
         elif primary_verb == "service-defined-actions":
             score = 5
-            risk_reasons.append("Any-user/group with service-defined actions")
+            reasons.append("Any-user/group with service-defined actions")
         else:
             score = max(score, 4)
-            risk_reasons.append("Any-user subject")
+            reasons.append("Any-user subject")
     elif subject_type == "dynamic-group":
-        if resource_breadth >= 2 or scope_kind >= 2:
+        if resource_breadth > 0 or scope_kind > 0:
             if primary_verb == "manage":
                 score = 5
-                risk_reasons.append("Dynamic group with broad resource and manage verb")
-            elif primary_verb != "inspect":
-                score = max(score, 4)
-                risk_reasons.append("Dynamic group with broad resource and powerful verb")
+                reasons.append("Dynamic group with broad resource and manage verb")
 
     # Service principal tenancy-wide manage
     if subject_type == "service" and primary_verb == "manage" and scope_kind == "tenancy":
         score = 5
-        risk_reasons.append("Service principal manage across tenancy")
+        reasons.append("Service principal manage across tenancy")
 
     # Org-level admit/endorse adjustments
     if relation in ORG_LEVEL_RELATIONS:
         if subject_type == "any-user" or "any-tenancy" in subj_l:
             score = 5
-            risk_reasons.append(f"{relation.title()} of any-user/any-tenancy")
+            reasons.append(f"{relation.title()} of any-user/any-tenancy")
         elif cross_tenancy:
             score = min(max(score, 3) + 1, 5)
-            risk_reasons.append(f"{relation.title()} cross-tenancy trust")
+            reasons.append(f"{relation.title()} cross-tenancy trust")
 
     # Conditions effect: conditions breadth/restrictiveness
     cond_l = conditions.lower()
-    cond_broad = any(tok in cond_l for tok in ["!=", " any {", " regex", "/*", "/**", "\\"])
-    cond_restrictive = (
-        bool(conditions)
-        and not cond_broad
-        and bool(re.search(r"\brequest.principal.id\b", conditions, flags=re.IGNORECASE))
-    )
+    cond_broad = any(tok in cond_l for tok in ["!=", " any {", " regex", "*", "request.principal.type"])
     if cond_broad:
         score = min(score + 1, 5)
-        risk_reasons.append("Broad or negative match in conditions")
-    elif cond_restrictive:
+        reasons.append("Broad or negative match in conditions")
+    if cond_l and not cond_broad:
         score = max(score - 1, 1)
-        risk_reasons.append("Restrictive conditions present")
+        reasons.append("Restrictive conditions present")
 
     # Unknown action phrase outside braces
     unknown_action = primary_verb == "unknown" and not actions_in_braces
     if unknown_action and scope_kind == "tenancy":
         score = max(score, 4)
     if unknown_action:
-        risk_reasons.append("Nonstandard action phrase (outside braces)")
+        reasons.append("Nonstandard action phrase (outside braces)")
 
     return {
         "parsed": True,
@@ -197,14 +183,14 @@ def parse_policy_statement(line: str) -> Optional[Dict[str, Any]]:
         "scope_phrase": scope_phrase,
         "conditions": conditions,
         "cross_tenancy": "Yes" if cross_tenancy else "No",
-        "risk_score": str(score),
-        "risk_reasons": "; ".join(risk_reasons) if risk_reasons else "",
+        "permissive_score": str(score),
+        "reasons": "; ".join(reasons) if reasons else "",
         "unknown_action": "Yes" if unknown_action else "No",
     }
 
 
 def remediation_for(row: Dict[str, Any]) -> str:
-    reasons = row.get("risk_reasons", "")
+    reasons = row.get("reasons", "")
     rel = row.get("relation", "")
     subj_type = row.get("subject_type", "")
     verb = row.get("primary_verb", "")
