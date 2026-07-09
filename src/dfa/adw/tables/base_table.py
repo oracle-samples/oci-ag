@@ -168,6 +168,7 @@ class BaseTable(ABC):
 
 class BaseStateTable(BaseTable, ABC):
     _ensured_delete_index_names: ClassVar[set[str]] = set()
+    _nullable_unique_index_sentinel: ClassVar[str] = "__DFA_NULL__"
 
     @abstractmethod
     def get_unique_contraint_definition_details(self):
@@ -182,7 +183,7 @@ class BaseStateTable(BaseTable, ABC):
     def _build_unique_constraint_ddl(self):
 
         ddl = ""
-        if len(self.get_unique_contraint_definition_details()) > 0:
+        if len(self.get_unique_contraint_definition_details()) > 0 and not self.get_nullable_constraint_columns():
             constraint_columns = self.get_unique_contraint_definition_details()["columns"]
             constraint_columns_ddl = '"' + '", "'.join(constraint_columns) + '"'
             constraint = self.get_unique_contraint_definition_details()["name"]
@@ -193,12 +194,21 @@ class BaseStateTable(BaseTable, ABC):
                 """
         return ddl
 
+    def _build_unique_index_column_expression(self, column_name):
+        nullable_columns = {column.upper() for column in self.get_nullable_constraint_columns()}
+        quoted_column = f'"{column_name}"'
+        if column_name.upper() not in nullable_columns:
+            return quoted_column
+        return f"COALESCE({quoted_column}, '{self._nullable_unique_index_sentinel}')"
+
     def _build_unique_index_ddl(self):
 
         ddl = ""
         if len(self.get_unique_contraint_definition_details()) > 0:
             constraint_columns = self.get_unique_contraint_definition_details()["columns"]
-            constraint_columns_ddl = '"' + '", "'.join(constraint_columns) + '"'
+            constraint_columns_ddl = ", ".join(
+                [self._build_unique_index_column_expression(column) for column in constraint_columns]
+            )
             constraint = self.get_unique_contraint_definition_details()["name"]
             ddl = f"""
                 CREATE UNIQUE INDEX {self.get_schema()}.{constraint} ON \

@@ -125,6 +125,28 @@ def test_merge_many_binds_clob_columns_directly():
     assert 'MERGE INTO "DFA"."DUMMY_TABLE"' in norm
 
 
+def test_nullable_unique_index_uses_function_based_columns():
+    table = PermissionAssignmentStateTable()
+
+    index_ddl = _normalize_sql(table._build_unique_index_ddl())
+    constraint_ddl = table._build_unique_constraint_ddl()
+
+    assert "COALESCE(\"ACCESS_BUNDLE_ID\", '__DFA_NULL__')" in index_ddl
+    assert "COALESCE(\"ROLE_ID\", '__DFA_NULL__')" in index_ddl
+    assert '"TARGET_IDENTITY_ID"' in index_ddl
+    assert constraint_ddl == ""
+
+
+def test_non_nullable_unique_index_keeps_unique_constraint():
+    table = PermissionStateTable()
+
+    index_ddl = _normalize_sql(table._build_unique_index_ddl())
+    constraint_ddl = _normalize_sql(table._build_unique_constraint_ddl())
+
+    assert "COALESCE(" not in index_ddl
+    assert 'ALTER TABLE DFA.PERMISSION_STATE ADD CONSTRAINT "DFA_UNQ_PERM_ST_CONST"' in constraint_ddl
+
+
 def test_state_delete_keys_are_indexed():
     def indexed_columns(table):
         indexes = [table.get_unique_contraint_definition_details()]

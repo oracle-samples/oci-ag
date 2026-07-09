@@ -59,13 +59,14 @@ class PermissionAssignmentStateTable(BaseStateTable, PermissionAssignmentTimeSer
                 "TARGET_IDENTITY_ID",
                 "PERMISSION_ID",
                 "ACCESS_BUNDLE_ID",
+                "ROLE_ID",
                 "SERVICE_INSTANCE_ID",
                 "TENANCY_ID",
             ],
         }
 
     def get_nullable_constraint_columns(self):
-        return ["ACCESS_BUNDLE_ID"]
+        return ["ACCESS_BUNDLE_ID", "ROLE_ID"]
 
     def get_delete_index_definition_details(self):
         return [
