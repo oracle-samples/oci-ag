@@ -383,7 +383,7 @@ class DfaSetupADWFunctionConfigs(BaseFunction):
     def add_adw_connection_string_to_configuration(self, application_ocid):
         self.logger.info("Pulling details for configured ADW instance")
         adw_details = BaseAutonomousDatabase().get_details(os.environ["DFA_ADW_INSTANCE_OCID"])
-        connection_host_and_service_name = adw_details.connection_strings.all_connection_strings["HIGH"].split("/")
+        connection_host_and_service_name = adw_details.connection_strings.all_connection_strings["LOW"].split("/")
 
         self.logger.info("Parsing connection host and service name for configured ADW instance")
         connection_host_and_port = connection_host_and_service_name[0].split(":")

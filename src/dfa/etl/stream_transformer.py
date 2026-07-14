@@ -98,7 +98,6 @@ class StreamTransformer(AbstractTransformer):
                     prepared_events["operation_type"],
                     prepared_events["data"],
                     self.is_timeseries,
-                    retry_merge_conflicts=False,
                 )
                 query_builder.execute_sql_for_events()
             self.logger.info("We executed all of the queries")

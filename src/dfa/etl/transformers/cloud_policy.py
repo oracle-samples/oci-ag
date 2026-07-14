@@ -84,7 +84,7 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             score = 0
             results = parse_policy_statement(temp_statement)
             if results:
-                score = results.get("risk_score", 0)
+                score = results.get("permissive_score", 0)
 
             # Embed score into attributes JSON
             try:
@@ -94,6 +94,7 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             except Exception:
                 attrs_obj = {}
             attrs_obj["permissive_score"] = int(score)
+            attrs_obj["reasons"] = results.get("reasons", [])
             base_policy_statement["attributes"] = json.dumps(attrs_obj)
 
             if subject_set:
