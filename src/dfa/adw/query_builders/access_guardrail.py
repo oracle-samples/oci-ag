@@ -13,7 +13,7 @@ class AccessGuardrailStateQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = AccessGuardrailStateTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod
@@ -47,7 +47,7 @@ class AccessGuardrailTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = AccessGuardrailTimeSeriesTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod

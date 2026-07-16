@@ -397,10 +397,10 @@ class AdwSecrets(DfaBaseSecret):
         return exists_flag
 
     def get_dfa_user_password(self):
-        self.logger.info(
-            "Pulling ADW password using secret name %s from the OCI vault",
-            os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"],
-        )
+        # self.logger.info(
+        #     "Pulling ADW password using secret name %s from the OCI vault",
+        #     os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"],
+        # )
         password_secret_ocid = self._get_secret_ocid(os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"])
         password = self._get_secret_value(password_secret_ocid)
 
@@ -473,14 +473,14 @@ class AdwSecrets(DfaBaseSecret):
         return True
 
     def get_password(self):
-        self.logger.info("Pulling ADW password from the OCI vault")
+        # self.logger.info("Pulling ADW password from the OCI vault")
         password_secret_ocid = self._get_secret_ocid(os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"])
         password = self._get_secret_value(password_secret_ocid)
 
         return password
 
     def get_wallet_password(self):
-        self.logger.info("Pulling ADW WALLET password using from the OCI vault")
+        # self.logger.info("Pulling ADW WALLET password using from the OCI vault")
         password_secret_ocid = self._get_secret_ocid(os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"])
         password = self._get_secret_value(password_secret_ocid)
 
@@ -489,10 +489,10 @@ class AdwSecrets(DfaBaseSecret):
     def get_wallet(self):
         wallet_secret_ocid = self._get_secret_ocid(os.environ["DFA_ADW_WALLET_SECRET_NAME"])
 
-        self.logger.info("Pulling ADW wallet from the OCI vault")
+        # self.logger.info("Pulling ADW wallet from the OCI vault")
         return self._get_wallet_value(wallet_secret_ocid)
 
     def get_ewallet_pem(self):
         wallet_secret_ocid = self._get_secret_ocid(os.environ["DFA_ADW_EWALLET_PEM_SECRET_NAME"])
-        self.logger.info("Pulling ADW EWALLET from the OCI vault")
+        # self.logger.info("Pulling ADW EWALLET from the OCI vault")
         return self._get_secret_value(wallet_secret_ocid)

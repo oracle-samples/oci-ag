@@ -13,7 +13,7 @@ class RoleStateQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = RoleStateTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod
@@ -47,7 +47,7 @@ class RoleTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = RoleTimeSeriesTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod

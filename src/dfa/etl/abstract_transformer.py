@@ -22,7 +22,9 @@ class AbstractTransformer(ABC):
     _tenancy_id = None
     _service_instance_id = None
     _raw_events: list[Any] = []
-    _prepared_events: list[Any] = []
+    # Always a flat list of transformed event dictionaries.  Batching is a
+    # load-time concern and must not change this representation.
+    _prepared_events: list[dict[str, Any]] = []
 
     def _get_raw_events(self):
         return self._raw_events
@@ -35,6 +37,12 @@ class AbstractTransformer(ABC):
                 self._prepared_events.append(event)
 
     def _get_prepared_events(self):
+        return self._prepared_events
+
+    def get_raw_events(self):
+        return self._raw_events
+
+    def get_prepared_events(self):
         return self._prepared_events
 
     def get_event_object_type(self):
@@ -99,9 +107,18 @@ class AbstractTransformer(ABC):
                     finally:
                         duration = perf_counter() - start
                         try:
-                            self.logger.info("%s runtime: %.3fs", label, duration)
+                            self.logger.info(
+                                "%s timeseries (%s) %s %s raw_events(%d) prepared_events(%d) runtime: %.3fs",
+                                self.transformer_name,
+                                self.is_timeseries,
+                                self.get_event_object_type(),
+                                label,
+                                len(self.get_raw_events()),
+                                len(self.get_prepared_events()),
+                                duration,
+                            )
                         except Exception:
-                            pass
+                            self.logger.info("%s %s runtime: %.3fs", self.transformer_name, label, duration)
 
                 setattr(cls, fn_name, _timed)
 

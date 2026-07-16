@@ -13,7 +13,7 @@ class CloudGroupStateQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = CloudGroupStateTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod
@@ -83,7 +83,7 @@ class CloudGroupTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = CloudGroupTimeSeriesTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod

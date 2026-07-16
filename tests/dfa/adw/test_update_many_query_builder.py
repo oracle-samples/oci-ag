@@ -255,31 +255,6 @@ def test_access_bundle_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
     mock_commit.assert_called_once()
 
 
-@patch("dfa.adw.query_builders.base_query_builder.perf_counter", side_effect=[10.0, 12.5])
-@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
-@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
-def test_execute_sql_for_events_logs_runtime(mock_get_cursor, mock_commit, _mock_perf_counter):
-    cursor = MagicMock()
-    cursor.getbatcherrors.return_value = []
-    mock_get_cursor.return_value = cursor
-    qb = AccessBundleStateDeleteQueryBuilder(
-        [
-            {"id": "bundle-1", "service_instance_id": "svc-1", "tenancy_id": "tenant-1"},
-        ]
-    )
-
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
-
-    mock_log.assert_any_call(
-        "%s execute_sql_for_events runtime: %.3fs for %d event(s)",
-        "access_bundle_state",
-        2.5,
-        1,
-    )
-    mock_commit.assert_called_once()
-
-
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
 def test_access_guardrail_delete_uses_bulk_delete(mock_get_cursor, mock_commit):

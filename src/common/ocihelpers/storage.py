@@ -80,10 +80,8 @@ class BaseObjectStorage(ABC):
         return self.__client
 
     def _check_environment(self):
-        self.logger.info("Performing envrionment checks for object storage client")
         try:
             self._signer_type = os.environ["DFA_SIGNER_TYPE"]
-            self.logger.info("Signer type for object storage manager has been set to %s", self._signer_type)
         except KeyError:
             self.logger.info(
                 "Cannot create object storage client - Environment varaible DFA_SIGNER_TYPE does not exist"

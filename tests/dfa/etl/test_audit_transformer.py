@@ -54,15 +54,15 @@ class TestAuditTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._prepared_events[0]["event_object_type"], "AUDIT_EVENTS")
         self.assertEqual(self.transformer._prepared_events[0]["operation_type"], "CREATE")
         self.assertEqual(
-            self.transformer._prepared_events[0]["data"][0]["event_timestamp"],
+            self.transformer._prepared_events[0]["event_timestamp"],
             "18-Aug-25 06:15:18.820311 PM",
         )
         self.assertEqual(
-            self.transformer._prepared_events[0]["data"][0]["tenancy_id"],
+            self.transformer._prepared_events[0]["tenancy_id"],
             "test-tenancy-0f3a6b0c9e2d4f11",
         )
         self.assertEqual(
-            self.transformer._prepared_events[0]["data"][0]["service_instance_id"],
+            self.transformer._prepared_events[0]["service_instance_id"],
             "test-service-instance-5d71a8e3c04b49af",
         )
 

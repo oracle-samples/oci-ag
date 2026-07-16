@@ -13,7 +13,7 @@ class PermissionStateQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = PermissionStateTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod
@@ -47,7 +47,7 @@ class PermissionTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = PermissionTimeSeriesTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod
