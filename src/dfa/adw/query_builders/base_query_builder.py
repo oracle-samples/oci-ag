@@ -7,9 +7,9 @@ import inspect
 import os
 import re
 from datetime import datetime, timedelta, timezone
-from functools import lru_cache, wraps
+from functools import lru_cache
 from pathlib import Path
-from time import perf_counter, sleep
+from time import sleep
 from typing import Any, Optional, cast
 
 import oracledb
@@ -37,7 +37,7 @@ class InsertManyQueryBuilder:
 
         insert_sql = Query.into(query_builder).insert(*parameter_set).get_sql()
 
-        table_name = query_builder.table_manager.get_table_name().upper()
+        table_name = query_builder.table_manager.get_table_name()
         column_list_str = ", ".join(insert_column_list)
         insert_sql = insert_sql.replace(f'"{table_name}"', f'"{table_name}" ({column_list_str}) ')
         return insert_sql
@@ -121,8 +121,8 @@ class MergeManyQueryBuilder:
         updatable_cols = [c for c in all_cols if c.lower() not in key_cols and c.lower() not in date_cols]
 
         # Qualify table name with schema
-        schema = query_builder.table_manager.get_schema().upper()
-        table = query_builder.table_manager.get_table_name().upper()
+        schema = query_builder.table_manager.get_schema()
+        table = query_builder.table_manager.get_table_name()
         qualified_table = f'"{schema}"."{table}"'
 
         # USING subquery with bind variables once per executemany row
@@ -192,7 +192,7 @@ class StreamOffsetTrackerQueryBuilder(Table):
     table_manager = StreamOffsetTrackerTable()
 
     def __init__(self):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
 
     def get_statement_for_select_max_offset_for_transformer(self, transformer):
         statement = (
@@ -254,49 +254,6 @@ class BaseQueryBuilder:
     STALE_ROW_DELETE_MAX_ATTEMPTS = 3
     STALE_ROW_DELETE_RETRY_DELAY_SECONDS = 30
     _snapshot_batch_tracker_table = SnapshotBatchTrackerTable()
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        BaseQueryBuilder._wrap_execute_sql_for_events(cls)
-
-    @staticmethod
-    def _wrap_execute_sql_for_events(subclass):
-        method = subclass.__dict__.get("execute_sql_for_events")
-        if not callable(method) or getattr(method, "__dfa_timed_execute_sql_for_events__", False):
-            return
-
-        @wraps(method)
-        def _timed_execute_sql_for_events(self, *args, **kw):
-            start_time = perf_counter()
-            try:
-                return method(self, *args, **kw)
-            finally:
-                duration = perf_counter() - start_time
-                try:
-                    table_name = self.table_manager.get_table_name().lower()
-                except Exception:
-                    table_name = self.__class__.__name__
-
-                events = getattr(self, "events", None) or []
-                try:
-                    event_count = len(events)
-                except TypeError:
-                    event_count = 0
-
-                try:
-                    self.logger.info(
-                        "%s execute_sql_for_events runtime: %.3fs for %d event(s)",
-                        table_name,
-                        duration,
-                        event_count,
-                    )
-                except Exception:
-                    pass
-
-        setattr(_timed_execute_sql_for_events, "__dfa_timed_execute_sql_for_events__", True)
-        if getattr(method, "__isabstractmethod__", False):
-            _timed_execute_sql_for_events.__isabstractmethod__ = True
-        setattr(subclass, "execute_sql_for_events", _timed_execute_sql_for_events)
 
     def _table(self) -> Table:
         return cast(Table, self)
@@ -381,7 +338,7 @@ class BaseQueryBuilder:
     def _get_cleanup_scope_values(
         self, tenancy_id: str | None = None, service_instance_id: str | None = None
     ) -> dict[str, str]:
-        entity_type = self.table_manager.get_table_name().upper()
+        entity_type = self.table_manager.get_table_name()
         if entity_type.endswith("_STATE"):
             entity_type = entity_type[: -len("_STATE")]
         elif entity_type.endswith("_TS"):
@@ -608,7 +565,7 @@ class BaseQueryBuilder:
             AdwConnection.commit()
         self.logger.info(
             "Deleted snapshot tracker rows for %s snapshot %s",
-            self.table_manager.get_table_name().lower(),
+            self.table_manager.get_table_name(),
             snapshot_id,
         )
 
@@ -639,7 +596,7 @@ class BaseQueryBuilder:
                 if completed_batch_count < required_batch_count:
                     self.logger.info(
                         "Deferring stale row cleanup for %s snapshot %s; completed %d/%d batches",
-                        self.table_manager.get_table_name().lower(),
+                        self.table_manager.get_table_name(),
                         snapshot_id,
                         completed_batch_count,
                         required_batch_count,
@@ -654,7 +611,7 @@ class BaseQueryBuilder:
                 ):
                     self.logger.info(
                         "Deferring stale row cleanup for %s snapshot %s; cleanup already in progress",
-                        self.table_manager.get_table_name().lower(),
+                        self.table_manager.get_table_name(),
                         snapshot_id,
                     )
                     AdwConnection.rollback()
@@ -691,7 +648,7 @@ class BaseQueryBuilder:
                         )
                         self.logger.warning(
                             retry_message,
-                            self.table_manager.get_table_name().lower(),
+                            self.table_manager.get_table_name(),
                             snapshot_id,
                             attempt,
                             self.STALE_ROW_DELETE_MAX_ATTEMPTS,
@@ -711,7 +668,7 @@ class BaseQueryBuilder:
     ):
         self.logger.info(
             "Removing stale rows from %s older than %s",
-            self.table_manager.get_table_name().lower(),
+            self.table_manager.get_table_name(),
             completion_timestamp,
         )
 
@@ -737,14 +694,14 @@ class BaseQueryBuilder:
     def executemany_sql_for_events(self):
         self.logger.info(
             "Using bulk insert into time series table (%s) for %d events",
-            self.table_manager.get_table_name().lower(),
+            self.table_manager.get_table_name(),
             len(self.events),
         )
 
         if len(self.events) == 0:
             self.logger.info(
                 "No events to process by %s time series query builder",
-                self.table_manager.get_table_name().lower(),
+                self.table_manager.get_table_name(),
             )
             return
 
@@ -765,7 +722,7 @@ class BaseQueryBuilder:
         if batch_errors:
             self.logger.warning(
                 "%s time series inserts encountered %d batch error(s)",
-                self.table_manager.get_table_name().lower(),
+                self.table_manager.get_table_name(),
                 len(batch_errors),
             )
             # Log top-N distinct messages for signal; avoid full spam
@@ -801,13 +758,13 @@ class BaseQueryBuilder:
         if not active_events or len(active_events) == 0:
             self.logger.info(
                 "No events to process by %s state upsert query builder",
-                self.table_manager.get_table_name().lower(),
+                self.table_manager.get_table_name(),
             )
             return
 
         self.logger.info(
             "Using bulk insert into %s for %d events with duplicate-key update fallback (keys: %s)",
-            self.table_manager.get_table_name().lower(),
+            self.table_manager.get_table_name(),
             len(active_events),
             ",".join([c.lower() for c in where_columns]),
         )
@@ -839,7 +796,7 @@ class BaseQueryBuilder:
             if other_batch_errors:
                 self.logger.warning(
                     "%s insert encountered %d unhandled batch error(s)",
-                    self.table_manager.get_table_name().lower(),
+                    self.table_manager.get_table_name(),
                     len(other_batch_errors),
                 )
                 seen = set()
@@ -858,7 +815,7 @@ class BaseQueryBuilder:
                 self.logger.info(
                     "%d %s insert row(s) hit unique constraints; retrying as bulk updates; sample keys: %s",
                     len(constraint_violating_rows),
-                    self.table_manager.get_table_name().lower(),
+                    self.table_manager.get_table_name(),
                     self._get_sample_keys_for_rows(constraint_violating_rows, where_columns),
                 )
                 AdwConnection.commit()
@@ -881,7 +838,7 @@ class BaseQueryBuilder:
                     for batch_error in update_batch_errors[:5]:
                         self.logger.warning(
                             "%s update fallback failed - %s",
-                            self.table_manager.get_table_name().lower(),
+                            self.table_manager.get_table_name(),
                             getattr(batch_error, "message", str(batch_error)),
                         )
         AdwConnection.commit()
@@ -913,13 +870,13 @@ class BaseQueryBuilder:
         if not active_events or len(active_events) == 0:
             self.logger.info(
                 "No events to process by %s delete query builder",
-                self.table_manager.get_table_name().lower(),
+                self.table_manager.get_table_name(),
             )
             return
 
         self.logger.info(
             "Using bulk delete from %s for %d events (keys: %s)",
-            self.table_manager.get_table_name().lower(),
+            self.table_manager.get_table_name(),
             len(active_events),
             ",".join([c.lower() for c in where_columns]),
         )
@@ -947,7 +904,7 @@ class BaseQueryBuilder:
         if batch_errors:
             self.logger.warning(
                 "%s delete encountered %d batch error(s)",
-                self.table_manager.get_table_name().lower(),
+                self.table_manager.get_table_name(),
                 len(batch_errors),
             )
             seen = set()
@@ -967,7 +924,7 @@ class BaseQueryBuilder:
 
 @lru_cache(maxsize=None)
 def _resolve_query_builder_class(event_object_type, operation, is_timeseries):
-    if is_timeseries:
+    if is_timeseries and event_object_type != "AUDIT_EVENTS":
         class_name = f"{event_object_type.lower().title().replace('_', '')}\
 TimeSeries{operation.lower().title().replace('_', '')}QueryBuilder"
     else:
@@ -996,13 +953,6 @@ def get_query_builder(
     is_timeseries=False,
 ):
     logger = Logger(__name__).get_logger()
-    query_builders = Path(__file__).parent
-    logger.info(
-        "Looking for query builder class for %s/%s in %s",
-        event_object_type,
-        operation,
-        query_builders,
-    )
     try:
         query_builder_class = _resolve_query_builder_class(
             event_object_type,

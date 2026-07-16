@@ -257,8 +257,7 @@ def test_file_transformer_chunking_uses_env(monkeypatch):
     # here we just ensure chunking method splits prepared events list respecting env var
     # Emulate prepared events
     t._prepared_events = events[:]  # type: ignore[attr-defined]
-    t.chunk_prepared_events()
-    chunks = t._prepared_events  # type: ignore[attr-defined]
+    chunks = t.chunk_prepared_events()
     assert isinstance(chunks, list)
     # 25 with chunk 10 => 3 chunks [10, 10, 5]
     assert [len(c) for c in chunks] == [10, 10, 5]

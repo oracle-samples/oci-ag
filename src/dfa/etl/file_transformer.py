@@ -25,13 +25,6 @@ class FileTransformer(AbstractTransformer):
     _snapshot_status = None
 
     def __init__(self, namespace, bucket_name, object_name, is_timeseries=False):
-        self.logger.info(
-            "Initializing FileTransformer with namespace %s, bucket_name %s, object_name %s, is_timeseries %s",
-            namespace,
-            bucket_name,
-            object_name,
-            is_timeseries,
-        )
         self.is_timeseries = is_timeseries
         self.transformer_name += "_timeseries" if is_timeseries else ""
         self._namespace = namespace
@@ -106,7 +99,6 @@ class FileTransformer(AbstractTransformer):
             self.logger.info("Skipping processing for event of type %s", self.get_event_object_type())
 
     def extract_data(self):
-        self.logger.info("Extracting data from object storage.")
         event_data = self._object_storage_client.download(self._namespace, self._bucket_name, self._object_name)
         self._raw_events = []
         self._prepared_events = []
@@ -137,8 +129,6 @@ class FileTransformer(AbstractTransformer):
 
     def transform_data(self):
         if self.is_valid_object_type(self.get_event_object_type()):
-            self.logger.info("Transforming data...")
-
             transformer = self.transformer_factory()
 
             self._prepared_events = []
@@ -148,20 +138,25 @@ class FileTransformer(AbstractTransformer):
                 transformer.set_event_timestamp_for_message(self._event_timestamp)
                 self._append_prepared_event(transformer.transform_raw_event(raw_event))
 
+            self.logger.info(
+                "%s transformed %d %s %s events",
+                self.transformer_name,
+                len(self._prepared_events),
+                self._event_object_type,
+                self._operation_type,
+            )
+
     def chunk_prepared_events(self, chunk_size=None):
+        """Return load batches without changing the flat prepared-event list."""
         if chunk_size is None:
             try:
                 chunk_size = int(os.getenv("DFA_BATCH_SIZE", "10000"))
             except ValueError:
                 chunk_size = 10000
 
-        chunks = []
-        for i in range(0, len(self._prepared_events), chunk_size):
-            chunks.append(self._prepared_events[i : i + chunk_size])
-        self._prepared_events = chunks
+        return [self._prepared_events[i : i + chunk_size] for i in range(0, len(self._prepared_events), chunk_size)]
 
     def load_data(self):
-        self.logger.info("Loading %d transformed data to data store...", len(self._prepared_events))
         try:
             current_query_builder = None
             snapshot_query_builder = None
@@ -183,10 +178,10 @@ class FileTransformer(AbstractTransformer):
                 self.query_builder = snapshot_query_builder
 
             if len(self._prepared_events) > 0:
-                self.chunk_prepared_events()
-                for batched_events in self._prepared_events:
+                for batched_events in self.chunk_prepared_events():
                     self.logger.info(
-                        "Building queries for %d %s %s",
+                        "%s building queries for %d %s %s",
+                        self.transformer_name,
                         len(batched_events),
                         self.get_event_object_type(),
                         self.get_operation_type(),

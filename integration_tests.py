@@ -28,11 +28,13 @@ def read_file_content(jsonl_file_path):
     return messages
 
 
-def test_file_transformer(data_type: str):
+def test_file_transformer(data_type: str, is_timeseries: bool = False):
     namespace = os.getenv("DFA_NAMESPACE")
     bucket_name = os.getenv("DFA_BUCKET_NAME")
     object_name_prefix = "integration-tests"
-    transformer = FileTransformer(namespace, bucket_name, object_name=f"{object_name_prefix}/{data_type}.jsonl")
+    transformer = FileTransformer(
+        namespace, bucket_name, object_name=f"{object_name_prefix}/{data_type}.jsonl", is_timeseries=is_timeseries
+    )
     transformer.extract_data()
     transformer.transform_data()
     transformer.load_data()
@@ -83,10 +85,40 @@ def test_identity_stream_transformer():
     transformer.transform_messages(messages)
     transformer.load_data()
 
+    messages = []
+    with open("tests/dfa/etl/test_data/stream/identity_changed.json", "r") as file:
+        message = {}
+        message["value"] = file.read()
+        messages.append(message)
+        messages = DataEnablementStream.decode_source_stream_messages(messages)
+        messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
+
+    transformer = StreamTransformer(is_timeseries=False)
+    transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
+
+    transformer.transform_messages(messages)
+    transformer.load_data()
+
 
 def test_permission_assignment_stream_transformer():
     messages = []
     with open("tests/dfa/etl/test_data/stream/permission_assignment_deleted.json", "r") as file:
+        message = {}
+        message["value"] = file.read()
+        messages.append(message)
+        messages = DataEnablementStream.decode_source_stream_messages(messages)
+        messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
+
+    transformer = StreamTransformer(is_timeseries=False)
+    transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
+
+    transformer.transform_messages(messages)
+    transformer.load_data()
+
+
+def test_policy_resource_mapping_stream_transformer():
+    messages = []
+    with open("tests/dfa/etl/test_data/stream/policy_statement_resource_mapping_created.json", "r") as file:
         message = {}
         message["value"] = file.read()
         messages.append(message)
@@ -116,6 +148,8 @@ def main():
     test_audit_transformer()
     test_identity_stream_transformer()
     test_permission_assignment_stream_transformer()
+    test_policy_resource_mapping_stream_transformer()
+    test_file_transformer(data_type="accessBundle", is_timeseries=True)
     test_file_transformer(data_type="accessBundle")
     test_file_transformer(data_type="accessGuardrail")
     test_file_transformer(data_type="approvalWorkflow")

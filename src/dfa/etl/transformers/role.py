@@ -91,8 +91,9 @@ class RoleEventTransformer(BaseEventTransformer):
             role["event_object_type"] = self.get_event_object_type()
             role["operation_type"] = self.get_operation_type()
 
-            if "accessBundleIds" in raw_event:
-                access_bundle_ids = raw_event["accessBundleIds"]
+            access_bundle_ids = raw_event.get("accessBundleIds")
+
+            if access_bundle_ids:
                 for ab_id in access_bundle_ids:
                     role_copy = role.copy()
                     role_copy["access_bundle_id"] = ab_id

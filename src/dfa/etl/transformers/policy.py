@@ -117,8 +117,9 @@ class PolicyEventTransformer(BaseEventTransformer):
             base_policy["event_object_type"] = self.get_event_object_type()
             base_policy["operation_type"] = self.get_operation_type()
 
-            if "policyRules" in raw_event:
-                policy_rules_list = raw_event["policyRules"]
+            policy_rules_list = raw_event.get("policyRules")
+
+            if policy_rules_list:
                 for pr in policy_rules_list:
                     policy_copy = base_policy.copy()
                     if "id" in pr:

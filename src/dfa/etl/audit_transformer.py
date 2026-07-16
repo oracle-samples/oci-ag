@@ -6,7 +6,9 @@ from dfa.etl.stream_transformer import StreamTransformer
 
 class AuditTransformer(StreamTransformer):
     transformer_name = "dfa_audit_transformer"
-    is_timeseries = True
+
+    def __init__(self, is_timeseries=True):
+        super().__init__(is_timeseries=is_timeseries)
 
     def is_valid_object_type(self, object_type):
         return object_type == "AUDIT_EVENTS"

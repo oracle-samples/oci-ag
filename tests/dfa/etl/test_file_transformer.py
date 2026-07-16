@@ -55,10 +55,11 @@ class TestFileTransformer(unittest.TestCase):
 
     def test_chunk_prepared_events(self):
         self.transformer._prepared_events = list(range(25))
-        self.transformer.chunk_prepared_events(chunk_size=10)
-        self.assertEqual(len(self.transformer._prepared_events), 3)
-        self.assertEqual(self.transformer._prepared_events[0], list(range(10)))
-        self.assertEqual(self.transformer._prepared_events[2], list(range(20, 25)))
+        chunks = self.transformer.chunk_prepared_events(chunk_size=10)
+        self.assertEqual(len(chunks), 3)
+        self.assertEqual(chunks[0], list(range(10)))
+        self.assertEqual(chunks[2], list(range(20, 25)))
+        self.assertEqual(self.transformer._prepared_events, list(range(25)))
 
     def read_file_content(self, jsonl_file_path):
         try:
@@ -263,7 +264,7 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._operation_type, "CREATE")
 
         self.transformer.transform_data()
-        self.assertEqual(len(self.transformer._prepared_events), 233)
+        self.assertEqual(len(self.transformer._prepared_events), 231)
 
         with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
             self.transformer.load_data()

@@ -13,7 +13,7 @@ class PolicyStateQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = PolicyStateTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod
@@ -47,7 +47,7 @@ class PolicyTimeSeriesQueryBuilder(Table, ABC, BaseQueryBuilder):
     table_manager = PolicyTimeSeriesTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod

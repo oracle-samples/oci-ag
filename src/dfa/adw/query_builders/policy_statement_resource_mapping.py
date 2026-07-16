@@ -16,7 +16,7 @@ class PolicyStatementResourceMappingStateQueryBuilder(Table, ABC, BaseQueryBuild
     table_manager = PolicyStatementResourceMappingStateTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod
@@ -52,7 +52,7 @@ class PolicyStatementResourceMappingTimeSeriesQueryBuilder(Table, ABC, BaseQuery
     table_manager = PolicyStatementResourceMappingTimeSeriesTable()
 
     def __init__(self, events: list):
-        super().__init__(self.table_manager.get_table_name().upper())
+        super().__init__(self.table_manager.get_table_name())
         self.events = events
 
     @abstractmethod
