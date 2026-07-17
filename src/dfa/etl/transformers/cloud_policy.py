@@ -83,8 +83,7 @@ class CloudPolicyEventTransformer(BaseEventTransformer):
             temp_statement = base_policy_statement.get("statement", "")
             score = 0
             results = parse_policy_statement(temp_statement)
-            if results:
-                score = results.get("permissive_score", 0)
+            score = results.get("permissive_score", 0)
 
             # Embed score into attributes JSON
             try:
