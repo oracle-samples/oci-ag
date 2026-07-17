@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 ALLOWED_BASE_VERBS = {"manage", "use", "read", "inspect"}
 ORG_LEVEL_RELATIONS = {"admit", "endorse"}  # treat as valid org/cross-tenancy constructs
@@ -39,11 +39,11 @@ def detect_subject_type(subject_raw: str) -> str:
 
 
 # pylint: disable=too-many-locals
-def parse_policy_statement(line: str) -> Optional[Dict[str, Any]]:
+def parse_policy_statement(line: str) -> Dict[str, Any]:
     original = line.rstrip("\n")
     norm = normalize_ws(original)
     if not norm:
-        return None
+        return {}
 
     # relation (allow/admit/endorse)
     m = re.match(r"^(allow|admit|endorse)\s+(.*?)\s+to\s+(.+)$", norm, flags=re.IGNORECASE)
