@@ -19,7 +19,6 @@ from handlers import (
 def dispatch(ctx, data: Optional[io.BytesIO] = None):
     logger = Logger(__name__).get_logger()
     function_name = ctx.Config().get("DFA_FUNCTION_NAME")
-    logger.info("Running %s", function_name)
 
     if not function_name:
         logger.error("DFA_FUNCTION_NAME is not set")

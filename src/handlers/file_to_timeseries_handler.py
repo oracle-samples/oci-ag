@@ -40,7 +40,6 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
         object_name = body["data"]["resourceName"]
         namespace = body["data"]["additionalDetails"]["namespace"]
 
-        logger.info("Creating instance of FileTransformer")
         transformer = FileTransformer(namespace, bucket_name, object_name, is_timeseries=True)
         transformer.extract_data()
         transformer.transform_data()

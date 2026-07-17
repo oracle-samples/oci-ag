@@ -128,12 +128,6 @@ class TestStreamTransformer(unittest.TestCase):
 
         return messages
 
-    def check_logs(self, logs, expected_message):
-        for log in logs:
-            if expected_message in log:
-                return True
-        return False
-
     def _encode_without_padding(self, value):
         return base64.b64encode(value).decode().rstrip("=")
 
@@ -177,9 +171,8 @@ class TestStreamTransformer(unittest.TestCase):
             "test-service-instance-5d71a8e3c04b49af",
         )
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_approval_workflow_changed(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/approval_workflow_changed.json")
@@ -206,9 +199,8 @@ class TestStreamTransformer(unittest.TestCase):
             "test-service-instance-c92f0d17aab34e65",
         )
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_identity_delete(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/identity_deleted.json")
@@ -227,9 +219,8 @@ class TestStreamTransformer(unittest.TestCase):
             "test-service-instance-5d71a8e3c04b49af",
         )
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Bulk delete for identity delete request"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_target_identity_delete(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/target_identity_deleted.json")
@@ -248,9 +239,8 @@ class TestStreamTransformer(unittest.TestCase):
             "test-service-instance-5d71a8e3c04b49af",
         )
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Bulk delete for target identity delete request"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_ownership_collection_delete(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/ownership_collection_delete.json")
@@ -273,9 +263,8 @@ class TestStreamTransformer(unittest.TestCase):
             "test-service-instance-5d71a8e3c04b49af",
         )
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Row delete for ownership collection delete request"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_identity_unmatched_created(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/identity_unmatched_created.json")
@@ -298,9 +287,8 @@ class TestStreamTransformer(unittest.TestCase):
             "test-service-instance-b8a42fd0936e47ac",
         )
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_policy_statement_resource_mapping_created(self):
         messages = self.read_file_content(
@@ -325,6 +313,5 @@ class TestStreamTransformer(unittest.TestCase):
             "test-service-instance-b8a42fd0936e47ac",
         )
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()

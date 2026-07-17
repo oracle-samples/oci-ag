@@ -21,14 +21,9 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
         if data is None:
             raise ValueError("No request body provided")
         messages = json.loads(data.getvalue())
-
-        logger.info("Decoding connector hub source stream messages")
         messages = DataEnablementStream.decode_connector_hub_source_stream_messages(messages)
-
-        logger.info("Sorting connector hub source stream messages")
         messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
 
-        logger.info("Creating instance of StreamTransformer")
         transformer = StreamTransformer()
         transformer.transform_messages(messages)
         transformer.load_data()

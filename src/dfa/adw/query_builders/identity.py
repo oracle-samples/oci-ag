@@ -77,14 +77,12 @@ class IdentityStateDeleteQueryBuilder(IdentityStateQueryBuilder):
                 global_identity_deletes.append(event)
 
         if target_identity_deletes:
-            self.logger.info("Bulk delete for target identity delete request")
             self.executemany_delete_for_events(
                 ["ti_id", "service_instance_id", "tenancy_id"],
                 events=target_identity_deletes,
             )
 
         if global_identity_deletes:
-            self.logger.info("Bulk delete for identity delete request")
             self.executemany_delete_for_events(
                 ["id", "service_instance_id", "tenancy_id"],
                 events=global_identity_deletes,
