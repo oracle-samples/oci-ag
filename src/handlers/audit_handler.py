@@ -23,12 +23,9 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
             raise ValueError("No request body provided")
         messages = json.loads(data.getvalue())
 
-        logger.info("Decoding connector hub source stream messages")
         messages = DataEnablementStream.decode_connector_hub_source_stream_messages(messages)
-        logger.info("Sorting connector hub source stream messages")
         messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
 
-        logger.info("Creating instance of AuditTransformer")
         transformer = AuditTransformer()
         transformer.transform_messages(messages)
         transformer.load_data()

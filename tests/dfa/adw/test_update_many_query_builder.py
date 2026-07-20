@@ -13,19 +13,9 @@ from dfa.adw.query_builders.access_bundle import (
 from dfa.adw.query_builders.access_guardrail import AccessGuardrailStateDeleteQueryBuilder
 from dfa.adw.query_builders.approval_workflow import ApprovalWorkflowStateDeleteQueryBuilder
 from dfa.adw.query_builders.audit_events import AuditEventsStateCreateQueryBuilder
-from dfa.adw.query_builders.base_query_builder import (
-    BaseQueryBuilder,
-    InsertManyQueryBuilder,
-    MergeManyQueryBuilder,
-    UpdateManyQueryBuilder,
-)
-from dfa.adw.query_builders.cloud_group import CloudGroupStateUpdateQueryBuilder
+from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder, MergeManyQueryBuilder, UpdateManyQueryBuilder
 from dfa.adw.query_builders.cloud_policy import CloudPolicyStateDeleteQueryBuilder
-from dfa.adw.query_builders.identity import (
-    IdentityStateCreateQueryBuilder,
-    IdentityStateDeleteQueryBuilder,
-    IdentityStateUpdateQueryBuilder,
-)
+from dfa.adw.query_builders.identity import IdentityStateDeleteQueryBuilder, IdentityStateUpdateQueryBuilder
 from dfa.adw.query_builders.orchestrated_system import OrchestratedSystemStateDeleteQueryBuilder
 from dfa.adw.query_builders.permission import PermissionStateDeleteQueryBuilder
 from dfa.adw.query_builders.permission_assignment import PermissionAssignmentStateDeleteQueryBuilder
@@ -241,8 +231,7 @@ def test_access_bundle_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete(
         cursor,
@@ -251,7 +240,6 @@ def test_access_bundle_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
             {"ID": "bundle-2", "SERVICE_INSTANCE_ID": "svc-1", "TENANCY_ID": "tenant-1"},
         ],
     )
-    mock_log.assert_any_call("Bulk delete for access bundle delete request")
     mock_commit.assert_called_once()
 
 
@@ -268,8 +256,7 @@ def test_access_guardrail_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete(
         cursor,
@@ -278,7 +265,6 @@ def test_access_guardrail_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
             {"ID": "guardrail-2", "SERVICE_INSTANCE_ID": "svc-1", "TENANCY_ID": "tenant-1"},
         ],
     )
-    mock_log.assert_any_call("Bulk delete for access guardrail delete request")
     mock_commit.assert_called_once()
 
 
@@ -295,8 +281,7 @@ def test_approval_workflow_delete_uses_bulk_delete(mock_get_cursor, mock_commit)
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete(
         cursor,
@@ -305,7 +290,6 @@ def test_approval_workflow_delete_uses_bulk_delete(mock_get_cursor, mock_commit)
             {"ID": "workflow-2", "SERVICE_INSTANCE_ID": "svc-1", "TENANCY_ID": "tenant-1"},
         ],
     )
-    mock_log.assert_any_call("Bulk delete for approval workflow delete request")
     mock_commit.assert_called_once()
 
 
@@ -330,8 +314,7 @@ def test_cloud_policy_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete_with_columns(
         cursor,
@@ -349,7 +332,6 @@ def test_cloud_policy_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
             },
         ],
     )
-    mock_log.assert_any_call("Bulk delete for tgt access pol stmt delete request")
     mock_commit.assert_called_once()
 
 
@@ -366,8 +348,7 @@ def test_orchestrated_system_delete_uses_bulk_delete(mock_get_cursor, mock_commi
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete(
         cursor,
@@ -376,7 +357,6 @@ def test_orchestrated_system_delete_uses_bulk_delete(mock_get_cursor, mock_commi
             {"ID": "system-2", "SERVICE_INSTANCE_ID": "svc-1", "TENANCY_ID": "tenant-1"},
         ],
     )
-    mock_log.assert_any_call("Bulk delete for orchestrated system delete request")
     mock_commit.assert_called_once()
 
 
@@ -393,8 +373,7 @@ def test_resource_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete(
         cursor,
@@ -403,7 +382,6 @@ def test_resource_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
             {"ID": "resource-2", "SERVICE_INSTANCE_ID": "svc-1", "TENANCY_ID": "tenant-1"},
         ],
     )
-    mock_log.assert_any_call("Bulk delete for resource delete request")
     mock_commit.assert_called_once()
 
 
@@ -420,8 +398,7 @@ def test_permission_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete(
         cursor,
@@ -430,7 +407,6 @@ def test_permission_delete_uses_bulk_delete(mock_get_cursor, mock_commit):
             {"ID": "permission-2", "SERVICE_INSTANCE_ID": "svc-1", "TENANCY_ID": "tenant-1"},
         ],
     )
-    mock_log.assert_any_call("Bulk delete for permission delete request")
     mock_commit.assert_called_once()
 
 
@@ -457,8 +433,7 @@ def test_identity_delete_uses_bulk_delete_for_global_identity(mock_get_cursor, m
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete_with_columns(
         cursor,
@@ -468,7 +443,6 @@ def test_identity_delete_uses_bulk_delete_for_global_identity(mock_get_cursor, m
             {"ID": "identity-2", "SERVICE_INSTANCE_ID": "svc-1", "TENANCY_ID": "tenant-1"},
         ],
     )
-    mock_log.assert_any_call("Bulk delete for identity delete request")
     mock_commit.assert_called_once()
 
 
@@ -495,8 +469,7 @@ def test_identity_delete_uses_bulk_delete_for_target_identity(mock_get_cursor, m
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     _assert_bulk_delete_with_columns(
         cursor,
@@ -506,7 +479,6 @@ def test_identity_delete_uses_bulk_delete_for_target_identity(mock_get_cursor, m
             {"TI_ID": "target-2", "SERVICE_INSTANCE_ID": "svc-1", "TENANCY_ID": "tenant-1"},
         ],
     )
-    mock_log.assert_any_call("Bulk delete for target identity delete request")
     mock_commit.assert_called_once()
 
 
@@ -537,8 +509,7 @@ def test_policy_statement_resource_mapping_delete_uses_bulk_delete(mock_get_curs
         ]
     )
 
-    with patch.object(qb.logger, "info") as mock_log:
-        qb.execute_sql_for_events()
+    qb.execute_sql_for_events()
 
     executed_sql = cursor.executemany.call_args.args[0]
     bind_rows = cursor.executemany.call_args.args[1]
@@ -562,7 +533,6 @@ def test_policy_statement_resource_mapping_delete_uses_bulk_delete(mock_get_curs
             "TENANCY_ID": "tenant-1",
         },
     ]
-    mock_log.assert_any_call("Bulk delete for policy statement resource mapping delete request")
     mock_commit.assert_called_once()
 
 

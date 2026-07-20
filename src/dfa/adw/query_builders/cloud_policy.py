@@ -39,7 +39,6 @@ class CloudPolicyStateUpdateQueryBuilder(CloudPolicyStateQueryBuilder):
 
 class CloudPolicyStateDeleteQueryBuilder(CloudPolicyStateQueryBuilder):
     def execute_sql_for_events(self):
-        self.logger.info("Bulk delete for tgt access pol stmt delete request")
         return self.executemany_delete_for_events(["policy_statement_id", "service_instance_id", "tenancy_id"])
 
 

@@ -68,12 +68,6 @@ class TestFileTransformer(unittest.TestCase):
         except Exception as e:
             return
 
-    def check_logs(self, logs, expected_message):
-        for log in logs:
-            if expected_message in log:
-                return True
-        return False
-
     @patch("dfa.etl.file_transformer.get_query_builder")
     def test_access_bundle(self, mock_get_query_builder):
         content = self.read_file_content("tests/dfa/etl/test_data/file/access_bundle.jsonl")
@@ -248,9 +242,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 1)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_cloud_group(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/cloud_group.jsonl")
@@ -266,9 +259,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 231)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_cloud_policy(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/cloud_policy.jsonl")
@@ -284,9 +276,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 4)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_global_identity_collection(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/global_identity_collection.jsonl")
@@ -302,9 +293,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 8)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called()
 
     def test_identity(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/identity.jsonl")
@@ -320,9 +310,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 1)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_identity_unmatched(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/identity_unmatched.jsonl")
@@ -338,9 +327,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 2)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_permission_assignment(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/permission_assignment.jsonl")
@@ -356,9 +344,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 8)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_permission(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/permission.jsonl")
@@ -374,9 +361,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 2)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_policy_to_resource_mapping(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/policy_to_resource_mapping.jsonl")
@@ -392,9 +378,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 9997)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_policy(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/policy.jsonl")
@@ -410,9 +395,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 3)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_resource(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/resource.jsonl")
@@ -428,9 +412,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 2)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_role(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/role.jsonl")
@@ -446,9 +429,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 3)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_ownership_collection(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/ownership_collection.jsonl")
@@ -464,9 +446,8 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 7)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_orchestrated_system(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/orchestrated_system.jsonl")
@@ -482,6 +463,5 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 1)
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "Using bulk insert into"))
+        self.transformer.load_data()
+        self.mock_cursor.executemany.assert_called_once()

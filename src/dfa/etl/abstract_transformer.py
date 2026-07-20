@@ -108,9 +108,8 @@ class AbstractTransformer(ABC):
                         duration = perf_counter() - start
                         try:
                             self.logger.info(
-                                "%s timeseries (%s) %s %s raw_events(%d) prepared_events(%d) runtime: %.3fs",
+                                "%s %s %s raw_events(%d) prepared_events(%d) runtime: %.3fs",
                                 self.transformer_name,
-                                self.is_timeseries,
                                 self.get_event_object_type(),
                                 label,
                                 len(self.get_raw_events()),

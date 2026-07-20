@@ -12,7 +12,6 @@ logger = Logger(__name__).get_logger()
 
 def bootstrap_base_environment_variables(cfg):
     try:
-        logger.info("Setting base environment variables")
         os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"] = cfg["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"]
         os.environ["DFA_ADW_WALLET_SECRET_NAME"] = cfg["DFA_ADW_WALLET_SECRET_NAME"]
         os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"] = cfg["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"]
@@ -40,8 +39,6 @@ def bootstrap_base_environment_variables(cfg):
 def bootstrap_local_machine_environment_variables(
     ini_file_location: Optional[str] = None, section: Optional[str] = None
 ):
-    logger.info("Loading environment vars for local machine testing")
-
     custom_configs: Mapping[str, str] = {}
     if ini_file_location:
         logger.info("INI file provided - loading custom configs from %s ", ini_file_location)

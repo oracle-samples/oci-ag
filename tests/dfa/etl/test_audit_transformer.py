@@ -39,12 +39,6 @@ class TestAuditTransformer(unittest.TestCase):
 
         return messages
 
-    def check_logs(self, logs, expected_message):
-        for log in logs:
-            if expected_message in log:
-                return True
-        return False
-
     def test_audit_events(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/audit_events.json")
         self.transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
@@ -66,6 +60,5 @@ class TestAuditTransformer(unittest.TestCase):
             "test-service-instance-5d71a8e3c04b49af",
         )
 
-        with self.assertLogs("dfa.adw.query_builders.base_query_builder", level="INFO") as logs:
-            self.transformer.load_data()
-            self.assertTrue(self.check_logs(logs.output, "1 audit events"))
+        self.transformer.load_data()
+        self.mock_adw_manager.get_cursor.return_value.executemany.assert_called_once()

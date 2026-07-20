@@ -39,7 +39,6 @@ class ApprovalWorkflowStateUpdateQueryBuilder(ApprovalWorkflowStateQueryBuilder)
 
 class ApprovalWorkflowStateDeleteQueryBuilder(ApprovalWorkflowStateQueryBuilder):
     def execute_sql_for_events(self):
-        self.logger.info("Bulk delete for approval workflow delete request")
         return self.executemany_delete_for_events(["id", "service_instance_id", "tenancy_id"])
 
 
