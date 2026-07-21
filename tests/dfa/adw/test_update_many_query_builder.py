@@ -23,27 +23,35 @@ from dfa.adw.query_builders.policy_statement_resource_mapping import (
     PolicyStatementResourceMappingStateDeleteQueryBuilder,
 )
 from dfa.adw.query_builders.resource import ResourceStateDeleteQueryBuilder
-from dfa.adw.tables.access_bundle import AccessBundleStateTable
-from dfa.adw.tables.access_guardrail import AccessGuardrailStateTable
-from dfa.adw.tables.approval_workflow import ApprovalWorkflowStateTable
-from dfa.adw.tables.base_table import BaseStateTable, SnapshotBatchTrackerTable
-from dfa.adw.tables.cloud_group import CloudGroupStateTable
-from dfa.adw.tables.cloud_policy import CloudPolicyStateTable
-from dfa.adw.tables.global_identity_collection import GlobalIdentityCollectionStateTable
-from dfa.adw.tables.identity import IdentityStateTable
-from dfa.adw.tables.orchestrated_system import OrchestratedSystemStateTable
-from dfa.adw.tables.ownership_collection import OwnershipCollectionStateTable
-from dfa.adw.tables.permission import PermissionStateTable
-from dfa.adw.tables.permission_assignment import PermissionAssignmentStateTable
-from dfa.adw.tables.policy import PolicyStateTable
-from dfa.adw.tables.policy_statement_resource_mapping import PolicyStatementResourceMappingStateTable
-from dfa.adw.tables.resource import ResourceStateTable
-from dfa.adw.tables.role import RoleStateTable
+from dfa.adw.tables.access_bundle import AccessBundleStateTable, AccessBundleTimeSeriesTable
+from dfa.adw.tables.access_guardrail import AccessGuardrailStateTable, AccessGuardrailTimeSeriesTable
+from dfa.adw.tables.approval_workflow import ApprovalWorkflowStateTable, ApprovalWorkflowTimeSeriesTable
+from dfa.adw.tables.audit_events import AuditEventsTable
+from dfa.adw.tables.base_table import BaseStateTable, BaseTable, SnapshotBatchTrackerTable
+from dfa.adw.tables.cloud_group import CloudGroupStateTable, CloudGroupTimeSeriesTable
+from dfa.adw.tables.cloud_policy import CloudPolicyStateTable, CloudPolicyTimeSeriesTable
+from dfa.adw.tables.global_identity_collection import (
+    GlobalIdentityCollectionStateTable,
+    GlobalIdentityCollectionTimeSeriesTable,
+)
+from dfa.adw.tables.identity import IdentityStateTable, IdentityTimeSeriesTable
+from dfa.adw.tables.orchestrated_system import OrchestratedSystemStateTable, OrchestratedSystemTimeSeriesTable
+from dfa.adw.tables.ownership_collection import OwnershipCollectionStateTable, OwnershipCollectionTimeSeriesTable
+from dfa.adw.tables.permission import PermissionStateTable, PermissionTimeSeriesTable
+from dfa.adw.tables.permission_assignment import PermissionAssignmentStateTable, PermissionAssignmentTimeSeriesTable
+from dfa.adw.tables.policy import PolicyStateTable, PolicyTimeSeriesTable
+from dfa.adw.tables.policy_statement_resource_mapping import (
+    PolicyStatementResourceMappingStateTable,
+    PolicyStatementResourceMappingTimeSeriesTable,
+)
+from dfa.adw.tables.resource import ResourceStateTable, ResourceTimeSeriesTable
+from dfa.adw.tables.role import RoleStateTable, RoleTimeSeriesTable
 
 
 @pytest.fixture(autouse=True)
 def _set_adw_schema(monkeypatch):
     monkeypatch.setenv("DFA_ADW_DFA_SCHEMA", "DFA")
+    BaseTable._ensured_index_names.clear()
     BaseStateTable._ensured_delete_index_names.clear()
 
 
@@ -135,6 +143,88 @@ def test_non_nullable_unique_index_keeps_unique_constraint():
 
     assert "COALESCE(" not in index_ddl
     assert 'ALTER TABLE DFA.PERMISSION_STATE ADD CONSTRAINT "DFA_UNQ_PERM_ST_CONST"' in constraint_ddl
+
+
+def test_event_timestamp_indexes_cover_all_requested_tables():
+    expected_indexes = {
+        "AUDIT_EVENTS": "DFA_AE_ET_IDX",
+        "IDENTITY_STATE": "DFA_ID_ST_ET_IDX",
+        "PERMISSION_ASSIGNMENT_STATE": "DFA_PA_ST_ET_IDX",
+        "GLOBAL_IDENTITY_COLLECTION_STATE": "DFA_GIC_ST_ET_IDX",
+        "ACCESS_BUNDLE_STATE": "DFA_AB_ST_ET_IDX",
+        "ACCESS_GUARDRAIL_STATE": "DFA_AG_ST_ET_IDX",
+        "APPROVAL_WORKFLOW_STATE": "DFA_AW_ST_ET_IDX",
+        "CLOUD_GROUP_STATE": "DFA_CG_ST_ET_IDX",
+        "CLOUD_POLICY_STATE": "DFA_CP_ST_ET_IDX",
+        "ORCHESTRATED_SYSTEM_STATE": "DFA_OS_ST_ET_IDX",
+        "OWNERSHIP_COLLECTION_STATE": "DFA_OC_ST_ET_IDX",
+        "PERMISSION_STATE": "DFA_PM_ST_ET_IDX",
+        "POLICY_STATEMENT_RESOURCE_MAPPING_STATE": "DFA_PSRM_ST_ET_IDX",
+        "POLICY_STATE": "DFA_P_ST_ET_IDX",
+        "RESOURCE_STATE": "DFA_R_ST_ET_IDX",
+        "ROLE_STATE": "DFA_ROLE_ST_ET_IDX",
+        "IDENTITY_TS": "DFA_ID_TS_ET_IDX",
+        "PERMISSION_ASSIGNMENT_TS": "DFA_PA_TS_ET_IDX",
+        "GLOBAL_IDENTITY_COLLECTION_TS": "DFA_GIC_TS_ET_IDX",
+        "ACCESS_BUNDLE_TS": "DFA_AB_TS_ET_IDX",
+        "ACCESS_GUARDRAIL_TS": "DFA_AG_TS_ET_IDX",
+        "APPROVAL_WORKFLOW_TS": "DFA_AW_TS_ET_IDX",
+        "CLOUD_GROUP_TS": "DFA_CG_TS_ET_IDX",
+        "CLOUD_POLICY_TS": "DFA_CP_TS_ET_IDX",
+        "ORCHESTRATED_SYSTEM_TS": "DFA_OS_TS_ET_IDX",
+        "OWNERSHIP_COLLECTION_TS": "DFA_OC_TS_ET_IDX",
+        "PERMISSION_TS": "DFA_PM_TS_ET_IDX",
+        "POLICY_STATEMENT_RESOURCE_MAPPING_TS": "DFA_PSRM_TS_ET_IDX",
+        "POLICY_TS": "DFA_P_TS_ET_IDX",
+        "RESOURCE_TS": "DFA_R_TS_ET_IDX",
+        "ROLE_TS": "DFA_ROLE_TS_ET_IDX",
+    }
+
+    assert BaseTable._event_timestamp_index_names == expected_indexes
+    for table_name, index_name in expected_indexes.items():
+        table = next(
+            table
+            for table in [
+                AuditEventsTable(),
+                AccessBundleStateTable(),
+                AccessBundleTimeSeriesTable(),
+                AccessGuardrailStateTable(),
+                AccessGuardrailTimeSeriesTable(),
+                ApprovalWorkflowStateTable(),
+                ApprovalWorkflowTimeSeriesTable(),
+                CloudGroupStateTable(),
+                CloudGroupTimeSeriesTable(),
+                CloudPolicyStateTable(),
+                CloudPolicyTimeSeriesTable(),
+                GlobalIdentityCollectionStateTable(),
+                GlobalIdentityCollectionTimeSeriesTable(),
+                IdentityStateTable(),
+                IdentityTimeSeriesTable(),
+                OrchestratedSystemStateTable(),
+                OrchestratedSystemTimeSeriesTable(),
+                OwnershipCollectionStateTable(),
+                OwnershipCollectionTimeSeriesTable(),
+                PermissionAssignmentStateTable(),
+                PermissionAssignmentTimeSeriesTable(),
+                PermissionStateTable(),
+                PermissionTimeSeriesTable(),
+                PolicyStateTable(),
+                PolicyTimeSeriesTable(),
+                PolicyStatementResourceMappingStateTable(),
+                PolicyStatementResourceMappingTimeSeriesTable(),
+                ResourceStateTable(),
+                ResourceTimeSeriesTable(),
+                RoleStateTable(),
+                RoleTimeSeriesTable(),
+            ]
+            if table.get_table_name() == table_name
+        )
+        if table is not None:
+            definition = table.get_index_definition_details()[0]
+            assert definition == {
+                "name": index_name,
+                "columns": ["EVENT_TIMESTAMP", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            }
 
 
 def test_state_delete_keys_are_indexed():
