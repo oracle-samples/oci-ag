@@ -16,6 +16,40 @@ class BaseTable(ABC):
     logger = Logger(__name__).get_logger()
     _table_name: ClassVar[Optional[str]] = None
     _schema: ClassVar[Optional[str]] = None
+    _ensured_index_names: ClassVar[set[str]] = set()
+    _event_timestamp_index_names: ClassVar[dict[str, str]] = {
+        "AUDIT_EVENTS": "DFA_AE_ET_IDX",
+        "IDENTITY_STATE": "DFA_ID_ST_ET_IDX",
+        "PERMISSION_ASSIGNMENT_STATE": "DFA_PA_ST_ET_IDX",
+        "GLOBAL_IDENTITY_COLLECTION_STATE": "DFA_GIC_ST_ET_IDX",
+        "ACCESS_BUNDLE_STATE": "DFA_AB_ST_ET_IDX",
+        "ACCESS_GUARDRAIL_STATE": "DFA_AG_ST_ET_IDX",
+        "APPROVAL_WORKFLOW_STATE": "DFA_AW_ST_ET_IDX",
+        "CLOUD_GROUP_STATE": "DFA_CG_ST_ET_IDX",
+        "CLOUD_POLICY_STATE": "DFA_CP_ST_ET_IDX",
+        "ORCHESTRATED_SYSTEM_STATE": "DFA_OS_ST_ET_IDX",
+        "OWNERSHIP_COLLECTION_STATE": "DFA_OC_ST_ET_IDX",
+        "PERMISSION_STATE": "DFA_PM_ST_ET_IDX",
+        "POLICY_STATEMENT_RESOURCE_MAPPING_STATE": "DFA_PSRM_ST_ET_IDX",
+        "POLICY_STATE": "DFA_P_ST_ET_IDX",
+        "RESOURCE_STATE": "DFA_R_ST_ET_IDX",
+        "ROLE_STATE": "DFA_ROLE_ST_ET_IDX",
+        "IDENTITY_TS": "DFA_ID_TS_ET_IDX",
+        "PERMISSION_ASSIGNMENT_TS": "DFA_PA_TS_ET_IDX",
+        "GLOBAL_IDENTITY_COLLECTION_TS": "DFA_GIC_TS_ET_IDX",
+        "ACCESS_BUNDLE_TS": "DFA_AB_TS_ET_IDX",
+        "ACCESS_GUARDRAIL_TS": "DFA_AG_TS_ET_IDX",
+        "APPROVAL_WORKFLOW_TS": "DFA_AW_TS_ET_IDX",
+        "CLOUD_GROUP_TS": "DFA_CG_TS_ET_IDX",
+        "CLOUD_POLICY_TS": "DFA_CP_TS_ET_IDX",
+        "ORCHESTRATED_SYSTEM_TS": "DFA_OS_TS_ET_IDX",
+        "OWNERSHIP_COLLECTION_TS": "DFA_OC_TS_ET_IDX",
+        "PERMISSION_TS": "DFA_PM_TS_ET_IDX",
+        "POLICY_STATEMENT_RESOURCE_MAPPING_TS": "DFA_PSRM_TS_ET_IDX",
+        "POLICY_TS": "DFA_P_TS_ET_IDX",
+        "RESOURCE_TS": "DFA_R_TS_ET_IDX",
+        "ROLE_TS": "DFA_ROLE_TS_ET_IDX",
+    }
 
     @abstractmethod
     def _column_definitions(self):
@@ -47,8 +81,74 @@ class BaseTable(ABC):
 
             self._after_create()
 
+        self.ensure_supporting_objects()
+
     def _after_create(self):
         pass
+
+    def get_index_definition_details(self):
+        index_name = self._event_timestamp_index_names.get(self.get_table_name())
+        if index_name is None:
+            return []
+        return [
+            {
+                "name": index_name,
+                "columns": ["EVENT_TIMESTAMP", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
+            }
+        ]
+
+    def _build_index_ddl(self, index_definition):
+        index_columns_ddl = '"' + '", "'.join(index_definition["columns"]) + '"'
+        return f"""
+            CREATE INDEX {self.get_schema()}.{index_definition["name"]} ON \\
+{self.get_schema()}.{self.get_table_name()} ({index_columns_ddl})
+            """
+
+    def _index_exists(self, index_name):
+        exists_sql = """
+            SELECT COUNT(*)
+            FROM ALL_INDEXES
+            WHERE OWNER = :OWNER
+              AND TABLE_NAME = :TABLE_NAME
+              AND INDEX_NAME = :INDEX_NAME
+        """
+        AdwConnection.get_cursor().execute(
+            exists_sql,
+            {
+                "OWNER": self.get_schema(),
+                "TABLE_NAME": self.get_table_name(),
+                "INDEX_NAME": index_name,
+            },
+        )
+        index_count = AdwConnection.get_cursor().fetchone()[0]
+        return isinstance(index_count, int) and index_count > 0
+
+    def _create_index(self, index_definition):
+        self.logger.info(
+            "Generating DDL to add index %s to table %s",
+            index_definition["name"],
+            self.get_table_name(),
+        )
+        AdwConnection.get_cursor().execute(self._build_index_ddl(index_definition))
+
+    def ensure_indexes(self):
+        for index_definition in self.get_index_definition_details():
+            index_cache_key = f"{self.get_schema()}.{self.get_table_name()}.{index_definition['name']}"
+            if index_cache_key in self._ensured_index_names:
+                continue
+            if self._index_exists(index_definition["name"]):
+                self._ensured_index_names.add(index_cache_key)
+                continue
+            try:
+                self._create_index(index_definition)
+            except oracledb.DatabaseError as exc:
+                error = exc.args[0] if exc.args else None
+                if getattr(error, "code", None) != 955:
+                    raise
+            self._ensured_index_names.add(index_cache_key)
+
+    def ensure_supporting_objects(self):
+        self.ensure_indexes()
 
     def get_create_table_sql(self):
         return self._get_create_ddl()
@@ -268,6 +368,7 @@ class BaseStateTable(BaseTable, ABC):
             self._ensured_delete_index_names.add(index_cache_key)
 
     def ensure_supporting_objects(self):
+        super().ensure_supporting_objects()
         self.ensure_delete_indexes()
 
     def _after_create(self):
