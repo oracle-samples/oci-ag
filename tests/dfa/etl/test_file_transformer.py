@@ -139,6 +139,7 @@ class TestFileTransformer(unittest.TestCase):
             service_instance_id="svc-1",
         )
         mock_query_builder.finalize_snapshot_cleanup_if_ready.assert_not_called()
+        self.mock_adw_close.assert_not_called()
 
     @patch("dfa.etl.file_transformer.get_query_builder")
     def test_load_data_does_not_finalize_snapshot_for_normal_batch(self, mock_get_query_builder):

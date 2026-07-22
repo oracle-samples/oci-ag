@@ -62,3 +62,4 @@ class TestAuditTransformer(unittest.TestCase):
 
         self.transformer.load_data()
         self.mock_adw_manager.get_cursor.return_value.executemany.assert_called_once()
+        self.mock_adw_manager.close.assert_not_called()

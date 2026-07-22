@@ -277,6 +277,17 @@ ADW connection and wallet:
 - DFA_ADW_WALLET_PASSWORD_SECRET_NAME: Secret name for wallet password.
 - DFA_ADW_EWALLET_PEM_SECRET_NAME: Secret name for ewallet.pem.
 
+
+`DFA_ADW_CONNECTION_SECRET_OCID` is the required consolidated credential
+bundle. It contains the DFA password, wallet, wallet password, and PEM in one
+JSON secret, so a cold ADW connection makes one secret-bundle retrieval. Its
+`wallet` member must be base64-encoded.
+
+`DFA_ADW_CONNECTION_SECRET_NAME` is optional installer-only configuration for
+the consolidated secret's name. If omitted, the installer derives it from the
+legacy DFA password-secret name and configures its OCID on the Function
+application.
+
 OCI access and vault:
 - DFA_SIGNER_TYPE: `resource` (default for Functions) or `user` (when using a user token).
 - DFA_VAULT_ID: OCID of the vault holding secrets.

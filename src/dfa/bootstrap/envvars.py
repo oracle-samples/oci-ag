@@ -12,10 +12,10 @@ logger = Logger(__name__).get_logger()
 
 def bootstrap_base_environment_variables(cfg):
     try:
-        os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"] = cfg["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"]
-        os.environ["DFA_ADW_WALLET_SECRET_NAME"] = cfg["DFA_ADW_WALLET_SECRET_NAME"]
-        os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"] = cfg["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"]
-        os.environ["DFA_ADW_EWALLET_PEM_SECRET_NAME"] = cfg["DFA_ADW_EWALLET_PEM_SECRET_NAME"]
+        connection_secret_ocid = cfg["DFA_ADW_CONNECTION_SECRET_OCID"]
+        if not connection_secret_ocid:
+            raise ValueError("DFA_ADW_CONNECTION_SECRET_OCID must not be empty")
+        os.environ["DFA_ADW_CONNECTION_SECRET_OCID"] = connection_secret_ocid
         os.environ["DFA_CONN_PROTOCOL"] = cfg["DFA_CONN_PROTOCOL"]
         os.environ["DFA_CONN_HOST"] = cfg["DFA_CONN_HOST"]
         os.environ["DFA_CONN_PORT"] = cfg["DFA_CONN_PORT"]

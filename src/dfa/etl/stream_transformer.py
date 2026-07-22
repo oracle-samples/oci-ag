@@ -90,5 +90,3 @@ class StreamTransformer(AbstractTransformer):
         except Exception:
             AdwConnection.rollback_and_close()
             raise
-
-        AdwConnection.close()

@@ -140,7 +140,6 @@ class BaseFunction:
 
 
 class DfaApplication(BaseFunction):
-
     def create_functions_application(self, subnet_ids):
         display_name = self.get_function_application_name()
         if not self._application_exists(display_name):
@@ -380,6 +379,21 @@ class DfaAuditTransformerFunctions(BaseFunction):
 
 
 class DfaSetupADWFunctionConfigs(BaseFunction):
+    def add_connection_secret_to_configuration(self, application_ocid, secret_ocid):
+        """Add the consolidated ADW secret OCID without replacing other app configuration."""
+        application_details = self._get_client().get_application(application_ocid)
+        dfa_configs = dict(application_details.data.config or {})
+        dfa_configs["DFA_ADW_CONNECTION_SECRET_OCID"] = secret_ocid
+
+        return (
+            self._get_client()
+            .update_application(
+                application_id=application_ocid,
+                update_application_details=oci.functions.models.UpdateApplicationDetails(config=dfa_configs),
+            )
+            .data
+        )
+
     def add_adw_connection_string_to_configuration(self, application_ocid):
         self.logger.info("Pulling details for configured ADW instance")
         adw_details = BaseAutonomousDatabase().get_details(os.environ["DFA_ADW_INSTANCE_OCID"])

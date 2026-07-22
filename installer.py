@@ -27,8 +27,8 @@ from dfa.adw.tables.cloud_group import *
 from dfa.adw.tables.cloud_policy import *
 from dfa.adw.tables.global_identity_collection import *
 from dfa.adw.tables.identity import *
-from dfa.adw.tables.ownership_collection import *
 from dfa.adw.tables.orchestrated_system import *
+from dfa.adw.tables.ownership_collection import *
 from dfa.adw.tables.permission import *
 from dfa.adw.tables.permission_assignment import *
 from dfa.adw.tables.policy import *
@@ -95,9 +95,7 @@ def create_adw_tables():
     if "DFA_RECREATE_DFA_ADW_TABLES" in os.environ:
         logger.info("Application configuration set for recreating tables option...")
         if os.environ.get("DFA_RECREATE_DFA_ADW_TABLES", "false").lower() == "true":
-            logger.info(
-                "Application configuration set table recreation.  Dropping all DFA tables now..."
-            )
+            logger.info("Application configuration set table recreation.  Dropping all DFA tables now...")
             is_table.delete()
             cgs_table.delete()
             rs_table.delete()
@@ -171,19 +169,23 @@ def create_adw_tables():
 def setup(application_ocid):
     function_mgr = DfaSetupADWFunctionConfigs()
 
-    downloaded_wallet_base_filename = 'dfa_adw_wallet'
-    wallet_extract_location = '%s/%s' % (os.environ['DFA_LOCAL_SAVE_DIRECTORY'] , downloaded_wallet_base_filename)
-    wallet_zip_filename = '%s.zip' % wallet_extract_location
-    wallet_filename = 'cwallet.sso'
-    wallet_pem_filename = 'ewallet.pem'
+    downloaded_wallet_base_filename = "dfa_adw_wallet"
+    wallet_extract_location = "%s/%s" % (os.environ["DFA_LOCAL_SAVE_DIRECTORY"], downloaded_wallet_base_filename)
+    wallet_zip_filename = "%s.zip" % wallet_extract_location
+    wallet_filename = "cwallet.sso"
+    wallet_pem_filename = "ewallet.pem"
     wallet_password = generate_wallet_password()
     secret_mgr = AdwSecrets()
+    connection_secret_name = os.getenv(
+        "DFA_ADW_CONNECTION_SECRET_NAME",
+        f'{os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"]}_connection',
+    )
 
     wallet_exists_flag = secret_mgr.dfa_wallet_secret_exists()
     wallet_pem_exists_flag = secret_mgr.dfa_wallet_pem_secret_exists()
     wallet_password_exists_flag = secret_mgr.dfa_wallet_password_secret_exists()
     dfa_user_password_exists_flag = secret_mgr.dfa_user_password_exists()
-    logger.info('Setting ADW connection information')
+    logger.info("Setting ADW connection information")
     function_mgr.add_adw_connection_string_to_configuration(application_ocid)
 
     if (
@@ -227,6 +229,22 @@ def setup(application_ocid):
     else:
         logger.info("Wallet credentials are stored in configured vault - moving with setup")
 
+    if secret_mgr._connection_secret_exists(connection_secret_name):
+        logger.info("Using existing consolidated ADW connection secret")
+    else:
+        logger.info("Creating consolidated ADW connection secret")
+        secret_mgr._create_connection_secret(
+            connection_secret_name,
+            dfa_user_password=secret_mgr.get_dfa_user_password(),
+            wallet=secret_mgr.get_wallet(),
+            wallet_password=secret_mgr.get_wallet_password(),
+            ewallet_pem=secret_mgr.get_ewallet_pem(),
+        )
+
+    connection_secret_ocid = secret_mgr._get_secret_ocid_by_name(connection_secret_name)
+    os.environ["DFA_ADW_CONNECTION_SECRET_OCID"] = connection_secret_ocid
+    function_mgr.add_connection_secret_to_configuration(application_ocid, connection_secret_ocid)
+
     logger.info("Creating DFA ADW user and schema")
     UserSchema().create_user_and_schema()
 
@@ -239,7 +257,7 @@ def setup(application_ocid):
             os.unlink(wallet_zip_filename)
             print(f"Directory '{wallet_extract_location}' and all its contents have been removed.")
         except OSError as e:
-            print(f"Error: {wallet_extract_location} : {e.strerror}")    
+            print(f"Error: {wallet_extract_location} : {e.strerror}")
 
 
 def main():
@@ -271,7 +289,7 @@ def main():
     application_class = DfaApplication()
     application_class.create_functions_application(subnet_ids)
     application_id = application_class.get_application_id()
-    
+
     function_ids = []
 
     # create f2s transformer function
@@ -335,7 +353,7 @@ def main():
     audit_sch_class = DfaAuditConnector()
     audit_sch_class.create_audit_sch(audit_function_id)
 
-    logger.info(f'Waiting for adw instance to reach an available state...')
+    logger.info(f"Waiting for adw instance to reach an available state...")
     adw_class.wait_for_active_adw()
 
     #  set up the secrets, database tables, dfa_user schema
@@ -349,7 +367,8 @@ def main():
     dynamic_group_class = DfaFunctionsDynamicGroup()
     dynamic_group_class.create_functions_dynamic_group(function_ids)
 
-    logger.info(f'DFA has successfully been set up')
+    logger.info(f"DFA has successfully been set up")
+
 
 if __name__ == "__main__":
     main()

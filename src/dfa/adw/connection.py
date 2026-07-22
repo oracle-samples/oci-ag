@@ -87,9 +87,11 @@ class AdwConnection:
         return max(0, min(value, maximum))
 
     @staticmethod
-    def _get_password(secrets_mgr, username: str):
+    def _get_password(secrets_mgr, username: str, connection_material=None):
         if username.upper() == "ADMIN":
             return secrets_mgr.get_password()
+        if connection_material is not None:
+            return connection_material["dfa_user_password"]
         return secrets_mgr.get_dfa_user_password()
 
     @classmethod
@@ -104,20 +106,23 @@ class AdwConnection:
             cls.logger.info("Initializing ADW connection (loading wallet and secrets)")
 
             secrets_mgr = AdwSecrets()
+            connection_material = secrets_mgr.get_connection_material()
+            if not isinstance(connection_material, dict):
+                raise ValueError("Invalid consolidated ADW connection secret")
             if cls.__wallet_dir is None:
                 cls.__wallet_dir = tempfile.mkdtemp(prefix="dfa_wallet_")
                 os.chmod(cls.__wallet_dir, 0o700)
                 # Write wallet files into the temp directory
                 with open(os.path.join(cls.__wallet_dir, "cwallet.sso"), "wb") as f:
-                    f.write(secrets_mgr.get_wallet())
+                    f.write(connection_material["wallet"])
                 with open(os.path.join(cls.__wallet_dir, "ewallet.pem"), "w", encoding="utf-8") as f:
-                    f.write(secrets_mgr.get_ewallet_pem())
+                    f.write(connection_material["ewallet_pem"])
                 # Cleanup temp wallet directory on process exit
                 atexit.register(shutil.rmtree, cls.__wallet_dir, ignore_errors=True)
 
             wallet_directory = cls.__wallet_dir
-            password = cls._get_password(secrets_mgr, username)
-            wallet_password = secrets_mgr.get_wallet_password()
+            password = cls._get_password(secrets_mgr, username, connection_material)
+            wallet_password = connection_material["wallet_password"]
 
             params = {
                 "retry_count": cls._get_bounded_int_env(

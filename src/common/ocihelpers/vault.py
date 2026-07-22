@@ -2,6 +2,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
 import base64
+import binascii
+import json
 import os
 import secrets
 import string
@@ -20,7 +22,7 @@ def build_default_oci_retry_strategy():
         total_elapsed_time_seconds=75,
         retry_max_wait_between_calls_seconds=7,
         retry_base_sleep_time_seconds=4,
-        service_error_check=False,
+        service_error_check=True,
         service_error_retry_on_any_5xx=False,
         service_error_retry_config={429: []},
         backoff_type=oci.retry.BACKOFF_FULL_JITTER_EQUAL_ON_THROTTLE_VALUE,
@@ -390,6 +392,44 @@ class DfaBaseSecret:
 
 class AdwSecrets(DfaBaseSecret):
     admin_password_name = None
+
+    def get_connection_material(self):
+        """Return consolidated ADW credentials, if configured.
+
+        Its wallet member is base64 encoded to keep the JSON secret text-safe.
+        """
+        self.logger.info("Pulling ADW connection material from the OCI vault")
+        secret_ocid = os.getenv("DFA_ADW_CONNECTION_SECRET_OCID")
+        if not secret_ocid:
+            raise ValueError("DFA_ADW_CONNECTION_SECRET_OCID must be configured")
+
+        try:
+            material = json.loads(self._get_secret_value(secret_ocid))
+            required_keys = {"dfa_user_password", "wallet", "wallet_password", "ewallet_pem"}
+            if not required_keys.issubset(material) or not all(isinstance(material[key], str) for key in required_keys):
+                raise ValueError("missing or invalid required fields")
+            material["wallet"] = base64.b64decode(material["wallet"], validate=True)
+            return material
+        except (ValueError, json.JSONDecodeError, UnicodeDecodeError, binascii.Error) as error:
+            raise ValueError("Invalid consolidated ADW connection secret") from error
+
+    def _connection_secret_exists(self, secret_name):
+        return self._secret_exists(secret_name)
+
+    def _create_connection_secret(self, secret_name, dfa_user_password, wallet, wallet_password, ewallet_pem):
+        """Create the text-safe JSON bundle consumed by ``get_connection_material``."""
+        material = json.dumps(
+            {
+                "dfa_user_password": dfa_user_password,
+                "wallet": base64.b64encode(wallet).decode("ascii"),
+                "wallet_password": wallet_password,
+                "ewallet_pem": ewallet_pem,
+            }
+        )
+        return self._create_secret(secret_name, material)
+
+    def _get_secret_ocid_by_name(self, secret_name):
+        return self._get_secret_ocid(secret_name)
 
     def dfa_user_password_exists(self):
         self.logger.info("Verifying ADW DFA_USER password exists in the OCI vault")

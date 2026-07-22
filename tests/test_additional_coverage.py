@@ -82,6 +82,25 @@ def test_vault_clients_use_retry_strategy(monkeypatch):
     assert secret_calls[0]["retry_strategy"] is sentinel_retry
 
 
+def test_vault_retry_strategy_retries_throttled_service_errors(monkeypatch):
+    import common.ocihelpers.vault as vault_mod
+
+    captured_options = {}
+
+    class RetryStrategyBuilder:
+        def __init__(self, **kwargs):
+            captured_options.update(kwargs)
+
+        def get_retry_strategy(self):
+            return "retry-strategy"
+
+    monkeypatch.setattr(vault_mod.oci.retry, "RetryStrategyBuilder", RetryStrategyBuilder)
+
+    assert vault_mod.build_default_oci_retry_strategy() == "retry-strategy"
+    assert captured_options["service_error_check"] is True
+    assert captured_options["service_error_retry_config"] == {429: []}
+
+
 # 2) Bootstrap envvars tests
 from dfa.bootstrap.envvars import bootstrap_base_environment_variables, bootstrap_local_machine_environment_variables
 from dfa.bootstrap.image_version import get_package_version, resolve_image_version
@@ -89,10 +108,7 @@ from dfa.bootstrap.image_version import get_package_version, resolve_image_versi
 
 def test_bootstrap_base_environment_variables_sets_expected_keys(monkeypatch):
     cfg: Dict[str, str] = {
-        "DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME": "secret1",
-        "DFA_ADW_WALLET_SECRET_NAME": "wallet",
-        "DFA_ADW_WALLET_PASSWORD_SECRET_NAME": "wallet_pwd",
-        "DFA_ADW_EWALLET_PEM_SECRET_NAME": "ewallet_pem",
+        "DFA_ADW_CONNECTION_SECRET_OCID": "ocid1.vaultsecret.oc1..connection",
         "DFA_CONN_PROTOCOL": "tcps",
         "DFA_CONN_HOST": "dbhost",
         "DFA_CONN_PORT": "1522",
@@ -112,6 +128,28 @@ def test_bootstrap_base_environment_variables_sets_expected_keys(monkeypatch):
         if k == "DFA_RECREATE_DFA_ADW_TABLES":
             continue
         assert os.environ.get(k) == v
+
+
+def test_bootstrap_accepts_consolidated_connection_secret_without_legacy_secrets(monkeypatch):
+    cfg: Dict[str, str] = {
+        "DFA_ADW_CONNECTION_SECRET_OCID": "ocid1.vaultsecret.oc1..connection",
+        "DFA_CONN_PROTOCOL": "tcps",
+        "DFA_CONN_HOST": "dbhost",
+        "DFA_CONN_PORT": "1522",
+        "DFA_CONN_SERVICE_NAME": "svc",
+        "DFA_CONN_RETRY_COUNT": "2",
+        "DFA_CONN_RETRY_DELAY": "1",
+        "DFA_SIGNER_TYPE": "resource",
+        "DFA_COMPARTMENT_ID": "ocid1.compartment.oc1..aaaa",
+        "DFA_NAMESPACE": "ns",
+        "DFA_STREAM_ID": "ocid1.stream.oc1..aaaa",
+        "DFA_STREAM_SERVICE_ENDPOINT": "https://example.com",
+        "DFA_VAULT_ID": "ocid1.vault.oc1..aaaa",
+    }
+
+    bootstrap_base_environment_variables(cfg)
+
+    assert os.environ["DFA_ADW_CONNECTION_SECRET_OCID"] == cfg["DFA_ADW_CONNECTION_SECRET_OCID"]
 
 
 def test_bootstrap_local_machine_env_reads_ini(tmp_path, monkeypatch):
