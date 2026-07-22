@@ -106,16 +106,16 @@ def test_rollback_and_close_closes_connection_when_rollback_fails():
 @patch("dfa.adw.connection.AdwSecrets")
 def test_get_cursor_reconnects_when_cached_connection_ping_fails(mock_secrets_cls, mock_connect):
     mock_secrets = mock_secrets_cls.return_value
-    mock_secrets.get_connection_material.return_value = {
-        "dfa_user_password": "password",
-        "wallet": b"wallet",
-        "wallet_password": "wallet-password",
-        "ewallet_pem": "pem",
-    }
     mock_secrets.get_wallet.return_value = b"wallet"
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "password"
     mock_secrets.get_wallet_password.return_value = "wallet-password"
+    mock_secrets.get_connection_material.return_value = {
+        "dfa_user_password": mock_secrets.get_dfa_user_password.return_value,
+        "wallet": mock_secrets.get_wallet.return_value,
+        "wallet_password": mock_secrets.get_wallet_password.return_value,
+        "ewallet_pem": mock_secrets.get_ewallet_pem.return_value,
+    }
     stale_connection = MagicMock()
     stale_connection.ping.side_effect = Exception("DPY-4011")
     stale_cursor = MagicMock()
@@ -190,17 +190,17 @@ def test_get_cursor_recreates_cached_cursor_when_cursor_is_invalid():
 def test_get_connection_reconnects_when_username_changes(mock_secrets_cls, mock_connect):
     _reset_adw_connection_state()
     mock_secrets = mock_secrets_cls.return_value
-    mock_secrets.get_connection_material.return_value = {
-        "dfa_user_password": "dfa-password",
-        "wallet": b"wallet",
-        "wallet_password": "wallet-password",
-        "ewallet_pem": "pem",
-    }
     mock_secrets.get_wallet.return_value = b"wallet"
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "dfa-password"
     mock_secrets.get_password.return_value = "admin-password"
     mock_secrets.get_wallet_password.return_value = "wallet-password"
+    mock_secrets.get_connection_material.return_value = {
+        "dfa_user_password": mock_secrets.get_dfa_user_password.return_value,
+        "wallet": mock_secrets.get_wallet.return_value,
+        "wallet_password": mock_secrets.get_wallet_password.return_value,
+        "ewallet_pem": mock_secrets.get_ewallet_pem.return_value,
+    }
     dfa_connection = MagicMock()
     admin_connection = MagicMock()
     mock_connect.side_effect = [dfa_connection, admin_connection]
