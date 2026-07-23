@@ -110,6 +110,12 @@ def test_get_cursor_reconnects_when_cached_connection_ping_fails(mock_secrets_cl
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "password"
     mock_secrets.get_wallet_password.return_value = "wallet-password"
+    mock_secrets.get_connection_material.return_value = {
+        "dfa_user_password": mock_secrets.get_dfa_user_password.return_value,
+        "wallet": mock_secrets.get_wallet.return_value,
+        "wallet_password": mock_secrets.get_wallet_password.return_value,
+        "ewallet_pem": mock_secrets.get_ewallet_pem.return_value,
+    }
     stale_connection = MagicMock()
     stale_connection.ping.side_effect = Exception("DPY-4011")
     stale_cursor = MagicMock()
@@ -187,8 +193,13 @@ def test_get_connection_reconnects_when_username_changes(mock_secrets_cls, mock_
     mock_secrets.get_wallet.return_value = b"wallet"
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "dfa-password"
-    mock_secrets.get_password.return_value = "admin-password"
     mock_secrets.get_wallet_password.return_value = "wallet-password"
+    mock_secrets.get_connection_material.return_value = {
+        "dfa_user_password": mock_secrets.get_dfa_user_password.return_value,
+        "wallet": mock_secrets.get_wallet.return_value,
+        "wallet_password": mock_secrets.get_wallet_password.return_value,
+        "ewallet_pem": mock_secrets.get_ewallet_pem.return_value,
+    }
     dfa_connection = MagicMock()
     admin_connection = MagicMock()
     mock_connect.side_effect = [dfa_connection, admin_connection]
@@ -202,7 +213,7 @@ def test_get_connection_reconnects_when_username_changes(mock_secrets_cls, mock_
         assert mock_connect.call_args_list[0].kwargs["user"] == "DFA"
         assert mock_connect.call_args_list[0].kwargs["password"] == "dfa-password"
         assert mock_connect.call_args_list[1].kwargs["user"] == "ADMIN"
-        assert mock_connect.call_args_list[1].kwargs["password"] == "admin-password"
+        assert mock_connect.call_args_list[1].kwargs["password"] == "dfa-password"
         assert AdwConnection._AdwConnection__username == "ADMIN"
     finally:
         _reset_adw_connection_state()
@@ -213,10 +224,15 @@ def test_get_connection_reconnects_when_username_changes(mock_secrets_cls, mock_
 def test_get_cursor_reconnects_when_username_changes(mock_secrets_cls, mock_connect):
     _reset_adw_connection_state()
     mock_secrets = mock_secrets_cls.return_value
+    mock_secrets.get_connection_material.return_value = {
+        "dfa_user_password": "password",
+        "wallet": b"wallet",
+        "wallet_password": "wallet-password",
+        "ewallet_pem": "pem",
+    }
     mock_secrets.get_wallet.return_value = b"wallet"
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "password"
-    mock_secrets.get_password.return_value = "admin-password"
     mock_secrets.get_wallet_password.return_value = "wallet-password"
     stale_connection = MagicMock()
     stale_cursor = MagicMock()
@@ -237,7 +253,7 @@ def test_get_cursor_reconnects_when_username_changes(mock_secrets_cls, mock_conn
         stale_connection.close.assert_called_once()
         mock_connect.assert_called_once()
         assert mock_connect.call_args.kwargs["user"] == "ADMIN"
-        assert mock_connect.call_args.kwargs["password"] == "admin-password"
+        assert mock_connect.call_args.kwargs["password"] == "password"
     finally:
         _reset_adw_connection_state()
 
@@ -247,6 +263,12 @@ def test_get_cursor_reconnects_when_username_changes(mock_secrets_cls, mock_conn
 def test_get_connection_includes_bounded_connect_parameters(mock_secrets_cls, mock_connect, tmp_path):
     _reset_adw_connection_state()
     mock_secrets = mock_secrets_cls.return_value
+    mock_secrets.get_connection_material.return_value = {
+        "dfa_user_password": "password",
+        "wallet": b"wallet",
+        "wallet_password": "wallet-password",
+        "ewallet_pem": "pem",
+    }
     mock_secrets.get_wallet.return_value = b"wallet"
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "password"
@@ -279,6 +301,12 @@ def test_get_connection_includes_bounded_connect_parameters(mock_secrets_cls, mo
 def test_get_connection_caps_large_connect_retry_parameters(mock_secrets_cls, mock_connect):
     _reset_adw_connection_state()
     mock_secrets = mock_secrets_cls.return_value
+    mock_secrets.get_connection_material.return_value = {
+        "dfa_user_password": "password",
+        "wallet": b"wallet",
+        "wallet_password": "wallet-password",
+        "ewallet_pem": "pem",
+    }
     mock_secrets.get_wallet.return_value = b"wallet"
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "password"
@@ -301,5 +329,32 @@ def test_get_connection_caps_large_connect_retry_parameters(mock_secrets_cls, mo
         assert "retry_count=3" in dsn
         assert "retry_delay=3" in dsn
         assert "tcp_connect_timeout=10" in dsn
+    finally:
+        _reset_adw_connection_state()
+
+
+@patch("dfa.adw.connection.oracledb.connect")
+@patch("dfa.adw.connection.AdwSecrets")
+def test_get_connection_uses_one_consolidated_secret_bundle(mock_secrets_cls, mock_connect):
+    _reset_adw_connection_state()
+    mock_secrets = mock_secrets_cls.return_value
+    mock_secrets.get_connection_material.return_value = {
+        "dfa_user_password": "password",
+        "wallet": b"wallet",
+        "wallet_password": "wallet-password",
+        "ewallet_pem": "pem",
+    }
+    connection = MagicMock()
+    mock_connect.return_value = connection
+
+    try:
+        with patch.dict(os.environ, _adw_env(), clear=False):
+            assert AdwConnection.get_connection() is connection
+
+        assert mock_connect.call_args.kwargs["password"] == "password"
+        mock_secrets.get_wallet.assert_not_called()
+        mock_secrets.get_ewallet_pem.assert_not_called()
+        mock_secrets.get_wallet_password.assert_not_called()
+        mock_secrets.get_dfa_user_password.assert_not_called()
     finally:
         _reset_adw_connection_state()

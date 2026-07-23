@@ -227,6 +227,15 @@ def test_event_timestamp_indexes_cover_all_requested_tables():
             }
 
 
+def test_event_timestamp_index_ddl_does_not_include_a_literal_backslash():
+    table = AuditEventsTable()
+    ddl = table._build_index_ddl(table.get_index_definition_details()[0])
+
+    assert _normalize_sql(ddl) == (
+        "CREATE INDEX DFA.DFA_AE_ET_IDX ON DFA.AUDIT_EVENTS " '("EVENT_TIMESTAMP", "SERVICE_INSTANCE_ID", "TENANCY_ID")'
+    )
+
+
 def test_state_delete_keys_are_indexed():
     def indexed_columns(table):
         indexes = [table.get_unique_contraint_definition_details()]

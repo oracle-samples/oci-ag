@@ -4,7 +4,6 @@
 import os
 
 from common.logger.logger import Logger
-from common.ocihelpers.vault import AdwSecrets
 from dfa.adw.connection import AdwConnection
 
 
@@ -24,24 +23,11 @@ class UserSchema:
 
         return exists
 
-    def create_user_password(self, adw_password):
-        adw_secrets_mgr = AdwSecrets()
-        secret_exists_flag = adw_secrets_mgr.dfa_user_password_exists()
-
-        if not secret_exists_flag:
-            self.logger.info("No secret found - storing password in configured DFA vault...")
-            adw_secrets_mgr.save_dfa_user_password(adw_password)
-            self.logger.info("ADW password successfully saved to configured DFA vault")
-
-    def create_user_and_schema(self):
+    def create_user_and_schema(self, dfa_user_password):
 
         self.logger.info("Checking if DFA_USER schema exists in configured DFA ADW instance")
         if not self._user_schema_exists():
             self.logger.info("DFA_USER schema does not exist - creating")
-
-            self.logger.info("Pulling DFA_USER password from configured DFA vault")
-            adw_secrets_mgr = AdwSecrets()
-            dfa_user_password = adw_secrets_mgr.get_dfa_user_password()
 
             self.logger.info("Creating user...")
             AdwConnection.get_cursor(username="ADMIN").execute(self._get_create_user_sql(dfa_user_password))

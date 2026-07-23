@@ -100,7 +100,7 @@ class BaseTable(ABC):
     def _build_index_ddl(self, index_definition):
         index_columns_ddl = '"' + '", "'.join(index_definition["columns"]) + '"'
         return f"""
-            CREATE INDEX {self.get_schema()}.{index_definition["name"]} ON \\
+            CREATE INDEX {self.get_schema()}.{index_definition["name"]} ON \
 {self.get_schema()}.{self.get_table_name()} ({index_columns_ddl})
             """
 
@@ -215,7 +215,7 @@ class BaseTable(ABC):
 
             AdwConnection.get_cursor().execute(delete_sql)
         else:
-            self.logger.info("Table %s already dropped - skipping delete", self.get_table_name())
+            self.logger.info("Table %s does not exist - skipping delete", self.get_table_name())
 
     def _table_exists(self):
         exists = False

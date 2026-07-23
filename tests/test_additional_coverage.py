@@ -82,6 +82,84 @@ def test_vault_clients_use_retry_strategy(monkeypatch):
     assert secret_calls[0]["retry_strategy"] is sentinel_retry
 
 
+def test_vault_retry_strategy_retries_throttled_service_errors(monkeypatch):
+    import common.ocihelpers.vault as vault_mod
+
+    captured_options = {}
+
+    class RetryStrategyBuilder:
+        def __init__(self, **kwargs):
+            captured_options.update(kwargs)
+
+        def get_retry_strategy(self):
+            return "retry-strategy"
+
+    monkeypatch.setattr(vault_mod.oci.retry, "RetryStrategyBuilder", RetryStrategyBuilder)
+
+    assert vault_mod.build_default_oci_retry_strategy() == "retry-strategy"
+    assert captured_options["service_error_check"] is True
+    assert captured_options["service_error_retry_config"] == {429: []}
+
+
+def test_secret_exists_scopes_lookup_to_configured_vault(monkeypatch):
+    import common.ocihelpers.vault as vault_mod
+
+    monkeypatch.setenv("DFA_COMPARTMENT_ID", "compartment-ocid")
+    monkeypatch.setenv("DFA_VAULT_ID", "configured-vault-ocid")
+    calls = []
+
+    def list_secrets(*args, **kwargs):
+        calls.append((args, kwargs))
+        return SimpleNamespace(data=[])
+
+    secrets = vault_mod.AdwSecrets()
+    secrets._DfaBaseSecret__vault_client = SimpleNamespace(list_secrets=list_secrets)  # type: ignore[attr-defined]
+
+    assert not secrets._secret_exists("shared-secret")
+    assert calls == [(("compartment-ocid",), {"name": "shared-secret", "vault_id": "configured-vault-ocid"})]
+
+
+def test_adw_configuration_update_includes_connection_secret(monkeypatch):
+    import common.ocihelpers.function as function_mod
+
+    class FakeClient:
+        def __init__(self):
+            self.update_calls = []
+
+        def get_application(self, application_ocid):
+            assert application_ocid == "application-ocid"
+            return SimpleNamespace(data=SimpleNamespace(config={"EXISTING_CONFIG": "preserved"}))
+
+        def update_application(self, **kwargs):
+            self.update_calls.append(kwargs)
+            return SimpleNamespace(data="updated-application")
+
+    fake_client = FakeClient()
+    adw_details = SimpleNamespace(
+        connection_strings=SimpleNamespace(all_connection_strings={"LOW": "db.example.com:1522/dbservice_low"})
+    )
+    monkeypatch.setenv("DFA_ADW_INSTANCE_OCID", "adw-ocid")
+    monkeypatch.setattr(
+        function_mod, "BaseAutonomousDatabase", lambda: SimpleNamespace(get_details=lambda _: adw_details)
+    )
+
+    function_configs = function_mod.DfaSetupADWFunctionConfigs()
+    function_configs._BaseFunction__client = fake_client  # type: ignore[attr-defined]
+
+    assert (
+        function_configs.add_adw_connection_string_to_configuration("application-ocid", "connection-secret-ocid")
+        == "updated-application"
+    )
+    assert len(fake_client.update_calls) == 1
+    config = fake_client.update_calls[0]["update_application_details"].config
+    assert config == {
+        "EXISTING_CONFIG": "preserved",
+        "DFA_CONN_HOST": "db.example.com",
+        "DFA_CONN_SERVICE_NAME": "dbservice_low",
+        "DFA_ADW_CONNECTION_SECRET_OCID": "connection-secret-ocid",
+    }
+
+
 # 2) Bootstrap envvars tests
 from dfa.bootstrap.envvars import bootstrap_base_environment_variables, bootstrap_local_machine_environment_variables
 from dfa.bootstrap.image_version import get_package_version, resolve_image_version
@@ -89,10 +167,7 @@ from dfa.bootstrap.image_version import get_package_version, resolve_image_versi
 
 def test_bootstrap_base_environment_variables_sets_expected_keys(monkeypatch):
     cfg: Dict[str, str] = {
-        "DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME": "secret1",
-        "DFA_ADW_WALLET_SECRET_NAME": "wallet",
-        "DFA_ADW_WALLET_PASSWORD_SECRET_NAME": "wallet_pwd",
-        "DFA_ADW_EWALLET_PEM_SECRET_NAME": "ewallet_pem",
+        "DFA_ADW_CONNECTION_SECRET_OCID": "ocid1.vaultsecret.oc1..connection",
         "DFA_CONN_PROTOCOL": "tcps",
         "DFA_CONN_HOST": "dbhost",
         "DFA_CONN_PORT": "1522",
@@ -112,6 +187,28 @@ def test_bootstrap_base_environment_variables_sets_expected_keys(monkeypatch):
         if k == "DFA_RECREATE_DFA_ADW_TABLES":
             continue
         assert os.environ.get(k) == v
+
+
+def test_bootstrap_accepts_consolidated_connection_secret_without_legacy_secrets(monkeypatch):
+    cfg: Dict[str, str] = {
+        "DFA_ADW_CONNECTION_SECRET_OCID": "ocid1.vaultsecret.oc1..connection",
+        "DFA_CONN_PROTOCOL": "tcps",
+        "DFA_CONN_HOST": "dbhost",
+        "DFA_CONN_PORT": "1522",
+        "DFA_CONN_SERVICE_NAME": "svc",
+        "DFA_CONN_RETRY_COUNT": "2",
+        "DFA_CONN_RETRY_DELAY": "1",
+        "DFA_SIGNER_TYPE": "resource",
+        "DFA_COMPARTMENT_ID": "ocid1.compartment.oc1..aaaa",
+        "DFA_NAMESPACE": "ns",
+        "DFA_STREAM_ID": "ocid1.stream.oc1..aaaa",
+        "DFA_STREAM_SERVICE_ENDPOINT": "https://example.com",
+        "DFA_VAULT_ID": "ocid1.vault.oc1..aaaa",
+    }
+
+    bootstrap_base_environment_variables(cfg)
+
+    assert os.environ["DFA_ADW_CONNECTION_SECRET_OCID"] == cfg["DFA_ADW_CONNECTION_SECRET_OCID"]
 
 
 def test_bootstrap_local_machine_env_reads_ini(tmp_path, monkeypatch):

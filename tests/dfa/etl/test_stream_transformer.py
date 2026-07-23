@@ -94,6 +94,7 @@ class TestStreamTransformer(unittest.TestCase):
             False,
         )
         mock_query_builder.execute_sql_for_events.assert_called_once()
+        self.mock_adw_close.assert_not_called()
 
     @patch("dfa.etl.stream_transformer.get_query_builder")
     def test_load_data_rolls_back_and_closes_on_failure(self, mock_get_query_builder):

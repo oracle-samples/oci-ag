@@ -196,10 +196,7 @@ By default, the installer script will create the resources with prefix 'dfa'. Th
 Any variable ending in *_FUNCTION_PROVISIONED_CONCURRENCY is related to the provisioned concurrency units used by the OCI Functions. Adjust these values in config.ini as needed based on tenancy limits and amount of AG data. The concurrency units can be changed in OCI once the functions have been created by the script.
 </br>
 
-Any variable ending in *_SECRET_NAME is related to secrets in the vault. The installer script creates secrets in an OCI vault to store the DB's ewallet.pem file contents, wallet.sso file contents, user schema name, and user schema password. The secrets will be named based off the values assigned to the *_SECRET_NAME variables. Once the script has created the secrets in the vault, changing the names in the config.ini file will not update the secret names in the OCI Vault, they must be manually changed.
-</br>
-
-The `REPOSITORY_NAME` variable should match the OCI repository name used by the build script. The installer derives the image version from `pyproject.toml` and the current git commit, producing tags like `1.0-a1b2c3d`. To deploy a specific prebuilt image tag, set `DFA_IMAGE_VERSION` in the shell before running the installer.
+The `REPOSITORY_NAME` variable should match the OCI repository name used by the build script. The installer derives the image version from `pyproject.toml` and the current git commit, producing tags like `1.1-a1b2c3d`. To deploy a specific prebuilt image tag, set `DFA_IMAGE_VERSION` in the shell before running the installer.
 </br>
 
 The `DFA_RECREATE_DFA_ADW_TABLES` variable should be set to false when running the script for the first time. This variable should be set to true if a table's schema or unique constraints have changed. Setting this variable to true will delete the existing DFA tables and will re-create them.
@@ -272,10 +269,17 @@ ADW connection and wallet:
 - DFA_CONN_SERVICE_NAME: Database service name.
 - DFA_CONN_RETRY_COUNT: Optional retry count for connection.
 - DFA_CONN_RETRY_DELAY: Optional delay between retries.
-- DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME: Secret name for DFA user password.
-- DFA_ADW_WALLET_SECRET_NAME: Secret name for cwallet.sso.
-- DFA_ADW_WALLET_PASSWORD_SECRET_NAME: Secret name for wallet password.
-- DFA_ADW_EWALLET_PEM_SECRET_NAME: Secret name for ewallet.pem.
+
+
+`DFA_ADW_CONNECTION_SECRET_OCID` is the required consolidated credential
+bundle. It contains the DFA password, wallet, wallet password, and PEM in one
+JSON secret, so a cold ADW connection makes one secret-bundle retrieval. Its
+`wallet` member must be base64-encoded.
+
+`DFA_ADW_CONNECTION_SECRET_NAME` is optional installer-only configuration for
+the consolidated secret's name. If omitted, the installer derives it from the
+legacy DFA password-secret name and configures its OCID on the Function
+application.
 
 OCI access and vault:
 - DFA_SIGNER_TYPE: `resource` (default for Functions) or `user` (when using a user token).
