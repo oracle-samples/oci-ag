@@ -196,7 +196,7 @@ By default, the installer script will create the resources with prefix 'dfa'. Th
 Any variable ending in *_FUNCTION_PROVISIONED_CONCURRENCY is related to the provisioned concurrency units used by the OCI Functions. Adjust these values in config.ini as needed based on tenancy limits and amount of AG data. The concurrency units can be changed in OCI once the functions have been created by the script.
 </br>
 
-The `REPOSITORY_NAME` variable should match the OCI repository name used by the build script. The installer derives the image version from `pyproject.toml` and the current git commit, producing tags like `1.0-a1b2c3d`. To deploy a specific prebuilt image tag, set `DFA_IMAGE_VERSION` in the shell before running the installer.
+The `REPOSITORY_NAME` variable should match the OCI repository name used by the build script. The installer derives the image version from `pyproject.toml` and the current git commit, producing tags like `1.1-a1b2c3d`. To deploy a specific prebuilt image tag, set `DFA_IMAGE_VERSION` in the shell before running the installer.
 </br>
 
 The `DFA_RECREATE_DFA_ADW_TABLES` variable should be set to false when running the script for the first time. This variable should be set to true if a table's schema or unique constraints have changed. Setting this variable to true will delete the existing DFA tables and will re-create them.

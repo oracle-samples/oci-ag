@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dfa"
-version = "1.0"
+version = "1.1"
 description = "Package for AGCS Data Feed Analytics"
 readme = "README.md"
 license = { file = "LICENSE.txt" }
