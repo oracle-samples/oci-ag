@@ -37,7 +37,7 @@ from dfa.adw.tables.role import *
 from dfa.adw.user_schema import UserSchema
 from dfa.bootstrap.envvars import bootstrap_local_machine_environment_variables
 
-bootstrap_local_machine_environment_variables("config.ini.mine", "INSTALLER_TEST")
+bootstrap_local_machine_environment_variables("config.ini", "DFA")
 
 logger = Logger(__name__).get_logger()
 
