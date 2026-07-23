@@ -87,12 +87,8 @@ class AdwConnection:
         return max(0, min(value, maximum))
 
     @staticmethod
-    def _get_password(secrets_mgr, username: str, connection_material=None):
-        if username.upper() == "ADMIN":
-            return secrets_mgr.get_password()
-        if connection_material is not None:
-            return connection_material["dfa_user_password"]
-        return secrets_mgr.get_dfa_user_password()
+    def _get_password(connection_material):
+        return connection_material["dfa_user_password"]
 
     @classmethod
     def get_connection(cls, username: str | None = None):
@@ -121,7 +117,7 @@ class AdwConnection:
                 atexit.register(shutil.rmtree, cls.__wallet_dir, ignore_errors=True)
 
             wallet_directory = cls.__wallet_dir
-            password = cls._get_password(secrets_mgr, username, connection_material)
+            password = cls._get_password(connection_material)
             wallet_password = connection_material["wallet_password"]
 
             params = {

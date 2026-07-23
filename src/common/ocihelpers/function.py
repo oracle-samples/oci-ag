@@ -154,15 +154,11 @@ class DfaApplication(BaseFunction):
                         "DFA_STREAM_ID": os.environ["DFA_STREAM_ID"],
                         "DFA_CONN_RETRY_DELAY": "3",
                         "DFA_SIGNER_TYPE": "principal",
-                        "DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME": os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"],
                         "DFA_CONN_SERVICE_NAME": "to-be-set",
                         "DFA_CONN_PROTOCOL": "tcps",
                         "DFA_CONN_PORT": "1522",
                         "DFA_NAMESPACE": os.environ["DFA_NAMESPACE"],
                         "DFA_TENANCY_ID": os.environ["DFA_TENANCY_ID"],
-                        "DFA_ADW_WALLET_SECRET_NAME": os.environ["DFA_ADW_WALLET_SECRET_NAME"],
-                        "DFA_ADW_WALLET_PASSWORD_SECRET_NAME": os.environ["DFA_ADW_WALLET_PASSWORD_SECRET_NAME"],
-                        "DFA_ADW_EWALLET_PEM_SECRET_NAME": os.environ["DFA_ADW_EWALLET_PEM_SECRET_NAME"],
                         "DFA_ADW_DFA_SCHEMA": os.environ["DFA_ADW_DFA_SCHEMA"],
                         "DFA_COMPARTMENT_ID": os.environ["DFA_COMPARTMENT_ID"],
                         "DFA_VAULT_ID": os.environ["DFA_VAULT_ID"],
@@ -394,7 +390,7 @@ class DfaSetupADWFunctionConfigs(BaseFunction):
             .data
         )
 
-    def add_adw_connection_string_to_configuration(self, application_ocid):
+    def add_adw_connection_string_to_configuration(self, application_ocid, connection_secret_ocid=None):
         self.logger.info("Pulling details for configured ADW instance")
         adw_details = BaseAutonomousDatabase().get_details(os.environ["DFA_ADW_INSTANCE_OCID"])
         connection_host_and_service_name = adw_details.connection_strings.all_connection_strings["LOW"].split("/")
@@ -407,14 +403,13 @@ class DfaSetupADWFunctionConfigs(BaseFunction):
         ## get existing configs
         self.logger.info("Pulling configurations for DFA OCI Function application")
         application_details = self._get_client().get_application(application_ocid)
-        dfa_configs = {}
-
-        if len(application_details.data.config) > 0:
-            dfa_configs = application_details.data.config
+        dfa_configs = dict(application_details.data.config or {})
 
         self.logger.info("Adding connection host and service name configurations for DFA OCI Function application")
         dfa_configs["DFA_CONN_SERVICE_NAME"] = connection_service_name
         dfa_configs["DFA_CONN_HOST"] = connection_host
+        if connection_secret_ocid:
+            dfa_configs["DFA_ADW_CONNECTION_SECRET_OCID"] = connection_secret_ocid
 
         os.environ["DFA_CONN_SERVICE_NAME"] = dfa_configs["DFA_CONN_SERVICE_NAME"]
         os.environ["DFA_CONN_HOST"] = dfa_configs["DFA_CONN_HOST"]

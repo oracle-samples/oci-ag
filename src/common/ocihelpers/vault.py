@@ -242,7 +242,11 @@ class DfaBaseSecret:
     def _secret_exists(self, secret_name):
         exists_flag = False
 
-        secrets_list = self.__get_vault_client().list_secrets(os.environ["DFA_COMPARTMENT_ID"], name=secret_name)
+        secrets_list = self.__get_vault_client().list_secrets(
+            os.environ["DFA_COMPARTMENT_ID"],
+            name=secret_name,
+            vault_id=os.environ["DFA_VAULT_ID"],
+        )
 
         if len(secrets_list.data) > 0:
             exists_flag = True

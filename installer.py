@@ -1,7 +1,6 @@
 # Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
-import base64
 import getpass
 import os
 import secrets
@@ -38,7 +37,7 @@ from dfa.adw.tables.role import *
 from dfa.adw.user_schema import UserSchema
 from dfa.bootstrap.envvars import bootstrap_local_machine_environment_variables
 
-bootstrap_local_machine_environment_variables("config.ini", "DFA")
+bootstrap_local_machine_environment_variables("config.ini.mine", "INSTALLER_TEST")
 
 logger = Logger(__name__).get_logger()
 
@@ -166,7 +165,7 @@ def create_adw_tables():
         osts_table.create()
 
 
-def setup(application_ocid):
+def setup(application_ocid, adw_password):
     function_mgr = DfaSetupADWFunctionConfigs()
 
     downloaded_wallet_base_filename = "dfa_adw_wallet"
@@ -178,23 +177,11 @@ def setup(application_ocid):
     secret_mgr = AdwSecrets()
     connection_secret_name = os.getenv(
         "DFA_ADW_CONNECTION_SECRET_NAME",
-        f'{os.environ["DFA_ADW_DFA_USER_PASSWORD_SECRET_NAME"]}_connection',
+        f'{os.environ["RESOURCE_NAME_PREFIX"]}_adw_connection',
     )
 
-    wallet_exists_flag = secret_mgr.dfa_wallet_secret_exists()
-    wallet_pem_exists_flag = secret_mgr.dfa_wallet_pem_secret_exists()
-    wallet_password_exists_flag = secret_mgr.dfa_wallet_password_secret_exists()
-    dfa_user_password_exists_flag = secret_mgr.dfa_user_password_exists()
-    logger.info("Setting ADW connection information")
-    function_mgr.add_adw_connection_string_to_configuration(application_ocid)
-
-    if (
-        not wallet_exists_flag
-        or not wallet_pem_exists_flag
-        or not wallet_password_exists_flag
-        or not dfa_user_password_exists_flag
-    ):
-        logger.info("Generate wallet credentials")
+    if not secret_mgr._connection_secret_exists(connection_secret_name):
+        logger.info("Generating wallet credentials and consolidated ADW connection secret")
         wallet_credentials = BaseAutonomousDatabase().generate_wallet(
             ocid=os.environ["DFA_ADW_INSTANCE_OCID"], password=wallet_password
         )
@@ -207,46 +194,30 @@ def setup(application_ocid):
         with zipfile.ZipFile(wallet_zip_filename, "r") as zip_ref:
             zip_ref.extractall(wallet_extract_location)
 
-        if not wallet_exists_flag:
-            logger.info("reading wallet and creating secret")
-            wallet_full_filepath = wallet_extract_location + "/" + wallet_filename
-            with open(wallet_full_filepath, "rb") as wallet_ref:
-                wallet_contents = wallet_ref.read()
-                wallet_secret_content = base64.b64encode(wallet_contents).decode()
-                secret_mgr.create_wallet_secret(wallet_secret_content)
+        wallet_full_filepath = wallet_extract_location + "/" + wallet_filename
+        with open(wallet_full_filepath, "rb") as wallet_ref:
+            wallet_contents = wallet_ref.read()
+        with open(wallet_extract_location + "/" + wallet_pem_filename, "r") as wallet_pem_ref:
+            wallet_pem_contents = wallet_pem_ref.read()
 
-        if not wallet_pem_exists_flag:
-            logger.info("reading wallet pem and creating secret")
-            wallet_pem_full_filepath = wallet_extract_location + "/" + wallet_pem_filename
-            with open(wallet_pem_full_filepath, "r") as wallet_pem_ref:
-                wallet_pem_contents = wallet_pem_ref.read()
-                secret_mgr.create_wallet_pem_secret(wallet_pem_contents)
-
-        if not wallet_password_exists_flag:
-            logger.info("reading wallet secret and creating secret")
-            secret_mgr.create_wallet_password_secret(wallet_password)
-
-    else:
-        logger.info("Wallet credentials are stored in configured vault - moving with setup")
-
-    if secret_mgr._connection_secret_exists(connection_secret_name):
-        logger.info("Using existing consolidated ADW connection secret")
-    else:
-        logger.info("Creating consolidated ADW connection secret")
         secret_mgr._create_connection_secret(
             connection_secret_name,
-            dfa_user_password=secret_mgr.get_dfa_user_password(),
-            wallet=secret_mgr.get_wallet(),
-            wallet_password=secret_mgr.get_wallet_password(),
-            ewallet_pem=secret_mgr.get_ewallet_pem(),
+            dfa_user_password=adw_password,
+            wallet=wallet_contents,
+            wallet_password=wallet_password,
+            ewallet_pem=wallet_pem_contents,
         )
+
+    else:
+        logger.info("Using existing consolidated ADW connection secret")
 
     connection_secret_ocid = secret_mgr._get_secret_ocid_by_name(connection_secret_name)
     os.environ["DFA_ADW_CONNECTION_SECRET_OCID"] = connection_secret_ocid
-    function_mgr.add_connection_secret_to_configuration(application_ocid, connection_secret_ocid)
+    logger.info("Setting ADW connection information")
+    function_mgr.add_adw_connection_string_to_configuration(application_ocid, connection_secret_ocid)
 
     logger.info("Creating DFA ADW user and schema")
-    UserSchema().create_user_and_schema()
+    UserSchema().create_user_and_schema(adw_password)
 
     logger.info("Creating DFA Tables")
     create_adw_tables()
@@ -274,16 +245,22 @@ def main():
     vault_class = DfaCreateVault()
     vault_class.create_vault()
     vault_class.create_key()
+    connection_secret_name = os.getenv(
+        "DFA_ADW_CONNECTION_SECRET_NAME",
+        f'{os.environ["RESOURCE_NAME_PREFIX"]}_adw_connection',
+    )
     secret_mgr = AdwSecrets()
-    if not secret_mgr.dfa_user_password_exists():
+    if secret_mgr._connection_secret_exists(connection_secret_name):
+        os.environ["DFA_ADW_CONNECTION_SECRET_OCID"] = secret_mgr._get_secret_ocid_by_name(connection_secret_name)
+        adw_password = secret_mgr.get_connection_material()["dfa_user_password"]
+    else:
         adw_password = getpass.getpass(
             'Enter a password for the ADW instance. It must be 12 to 30 characters long, at least 1 uppercase, 1 lowercase, 1 numeric. It cannot contain double quotes or the word "admin".'
         )
-        UserSchema().create_user_password(adw_password=adw_password)
 
     # create adw instance
     adw_class = DfaCreateAutonomousDatabase()
-    adw_class.create_adw(secret_mgr.get_dfa_user_password())
+    adw_class.create_adw(adw_password)
 
     # create function application
     application_class = DfaApplication()
@@ -357,7 +334,7 @@ def main():
     adw_class.wait_for_active_adw()
 
     #  set up the secrets, database tables, dfa_user schema
-    setup(application_id)
+    setup(application_id, adw_password)
 
     # create the policy giving the appropriate permissions to the resources
     policy_class = DfaAccessPolicy()

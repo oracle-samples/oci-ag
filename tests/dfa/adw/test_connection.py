@@ -193,7 +193,6 @@ def test_get_connection_reconnects_when_username_changes(mock_secrets_cls, mock_
     mock_secrets.get_wallet.return_value = b"wallet"
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "dfa-password"
-    mock_secrets.get_password.return_value = "admin-password"
     mock_secrets.get_wallet_password.return_value = "wallet-password"
     mock_secrets.get_connection_material.return_value = {
         "dfa_user_password": mock_secrets.get_dfa_user_password.return_value,
@@ -214,7 +213,7 @@ def test_get_connection_reconnects_when_username_changes(mock_secrets_cls, mock_
         assert mock_connect.call_args_list[0].kwargs["user"] == "DFA"
         assert mock_connect.call_args_list[0].kwargs["password"] == "dfa-password"
         assert mock_connect.call_args_list[1].kwargs["user"] == "ADMIN"
-        assert mock_connect.call_args_list[1].kwargs["password"] == "admin-password"
+        assert mock_connect.call_args_list[1].kwargs["password"] == "dfa-password"
         assert AdwConnection._AdwConnection__username == "ADMIN"
     finally:
         _reset_adw_connection_state()
@@ -234,7 +233,6 @@ def test_get_cursor_reconnects_when_username_changes(mock_secrets_cls, mock_conn
     mock_secrets.get_wallet.return_value = b"wallet"
     mock_secrets.get_ewallet_pem.return_value = "pem"
     mock_secrets.get_dfa_user_password.return_value = "password"
-    mock_secrets.get_password.return_value = "admin-password"
     mock_secrets.get_wallet_password.return_value = "wallet-password"
     stale_connection = MagicMock()
     stale_cursor = MagicMock()
@@ -255,7 +253,7 @@ def test_get_cursor_reconnects_when_username_changes(mock_secrets_cls, mock_conn
         stale_connection.close.assert_called_once()
         mock_connect.assert_called_once()
         assert mock_connect.call_args.kwargs["user"] == "ADMIN"
-        assert mock_connect.call_args.kwargs["password"] == "admin-password"
+        assert mock_connect.call_args.kwargs["password"] == "password"
     finally:
         _reset_adw_connection_state()
 

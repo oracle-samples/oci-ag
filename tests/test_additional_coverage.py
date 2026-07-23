@@ -101,6 +101,65 @@ def test_vault_retry_strategy_retries_throttled_service_errors(monkeypatch):
     assert captured_options["service_error_retry_config"] == {429: []}
 
 
+def test_secret_exists_scopes_lookup_to_configured_vault(monkeypatch):
+    import common.ocihelpers.vault as vault_mod
+
+    monkeypatch.setenv("DFA_COMPARTMENT_ID", "compartment-ocid")
+    monkeypatch.setenv("DFA_VAULT_ID", "configured-vault-ocid")
+    calls = []
+
+    def list_secrets(*args, **kwargs):
+        calls.append((args, kwargs))
+        return SimpleNamespace(data=[])
+
+    secrets = vault_mod.AdwSecrets()
+    secrets._DfaBaseSecret__vault_client = SimpleNamespace(list_secrets=list_secrets)  # type: ignore[attr-defined]
+
+    assert not secrets._secret_exists("shared-secret")
+    assert calls == [(("compartment-ocid",), {"name": "shared-secret", "vault_id": "configured-vault-ocid"})]
+
+
+def test_adw_configuration_update_includes_connection_secret(monkeypatch):
+    import common.ocihelpers.function as function_mod
+
+    class FakeClient:
+        def __init__(self):
+            self.update_calls = []
+
+        def get_application(self, application_ocid):
+            assert application_ocid == "application-ocid"
+            return SimpleNamespace(data=SimpleNamespace(config={"EXISTING_CONFIG": "preserved"}))
+
+        def update_application(self, **kwargs):
+            self.update_calls.append(kwargs)
+            return SimpleNamespace(data="updated-application")
+
+    fake_client = FakeClient()
+    adw_details = SimpleNamespace(
+        connection_strings=SimpleNamespace(all_connection_strings={"LOW": "db.example.com:1522/dbservice_low"})
+    )
+    monkeypatch.setenv("DFA_ADW_INSTANCE_OCID", "adw-ocid")
+    monkeypatch.setattr(
+        function_mod, "BaseAutonomousDatabase", lambda: SimpleNamespace(get_details=lambda _: adw_details)
+    )
+
+    function_configs = function_mod.DfaSetupADWFunctionConfigs()
+    function_configs._BaseFunction__client = fake_client  # type: ignore[attr-defined]
+
+    assert (
+        function_configs.add_adw_connection_string_to_configuration("application-ocid", "connection-secret-ocid")
+        == "updated-application"
+    )
+    assert len(fake_client.update_calls) == 1
+    config = fake_client.update_calls[0]["update_application_details"].config
+    assert config == {
+        "EXISTING_CONFIG": "preserved",
+        "DFA_CONN_HOST": "db.example.com",
+        "DFA_CONN_SERVICE_NAME": "dbservice_low",
+        "DFA_ADW_CONNECTION_SECRET_OCID": "connection-secret-ocid",
+    }
+
+
 # 2) Bootstrap envvars tests
 from dfa.bootstrap.envvars import bootstrap_base_environment_variables, bootstrap_local_machine_environment_variables
 from dfa.bootstrap.image_version import get_package_version, resolve_image_version
