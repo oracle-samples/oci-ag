@@ -28,7 +28,7 @@ scripts/migrate_adw_connection_secret.sh \
   --compartment-id ocid1.compartment.oc1..example \
   --vault-id ocid1.vault.oc1..example \
   --region us-ashburn-1 \
-  --profile your-oci-profile
+  --profile your-oci-profile \
   --auth api_key or security_token for BOAT profile \
   --dfa-user-password-secret-name dfa_adw_dfa_user_password \
   --wallet-secret-name dfa_adw_wallet \
