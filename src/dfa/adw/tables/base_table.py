@@ -169,15 +169,16 @@ class BaseTable(ABC):
 
         table_column_ddl = ""
         for column_ddl in all_columns_ddl:
+            nullable_ddl = "" if column_ddl["nullable"] else " NOT NULL"
             if "default" in column_ddl.keys():
                 table_column_ddl += f' {column_ddl["name"]} {column_ddl["type"]}\
-                    ({column_ddl["type_definition"]}) default {column_ddl["default"]},\n'
+                    ({column_ddl["type_definition"]}) default {column_ddl["default"]}{nullable_ddl},\n'
             else:
                 if column_ddl["type_definition"]:
                     table_column_ddl += f'   {column_ddl["name"]} {column_ddl["type"]}\
-                        ({column_ddl["type_definition"]}),\n'
+                        ({column_ddl["type_definition"]}){nullable_ddl},\n'
                 else:
-                    table_column_ddl += f'   {column_ddl["name"]} {column_ddl["type"]},\n'
+                    table_column_ddl += f'   {column_ddl["name"]} {column_ddl["type"]}{nullable_ddl},\n'
 
         return table_column_ddl[:-2]
 
@@ -190,6 +191,7 @@ class BaseTable(ABC):
             column_definition = {}
             column_definition["name"] = definition["column_name"]
             column_definition["type"] = definition["data_type"]
+            column_definition["nullable"] = definition.get("nullable", True)
             if definition["data_length"]:
                 column_definition["type_definition"] = definition["data_length"]
             else:
@@ -290,7 +292,7 @@ class BaseStateTable(BaseTable, ABC):
             ddl = f"""
                 ALTER TABLE {self.get_schema()}.{self.get_table_name()} ADD CONSTRAINT "{constraint}"
                 UNIQUE ({constraint_columns_ddl})
-                USING INDEX ENABLE
+                USING INDEX {self.get_schema()}.{constraint} ENABLE
                 """
         return ddl
 

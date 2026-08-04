@@ -44,6 +44,8 @@ class InsertManyQueryBuilder:
 
 
 class UpdateManyQueryBuilder:
+    _event_timestamp_column = "event_timestamp"
+
     def get_operation_sql(
         self,
         query_builder: Any,
@@ -83,6 +85,17 @@ class UpdateManyQueryBuilder:
             else:
                 # For non-nullable columns, simple equality is sufficient
                 update_sql = update_sql.where(column == param)
+
+        # State-table events use an insert-first upsert. When an insert hits the
+        # unique key, only let the update fallback apply a strictly newer event.
+        # Equal timestamps are duplicate deliveries and older events must not
+        # overwrite newer state. Keep this conditional so the generic builder
+        # remains usable by callers that do not supply EVENT_TIMESTAMP.
+        if self._event_timestamp_column in {column_name.lower() for column_name in event}:
+            update_sql = update_sql.where(
+                getattr(query_builder, self._event_timestamp_column.upper())
+                < Parameter(f":{self._event_timestamp_column.upper()}")
+            )
 
         complete_update_stmt = update_sql.get_sql()
 
@@ -145,6 +158,8 @@ class MergeManyQueryBuilder:
         if len(updatable_cols) > 0:
             set_parts = [f't."{c.upper()}" = s."{c.upper()}"' for c in updatable_cols]
             update_clause = " WHEN MATCHED THEN UPDATE SET " + ", ".join(set_parts)
+            if "event_timestamp" in {column.lower() for column in all_cols}:
+                update_clause += ' WHERE t."EVENT_TIMESTAMP" < s."EVENT_TIMESTAMP"'
         else:
             # If nothing to update, skip UPDATE branch
             update_clause = ""

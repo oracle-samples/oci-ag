@@ -19,6 +19,7 @@ class AbstractTransformer(ABC):
     _event_object_type = None
     _operation_type = None
     _event_timestamp = None
+    _event_type_version = None
     _tenancy_id = None
     _service_instance_id = None
     _raw_events: list[Any] = []
@@ -50,6 +51,12 @@ class AbstractTransformer(ABC):
 
     def get_operation_type(self):
         return self._operation_type
+
+    @classmethod
+    def is_supported_event_type_version(cls, event_object_type, event_type_version):
+        if event_object_type == "PERMISSION_ASSIGNMENT":
+            return event_type_version == "2.0"
+        return event_type_version == "1.0"
 
     def is_valid_object_type(self, object_type):
         valid_object_types = [
@@ -150,11 +157,13 @@ class AbstractTransformer(ABC):
         try:
             transformer_class = self._resolve_transformer_class(self.get_event_object_type(), self.get_operation_type())
             if transformer_class is not None:
-                return transformer_class(
+                transformer = transformer_class(
                     self.get_event_object_type(),
                     self.get_operation_type(),
                     self.is_timeseries,
                 )
+                transformer.set_event_type_version(self._event_type_version)
+                return transformer
         except Exception as e:
             self.logger.error(
                 "Error finding transformer for %s/%s: %s",

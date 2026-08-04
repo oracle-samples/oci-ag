@@ -8,12 +8,16 @@ from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 
 
 class PermissionAssignmentEventTransformer(BaseEventTransformer):
-    def __process_permission_assignments(self, identities_list, operation_type, base_pa, pa_list):
-        for i in identities_list:
+
+    def __process_permission_assignments(self, assignment_list, base_pa, pa_list):
+        for i in assignment_list:
             pa_copy = base_pa.copy()
-            pa_copy["identity_operation_type"] = operation_type
             if "id" in i:
                 pa_copy["assignment_id"] = i["id"]
+            if "targetIdentityId" in i:
+                pa_copy["target_identity_id"] = i["targetIdentityId"]
+            if "globalIdentityId" in i:
+                pa_copy["global_identity_id"] = i["globalIdentityId"]
             if "externalId" in i:
                 pa_copy["external_id"] = i["externalId"]
             if "targetId" in i:
@@ -56,75 +60,70 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
                 pa_copy["valid_from"] = i["validFrom"]
             if "validTo" in i and i["validTo"] not in (0, "0"):
                 pa_copy["valid_to"] = i["validTo"]
+            if "status" in i:
+                pa_copy["status"] = i["status"]
+            if "accountStatus" in i:
+                pa_copy["account_status"] = i["accountStatus"]
             if "customAttributes" in i:
                 pa_copy["assignment_attributes"] = json.dumps(i["customAttributes"])
+            if "additionalProperties" in i:
+                pa_copy["attributes"] = json.dumps(i["additionalProperties"])
 
             pa_list.append(pa_copy)
 
-    def transform_raw_event(self, raw_event):
+    def _get_base_permission_assignment(self):
         base_pa = PermissionAssignmentStateTable().get_default_row()
+        if self._get_tenancy_id():
+            base_pa["tenancy_id"] = self._get_tenancy_id()
+
+        if self._get_service_instance_id():
+            base_pa["service_instance_id"] = self._get_service_instance_id()
+
+        if self._get_event_timestamp():
+            base_pa["event_timestamp"] = self._get_event_timestamp()
+
+        return base_pa
+
+    def _transform_v2_assignment(self, assignment):
+        base_pa = self._get_base_permission_assignment()
         pa_list = []
-
-        try:
-            if self._get_tenancy_id():
-                base_pa["tenancy_id"] = self._get_tenancy_id()
-
-            if self._get_service_instance_id():
-                base_pa["service_instance_id"] = self._get_service_instance_id()
-
-            if self._get_event_timestamp():
-                base_pa["event_timestamp"] = self._get_event_timestamp()
-
-            if "targetIdentityId" in raw_event:
-                base_pa["target_identity_id"] = raw_event["targetIdentityId"]
-
-            if "globalIdentityId" in raw_event:
-                base_pa["global_identity_id"] = raw_event["globalIdentityId"]
-
-            if "additionalProperties" in raw_event:
-                base_pa["attributes"] = json.dumps(raw_event["additionalProperties"])
-
-            base_pa["operation_type"] = self.get_operation_type()
-            base_pa["event_object_type"] = self.get_event_object_type()
-
-            if self.get_operation_type() == "DELETE":
-                ids_list = []
-                if "ids" in raw_event:
-                    ids_list = raw_event["ids"]
-                    for i in ids_list:
-                        pa_copy = base_pa.copy()
-                        pa_copy["permission_id"] = i
-                        pa_list.append(pa_copy)
-                if not ids_list:
-                    pa_list.append(base_pa)
-
-            else:
-                add_identities = []
-                remove_identities = []
-
-                if "add" in raw_event:
-                    add_identities = raw_event["add"]
-                    self.__process_permission_assignments(add_identities, "add", base_pa, pa_list)
-
-                if "remove" in raw_event:
-                    remove_identities = raw_event["remove"]
-                    self.__process_permission_assignments(remove_identities, "remove", base_pa, pa_list)
-
-                if not add_identities and not remove_identities:
-                    pa_list.append(base_pa)
-
-        except KeyError as e:
-            self.logger.error("Cannot process event due to KeyError - %s is missing from event data", e)
-
+        self.__process_permission_assignments(
+            [assignment],
+            base_pa,
+            pa_list,
+        )
         return pa_list
+
+    def _get_v2_assignments(self, raw_event):
+        if isinstance(raw_event, list):
+            return raw_event
+        if isinstance(raw_event, dict):
+            return [raw_event]
+        if isinstance(raw_event, str):
+            try:
+                parsed_event = json.loads(raw_event)
+                if isinstance(parsed_event, list):
+                    return parsed_event
+                if isinstance(parsed_event, dict):
+                    return [parsed_event]
+            except json.JSONDecodeError:
+                self.logger.error("Failed to parse raw event as JSON: %s", raw_event)
+        return []
+
+    def transform_raw_event(self, raw_event):
+        transformed_pa = []
+        for assignment in self._get_v2_assignments(raw_event):
+            transformed_pa.extend(self._transform_v2_assignment(assignment))
+        return transformed_pa
 
     def transform_stream_message(self, message):
         transformed_pa = []
-        if isinstance(self._access_message_value_data(message), list):
-            for event in self._access_message_value_data(message):
+        message_data = self._access_message_value_data(message)
+        if isinstance(message_data, list):
+            for event in message_data:
                 transformed_pa.extend(self.transform_raw_event(event))
         else:
-            transformed_pa.extend(super().transform_stream_message(message))
+            transformed_pa.extend(self.transform_raw_event(message_data))
 
         return transformed_pa
 

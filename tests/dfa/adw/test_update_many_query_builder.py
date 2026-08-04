@@ -60,6 +60,20 @@ def _normalize_sql(sql: str) -> str:
     return re.sub(r"\s+", " ", sql).strip()
 
 
+def test_column_definition_nullable_false_generates_not_null():
+    state_ddl = _normalize_sql(PermissionAssignmentStateTable().get_create_table_sql())
+    timeseries_ddl = _normalize_sql(PermissionAssignmentTimeSeriesTable().get_create_table_sql())
+
+    assert "ASSIGNMENT_ID VARCHAR2 (4000) NOT NULL" in state_ddl
+    assert "ASSIGNMENT_ID VARCHAR2 (4000) NOT NULL" in timeseries_ddl
+
+
+def test_column_definition_defaults_to_nullable():
+    ddl = _normalize_sql(PermissionStateTable().get_create_table_sql())
+
+    assert "ID VARCHAR2 (4000) NOT NULL" not in ddl
+
+
 def test_update_many_nullable_none_uses_equality():
     qb = Table("dummy")
     builder = UpdateManyQueryBuilder()
@@ -106,6 +120,45 @@ def test_update_many_nullable_uppercase_uses_decode_for_where():
     assert "DECODE(" in norm
 
 
+def test_update_many_with_event_timestamp_only_updates_for_newer_event():
+    qb = Table("dummy")
+    builder = UpdateManyQueryBuilder()
+
+    events = [
+        {
+            "id": 1,
+            "name": "newer value",
+            "event_timestamp": "03-Aug-26 01:00:00.000000 PM",
+        }
+    ]
+    sql = builder.get_operation_sql(
+        qb,
+        events,
+        date_columns=[],
+        where_columns=["id"],
+    )
+
+    assert sql is not None
+    norm = _normalize_sql(sql).upper()
+    assert '"EVENT_TIMESTAMP"<:EVENT_TIMESTAMP' in norm
+
+
+def test_update_many_without_event_timestamp_does_not_add_newer_event_predicate():
+    qb = Table("dummy")
+    builder = UpdateManyQueryBuilder()
+
+    sql = builder.get_operation_sql(
+        qb,
+        [{"id": 1, "name": "value"}],
+        date_columns=[],
+        where_columns=["id"],
+    )
+
+    assert sql is not None
+    norm = _normalize_sql(sql).upper()
+    assert "EVENT_TIMESTAMP" not in norm
+
+
 def test_merge_many_binds_clob_columns_directly():
     qb = Table("dummy")
     qb.table_manager = MagicMock()
@@ -123,15 +176,54 @@ def test_merge_many_binds_clob_columns_directly():
     assert 'MERGE INTO "DFA"."DUMMY_TABLE"' in norm
 
 
+def test_merge_many_only_updates_for_newer_event_timestamp():
+    qb = Table("dummy")
+    qb.table_manager = MagicMock()
+    qb.table_manager.get_schema.return_value = "dfa"
+    qb.table_manager.get_table_name.return_value = "dummy_table"
+    builder = MergeManyQueryBuilder()
+    events = [
+        {
+            "id": "1",
+            "name": "newer value",
+            "event_timestamp": "03-Aug-26 01:00:00.000000 PM",
+        }
+    ]
+
+    sql = builder.get_operation_sql(qb, events, date_columns=[], where_columns=["id"])
+
+    norm = _normalize_sql(sql).upper()
+    assert "WHEN MATCHED THEN UPDATE SET" in norm
+    assert 'WHERE T."EVENT_TIMESTAMP" < S."EVENT_TIMESTAMP"' in norm
+
+
+def test_merge_many_without_event_timestamp_has_no_update_timestamp_predicate():
+    qb = Table("dummy")
+    qb.table_manager = MagicMock()
+    qb.table_manager.get_schema.return_value = "dfa"
+    qb.table_manager.get_table_name.return_value = "dummy_table"
+    builder = MergeManyQueryBuilder()
+
+    sql = builder.get_operation_sql(
+        qb,
+        [{"id": "1", "name": "value"}],
+        date_columns=[],
+        where_columns=["id"],
+    )
+
+    norm = _normalize_sql(sql).upper()
+    assert "WHEN MATCHED THEN UPDATE SET" in norm
+    assert 'T."EVENT_TIMESTAMP" < S."EVENT_TIMESTAMP"' not in norm
+
+
 def test_nullable_unique_index_uses_function_based_columns():
-    table = PermissionAssignmentStateTable()
+    table = IdentityStateTable()
 
     index_ddl = _normalize_sql(table._build_unique_index_ddl())
     constraint_ddl = table._build_unique_constraint_ddl()
 
-    assert "COALESCE(\"ACCESS_BUNDLE_ID\", '__DFA_NULL__')" in index_ddl
-    assert "COALESCE(\"ROLE_ID\", '__DFA_NULL__')" in index_ddl
-    assert '"TARGET_IDENTITY_ID"' in index_ddl
+    assert "COALESCE(\"ID\", '__DFA_NULL__')" in index_ddl
+    assert '"TI_ID"' in index_ddl
     assert constraint_ddl == ""
 
 
@@ -143,6 +235,20 @@ def test_non_nullable_unique_index_keeps_unique_constraint():
 
     assert "COALESCE(" not in index_ddl
     assert 'ALTER TABLE DFA.PERMISSION_STATE ADD CONSTRAINT "DFA_UNQ_PERM_ST_CONST"' in constraint_ddl
+    assert "USING INDEX DFA.DFA_UNQ_PERM_ST_CONST ENABLE" in constraint_ddl
+
+
+def test_permission_assignment_unique_constraint_is_backed_by_its_index():
+    table = PermissionAssignmentStateTable()
+
+    index_ddl = _normalize_sql(table._build_unique_index_ddl())
+    constraint_ddl = _normalize_sql(table._build_unique_constraint_ddl())
+
+    unique_columns = '"ASSIGNMENT_ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"'
+    assert "CREATE UNIQUE INDEX DFA.DFA_UNQ_PA_ST_CONST" in index_ddl
+    assert f"ON DFA.PERMISSION_ASSIGNMENT_STATE ({unique_columns})" in index_ddl
+    assert f'ADD CONSTRAINT "DFA_UNQ_PA_ST_CONST" UNIQUE ({unique_columns})' in constraint_ddl
+    assert "USING INDEX DFA.DFA_UNQ_PA_ST_CONST ENABLE" in constraint_ddl
 
 
 def test_event_timestamp_indexes_cover_all_requested_tables():
@@ -722,6 +828,42 @@ def test_permission_assignment_delete_with_permission_filters_input_sizes_to_sql
     ]
     assert "GLOBAL_IDENTITY_ID" not in input_size_names
     assert "global_identity_id" not in input_size_names
+    mock_commit.assert_called_once()
+
+
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
+@patch("dfa.adw.query_builders.base_query_builder.AdwConnection.get_cursor")
+def test_permission_assignment_delete_with_assignment_id_uses_assignment_key(mock_get_cursor, mock_commit):
+    cursor = MagicMock()
+    cursor.getbatcherrors.return_value = []
+    mock_get_cursor.return_value = cursor
+
+    qb = PermissionAssignmentStateDeleteQueryBuilder(
+        [
+            {
+                "assignment_id": "assignment-1",
+                "target_identity_id": "identity-1",
+                "permission_id": "permission-1",
+                "service_instance_id": "svc-1",
+                "tenancy_id": "tenant-1",
+            }
+        ]
+    )
+
+    qb.execute_sql_for_events()
+
+    executed_sql = cursor.executemany.call_args.args[0]
+    bind_rows = cursor.executemany.call_args.args[1]
+    assert ":ASSIGNMENT_ID" in executed_sql
+    assert ":TARGET_IDENTITY_ID" not in executed_sql
+    assert ":PERMISSION_ID" not in executed_sql
+    assert bind_rows == [
+        {
+            "ASSIGNMENT_ID": "assignment-1",
+            "SERVICE_INSTANCE_ID": "svc-1",
+            "TENANCY_ID": "tenant-1",
+        }
+    ]
     mock_commit.assert_called_once()
 
 

@@ -73,6 +73,170 @@ class TestStreamTransformer(unittest.TestCase):
         self.transformer._set_raw_event_data.assert_called_once_with(messages)
         self.transformer.transform_data.assert_called_once()
 
+    def test_non_permission_assignment_v2_message_is_skipped(self):
+        messages = {
+            "IDENTITY": {
+                "CREATE": [
+                    {
+                        "value": {
+                            "headers": {
+                                "messageType": "IDENTITY",
+                                "operation": "CREATE",
+                                "eventTypeVersion": "2.0",
+                                "eventTime": "2026-08-03T18:00:00Z",
+                                "tenancyId": "tenant-1",
+                                "serviceInstanceId": "service-1",
+                            },
+                            "data": {"id": "identity-1"},
+                        }
+                    }
+                ]
+            }
+        }
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(self.transformer._prepared_events, [])
+
+    def test_permission_assignment_v1_message_is_skipped(self):
+        messages = {
+            "PERMISSION_ASSIGNMENT": {
+                "CREATE": [
+                    {
+                        "value": {
+                            "headers": {
+                                "messageType": "PERMISSION_ASSIGNMENT",
+                                "operation": "CREATE",
+                                "eventTypeVersion": "1.0",
+                            },
+                            "data": [{"id": "id-1"}],
+                        }
+                    }
+                ]
+            }
+        }
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(self.transformer._prepared_events, [])
+
+    def test_permission_assignment_v2_flat_list_is_transformed(self):
+        messages = {
+            "PERMISSION_ASSIGNMENT": {
+                "CREATE": [
+                    {
+                        "value": {
+                            "headers": {
+                                "messageType": "PERMISSION_ASSIGNMENT",
+                                "operation": "CREATE",
+                                "eventTypeVersion": "2.0",
+                                "eventTime": "2026-08-03T18:00:00Z",
+                                "tenancyId": "tenant-1",
+                                "serviceInstanceId": "service-1",
+                            },
+                            "data": [
+                                {
+                                    "id": "id-1",
+                                    "targetIdentityId": "identity-1",
+                                    "permissionId": "permission-1",
+                                },
+                                {
+                                    "id": "id-2",
+                                    "targetIdentityId": "identity-2",
+                                    "permissionId": "permission-2",
+                                },
+                            ],
+                        }
+                    }
+                ]
+            }
+        }
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(len(self.transformer._prepared_events), 2)
+        self.assertEqual(self.transformer._prepared_events[0]["assignment_id"], "id-1")
+        self.assertEqual(self.transformer._prepared_events[0]["target_identity_id"], "identity-1")
+        self.assertEqual(self.transformer._prepared_events[1]["assignment_id"], "id-2")
+
+    def test_permission_assignment_v2_json_encoded_flat_list_is_transformed(self):
+        assignments = [
+            {
+                "id": "permission-assignment-001",
+                "targetIdentityId": "target-identity-001",
+                "globalIdentityId": "global-identity-001",
+                "externalId": "jsmith",
+                "status": "PROVISIONED",
+                "accountStatus": "ACTIVE",
+                "targetId": "target-001",
+                "targetType": "OCI",
+                "granttype": "POLICY",
+                "permissionType": "ACCESS_BUNDLE",
+                "permissionId": "permission-001",
+                "permissionName": "Application Administrator",
+                "accessBundleId": "access-bundle-001",
+                "accessBundleName": "Application Administration",
+                "roleId": "role-001",
+                "roleName": "Application Administrator",
+                "identityGroupId": "identity-group-001",
+                "identityGroupName": "Application Administrators",
+                "resourceId": "resource-001",
+                "resourceDisplayName": "Production Application",
+                "policyId": "policy-001",
+                "policyName": "Application Administrator Access",
+                "policyRuleId": "policy-rule-001",
+                "userLogin": "jsmith",
+                "validFrom": 1785758400000,
+                "validTo": 1817294400000,
+                "customAttributes": {"created": 1785758400000},
+            },
+            {
+                "id": "permission-assignment-002",
+                "targetIdentityId": "target-identity-002",
+                "globalIdentityId": "global-identity-002",
+                "permissionId": "permission-002",
+            },
+        ]
+        messages = {
+            "PERMISSION_ASSIGNMENT": {
+                "CREATE": [
+                    {
+                        "value": {
+                            "headers": {
+                                "messageType": "PERMISSION_ASSIGNMENT",
+                                "operation": "CREATE",
+                                "eventTypeVersion": "2.0",
+                                "eventTime": "2026-08-03T18:00:00Z",
+                                "tenancyId": "tenant-1",
+                                "serviceInstanceId": "service-1",
+                            },
+                            "data": json.dumps(assignments),
+                        }
+                    }
+                ]
+            }
+        }
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(len(self.transformer._prepared_events), 2)
+        first_assignment = self.transformer._prepared_events[0]
+        self.assertEqual(first_assignment["assignment_id"], "permission-assignment-001")
+        self.assertEqual(first_assignment["target_identity_id"], "target-identity-001")
+        self.assertEqual(first_assignment["global_identity_id"], "global-identity-001")
+        self.assertEqual(first_assignment["status"], "PROVISIONED")
+        self.assertEqual(first_assignment["account_status"], "ACTIVE")
+        self.assertEqual(first_assignment["grant_type"], "POLICY")
+        self.assertEqual(first_assignment["valid_from"], 1785758400000)
+        self.assertEqual(
+            json.loads(first_assignment["assignment_attributes"]),
+            {"created": 1785758400000},
+        )
+        self.assertEqual(
+            self.transformer._prepared_events[1]["assignment_id"],
+            "permission-assignment-002",
+        )
+
     @patch("dfa.etl.stream_transformer.get_query_builder")
     def test_load_data_builds_query_builder_for_prepared_events(self, mock_get_query_builder):
         mock_query_builder = MagicMock()

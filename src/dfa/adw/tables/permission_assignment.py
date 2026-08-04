@@ -14,7 +14,7 @@ class PermissionAssignmentTimeSeriesTable(BaseTable):
         {"field_name":"TARGET_IDENTITY_ID","column_name":"TARGET_IDENTITY_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"GLOBAL_IDENTITY_ID","column_name":"GLOBAL_IDENTITY_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"IDENTITY_OPERATION_TYPE","column_name":"IDENTITY_OPERATION_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
-        {"field_name":"ASSIGNMENT_ID","column_name":"ASSIGNMENT_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
+        {"field_name":"ASSIGNMENT_ID","column_name":"ASSIGNMENT_ID","column_expression":null,"skip_column":false,"nullable":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"EXTERNAL_ID","column_name":"EXTERNAL_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"TARGET_ID","column_name":"TARGET_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"TARGET_TYPE","column_name":"TARGET_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
@@ -36,6 +36,8 @@ class PermissionAssignmentTimeSeriesTable(BaseTable):
         {"field_name":"USER_LOGIN","column_name":"USER_LOGIN","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"VALID_FROM","column_name":"VALID_FROM","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
         {"field_name":"VALID_TO","column_name":"VALID_TO","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
+        {"field_name":"STATUS","column_name":"STATUS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":256,"data_format":null},
+        {"field_name":"ACCOUNT_STATUS","column_name":"ACCOUNT_STATUS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":256,"data_format":null},
         {"field_name":"ASSIGNMENT_ATTRIBUTES","column_name":"ASSIGNMENT_ATTRIBUTES","column_expression":null,"skip_column":false,"data_type":"CLOB","data_length":null,"data_format":null},
         {"field_name":"EVENT_OBJECT_TYPE","column_name":"EVENT_OBJECT_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"OPERATION_TYPE","column_name":"OPERATION_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
@@ -56,17 +58,11 @@ class PermissionAssignmentStateTable(BaseStateTable, PermissionAssignmentTimeSer
         return {
             "name": "DFA_UNQ_PA_ST_CONST",
             "columns": [
-                "TARGET_IDENTITY_ID",
-                "PERMISSION_ID",
-                "ACCESS_BUNDLE_ID",
-                "ROLE_ID",
+                "ASSIGNMENT_ID",
                 "SERVICE_INSTANCE_ID",
                 "TENANCY_ID",
             ],
         }
-
-    def get_nullable_constraint_columns(self):
-        return ["ACCESS_BUNDLE_ID", "ROLE_ID"]
 
     def get_delete_index_definition_details(self):
         return [

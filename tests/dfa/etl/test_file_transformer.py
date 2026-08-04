@@ -1,6 +1,7 @@
 # Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
+import json
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -120,6 +121,7 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer._object_name = "snapshots/access_bundle.snapshot-1.batch-1.jsonl"
         self.transformer._event_object_type = "ACCESS_BUNDLE"
         self.transformer._operation_type = "CREATE"
+        self.transformer._event_type_version = "1.0"
         self.transformer._event_timestamp = "2025-08-15T17:38:23.645616585Z"
         self.transformer._snapshot_id = "snapshot-1"
         self.transformer._tenancy_id = "tenant-1"
@@ -187,6 +189,7 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer._object_name = "snapshots/access_bundle.snapshot-1.batch-3.jsonl"
         self.transformer._event_object_type = "ACCESS_BUNDLE"
         self.transformer._operation_type = "CREATE"
+        self.transformer._event_type_version = "1.0"
         self.transformer._event_timestamp = "2026-04-17T12:00:00.000000Z"
         self.transformer._snapshot_id = "snapshot-1"
         self.transformer._tenancy_id = "tenant-1"
@@ -215,6 +218,7 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer._object_name = "snapshots/access_bundle.snapshot-1.batch-3.jsonl"
         self.transformer._event_object_type = "ACCESS_BUNDLE"
         self.transformer._operation_type = "CREATE"
+        self.transformer._event_type_version = "1.0"
         self.transformer._event_timestamp = "2026-04-17T12:00:00.000000-05:00"
         self.transformer._snapshot_id = "snapshot-1"
         self.transformer._tenancy_id = "tenant-1"
@@ -331,7 +335,7 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.load_data()
         self.mock_cursor.executemany.assert_called_once()
 
-    def test_permission_assignment(self):
+    def test_permission_assignment_v1_is_skipped(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/permission_assignment.jsonl")
         mock_object = MagicMock()
         mock_object.data.content.decode.return_value = content
@@ -343,10 +347,121 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._operation_type, "CREATE")
 
         self.transformer.transform_data()
-        self.assertEqual(len(self.transformer._prepared_events), 8)
+        self.assertEqual(self.transformer._prepared_events, [])
 
         self.transformer.load_data()
-        self.mock_cursor.executemany.assert_called_once()
+        self.mock_cursor.executemany.assert_not_called()
+
+    def test_permission_assignment_v2_flat_jsonl_rows(self):
+        headers = {
+            "headers": {
+                "eventTime": "2026-08-03T18:00:00Z",
+                "eventTypeVersion": "2.0",
+                "operation": "CREATE",
+                "messageType": "PERMISSION_ASSIGNMENT",
+                "tenancyId": "tenant-1",
+                "serviceInstanceId": "service-1",
+            }
+        }
+        assignments = [
+            {
+                "id": "assignment-1",
+                "targetIdentityId": "identity-1",
+                "permissionId": "permission-1",
+            },
+            {
+                "id": "assignment-2",
+                "targetIdentityId": "identity-2",
+                "permissionId": "permission-2",
+            },
+        ]
+        content = "\n".join(json.dumps(row) for row in [headers, *assignments])
+        mock_object = MagicMock()
+        mock_object.data.content.decode.return_value = content
+        self.mock_storage.download.return_value = mock_object
+
+        self.transformer.extract_data()
+        self.transformer.transform_data()
+
+        self.assertEqual(self.transformer._event_type_version, "2.0")
+        self.assertEqual(len(self.transformer._prepared_events), 2)
+        self.assertEqual(self.transformer._prepared_events[0]["assignment_id"], "assignment-1")
+        self.assertEqual(self.transformer._prepared_events[1]["assignment_id"], "assignment-2")
+
+    def test_permission_assignment_v2_json_encoded_flat_list_file(self):
+        self.transformer._object_name = "permission-assignment.json"
+        assignments = [
+            {
+                "id": "permission-assignment-001",
+                "targetIdentityId": "target-identity-001",
+                "globalIdentityId": "global-identity-001",
+                "status": "PROVISIONED",
+                "permissionId": "permission-001",
+            },
+            {
+                "id": "permission-assignment-002",
+                "targetIdentityId": "target-identity-002",
+                "globalIdentityId": "global-identity-002",
+                "status": "PROVISIONED",
+                "permissionId": "permission-002",
+            },
+        ]
+        content = json.dumps(
+            {
+                "headers": {
+                    "eventTime": "2026-08-03T18:00:00Z",
+                    "eventTypeVersion": "2.0",
+                    "operation": "CREATE",
+                    "messageType": "PERMISSION_ASSIGNMENT",
+                    "tenancyId": "tenant-1",
+                    "serviceInstanceId": "service-1",
+                },
+                "data": json.dumps(assignments),
+            }
+        )
+        mock_object = MagicMock()
+        mock_object.data.content.decode.return_value = content
+        self.mock_storage.download.return_value = mock_object
+
+        self.transformer.extract_data()
+        self.transformer.transform_data()
+
+        self.assertEqual(len(self.transformer._prepared_events), 2)
+        self.assertEqual(
+            self.transformer._prepared_events[0]["assignment_id"],
+            "permission-assignment-001",
+        )
+        self.assertEqual(
+            self.transformer._prepared_events[1]["assignment_id"],
+            "permission-assignment-002",
+        )
+
+    def test_non_permission_assignment_v2_file_is_skipped(self):
+        content = "\n".join(
+            [
+                json.dumps(
+                    {
+                        "headers": {
+                            "eventTime": "2026-08-03T18:00:00Z",
+                            "eventTypeVersion": "2.0",
+                            "operation": "CREATE",
+                            "messageType": "PERMISSION",
+                            "tenancyId": "tenant-1",
+                            "serviceInstanceId": "service-1",
+                        }
+                    }
+                ),
+                json.dumps({"id": "permission-1"}),
+            ]
+        )
+        mock_object = MagicMock()
+        mock_object.data.content.decode.return_value = content
+        self.mock_storage.download.return_value = mock_object
+
+        self.transformer.extract_data()
+        self.transformer.transform_data()
+
+        self.assertEqual(self.transformer._prepared_events, [])
 
     def test_permission(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/permission.jsonl")

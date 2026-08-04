@@ -42,6 +42,15 @@ class TestAbstractTransformer(unittest.TestCase):
     def test_is_valid_object_type_false(self):
         self.assertFalse(self.transformer.is_valid_object_type("INVALID_TYPE"))
 
+    def test_supported_event_type_versions(self):
+        self.assertTrue(self.transformer.is_supported_event_type_version("IDENTITY", "1.0"))
+        self.assertFalse(self.transformer.is_supported_event_type_version("IDENTITY", "2.0"))
+        self.assertFalse(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "1.0"))
+        self.assertFalse(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "2"))
+        self.assertTrue(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "2.0"))
+        self.assertFalse(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "2.1"))
+        self.assertFalse(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "3.0"))
+
     def test_transformer_factory(self):
         self.transformer._event_object_type = "IDENTITY"
         self.transformer._operation_type = "CREATE"

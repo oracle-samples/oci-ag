@@ -52,6 +52,8 @@ class FileTransformer(AbstractTransformer):
             self._operation_type = headers["operation"]
         if "eventTime" in headers:
             self._event_timestamp = headers["eventTime"]
+        if "eventTypeVersion" in headers:
+            self._event_type_version = headers["eventTypeVersion"]
         if "correlationId" in headers:
             self._snapshot_id = headers["correlationId"]
         if "status" in headers:
@@ -105,6 +107,7 @@ class FileTransformer(AbstractTransformer):
         self._snapshot_id = None
         self._num_of_batches = None
         self._snapshot_status = None
+        self._event_type_version = None
         self._set_raw_event_data(event_data)
 
     def _get_snapshot_id_for_batch(self):
@@ -128,7 +131,9 @@ class FileTransformer(AbstractTransformer):
         return datetime.fromisoformat(self._event_timestamp).astimezone(timezone.utc).strftime("%d-%b-%y %H:%M:%S.%f")
 
     def transform_data(self):
-        if self.is_valid_object_type(self.get_event_object_type()):
+        if self.is_valid_object_type(self.get_event_object_type()) and self.is_supported_event_type_version(
+            self.get_event_object_type(), self._event_type_version
+        ):
             transformer = self.transformer_factory()
 
             self._prepared_events = []
@@ -144,6 +149,12 @@ class FileTransformer(AbstractTransformer):
                 len(self._prepared_events),
                 self._event_object_type,
                 self._operation_type,
+            )
+        elif self.is_valid_object_type(self.get_event_object_type()):
+            self.logger.warning(
+                "Skipping unsupported %s eventTypeVersion %s",
+                self.get_event_object_type(),
+                self._event_type_version,
             )
 
     def chunk_prepared_events(self, chunk_size=None):
@@ -164,6 +175,10 @@ class FileTransformer(AbstractTransformer):
                 not self.is_timeseries
                 and self.get_operation_type() == "CREATE"
                 and self.is_valid_object_type(self.get_event_object_type())
+                and self.is_supported_event_type_version(
+                    self.get_event_object_type(),
+                    self._event_type_version,
+                )
             )
             is_snapshot_completion_marker = self._is_snapshot_completion_marker()
             should_track_snapshot_batch = should_track_snapshot and not is_snapshot_completion_marker
