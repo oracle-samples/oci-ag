@@ -1,6 +1,8 @@
 # Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/.
 
+import json
+
 from dfa.adw.tables.base_table import BaseStateTable, BaseTable
 
 
@@ -9,12 +11,12 @@ class PermissionAssignmentTimeSeriesTable(BaseTable):
     _schema = None
 
     def _column_definitions(self):
-        json = """
+        table_json = """
 [
         {"field_name":"TARGET_IDENTITY_ID","column_name":"TARGET_IDENTITY_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"GLOBAL_IDENTITY_ID","column_name":"GLOBAL_IDENTITY_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"IDENTITY_OPERATION_TYPE","column_name":"IDENTITY_OPERATION_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
-        {"field_name":"ASSIGNMENT_ID","column_name":"ASSIGNMENT_ID","column_expression":null,"skip_column":false,"nullable":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
+        {"field_name":"ASSIGNMENT_ID","column_name":"ASSIGNMENT_ID","column_expression":null,"skip_column":false,"nullable":true,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"EXTERNAL_ID","column_name":"EXTERNAL_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"TARGET_ID","column_name":"TARGET_ID","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"TARGET_TYPE","column_name":"TARGET_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
@@ -36,9 +38,10 @@ class PermissionAssignmentTimeSeriesTable(BaseTable):
         {"field_name":"USER_LOGIN","column_name":"USER_LOGIN","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"VALID_FROM","column_name":"VALID_FROM","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
         {"field_name":"VALID_TO","column_name":"VALID_TO","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
+        {"field_name":"CREATED_ON","column_name":"CREATED_ON","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
+        {"field_name":"UPDATED_ON","column_name":"UPDATED_ON","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
         {"field_name":"STATUS","column_name":"STATUS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":256,"data_format":null},
         {"field_name":"ACCOUNT_STATUS","column_name":"ACCOUNT_STATUS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":256,"data_format":null},
-        {"field_name":"ASSIGNMENT_ATTRIBUTES","column_name":"ASSIGNMENT_ATTRIBUTES","column_expression":null,"skip_column":false,"data_type":"CLOB","data_length":null,"data_format":null},
         {"field_name":"EVENT_OBJECT_TYPE","column_name":"EVENT_OBJECT_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"OPERATION_TYPE","column_name":"OPERATION_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"EVENT_TIMESTAMP","column_name":"EVENT_TIMESTAMP","column_expression":"SYSTIMESTAMP","skip_column":false,"data_type":"TIMESTAMP WITH TIME ZONE","data_length":null,"data_format":"YYYY-MM-DD\\"T\\"HH24:MI:SS.FFTZH:TZM"},
@@ -48,11 +51,19 @@ class PermissionAssignmentTimeSeriesTable(BaseTable):
 ]
 """
 
-        return json
+        return table_json
 
 
 class PermissionAssignmentStateTable(BaseStateTable, PermissionAssignmentTimeSeriesTable):
     _table_name = "permission_assignment_state"
+
+    def _column_definitions(self):
+        definitions = json.loads(super()._column_definitions())
+        for definition in definitions:
+            if definition["field_name"] == "ASSIGNMENT_ID":
+                definition["nullable"] = False
+                break
+        return json.dumps(definitions)
 
     def get_unique_contraint_definition_details(self):
         return {

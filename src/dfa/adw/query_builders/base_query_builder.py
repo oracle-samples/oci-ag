@@ -185,6 +185,7 @@ class DeleteManyQueryBuilder:
         query_builder: Any,
         where_columns: list[str],
         nullable_columns: list[str] | None = None,
+        require_newer_event: bool = False,
     ) -> str:
         delete_sql: Any = Query.from_(query_builder).delete()
         where_columns = [col.lower() for col in where_columns]
@@ -199,6 +200,9 @@ class DeleteManyQueryBuilder:
                 delete_sql = delete_sql.where(decode(column, param, 1, 0) == 1)
             else:
                 delete_sql = delete_sql.where(column == param)
+
+        if require_newer_event:
+            delete_sql = delete_sql.where(getattr(query_builder, "EVENT_TIMESTAMP") < Parameter(":EVENT_TIMESTAMP"))
 
         return delete_sql.get_sql()
 
@@ -367,8 +371,6 @@ class BaseQueryBuilder:
     def _ensure_helper_table_exists(self, table_manager):
         try:
             table_manager.create()
-            if hasattr(table_manager, "ensure_supporting_objects"):
-                table_manager.ensure_supporting_objects()
             AdwConnection.commit()
         except oracledb.DatabaseError as e:
             AdwConnection.rollback()
@@ -880,6 +882,7 @@ class BaseQueryBuilder:
         where_columns: list[str],
         events: list[dict[str, Any]] | None = None,
         nullable_columns: list[str] | None = None,
+        require_newer_event: bool = False,
     ):
         active_events = self.events if events is None else events
         if not active_events or len(active_events) == 0:
@@ -902,6 +905,7 @@ class BaseQueryBuilder:
             self,
             where_columns,
             nullable_columns,
+            require_newer_event,
         )
         input_sizes = self.get_input_sizes_for_events(
             self.table_manager.get_column_list_definition_for_table_ddl(),

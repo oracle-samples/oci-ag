@@ -55,7 +55,7 @@ class AbstractTransformer(ABC):
     @classmethod
     def is_supported_event_type_version(cls, event_object_type, event_type_version):
         if event_object_type == "PERMISSION_ASSIGNMENT":
-            return event_type_version == "2.0"
+            return event_type_version in ("1.0", "2.0")
         return event_type_version == "1.0"
 
     def is_valid_object_type(self, object_type):

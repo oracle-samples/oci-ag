@@ -81,12 +81,7 @@ class StreamTransformer(AbstractTransformer):
             prepared_events_by_operation = {}
             for event in self._prepared_events:
                 key = (event["event_object_type"], event["operation_type"])
-                event_data = {
-                    field: value
-                    for field, value in event.items()
-                    if field not in {"event_object_type", "operation_type"}
-                }
-                prepared_events_by_operation.setdefault(key, []).append(event_data)
+                prepared_events_by_operation.setdefault(key, []).append(event.copy())
 
             for (event_object_type, operation_type), events in prepared_events_by_operation.items():
                 self.logger.info(

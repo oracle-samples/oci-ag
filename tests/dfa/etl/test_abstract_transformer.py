@@ -45,7 +45,7 @@ class TestAbstractTransformer(unittest.TestCase):
     def test_supported_event_type_versions(self):
         self.assertTrue(self.transformer.is_supported_event_type_version("IDENTITY", "1.0"))
         self.assertFalse(self.transformer.is_supported_event_type_version("IDENTITY", "2.0"))
-        self.assertFalse(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "1.0"))
+        self.assertTrue(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "1.0"))
         self.assertFalse(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "2"))
         self.assertTrue(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "2.0"))
         self.assertFalse(self.transformer.is_supported_event_type_version("PERMISSION_ASSIGNMENT", "2.1"))

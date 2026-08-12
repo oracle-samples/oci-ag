@@ -60,12 +60,12 @@ def _normalize_sql(sql: str) -> str:
     return re.sub(r"\s+", " ", sql).strip()
 
 
-def test_column_definition_nullable_false_generates_not_null():
+def test_permission_assignment_id_is_required_only_for_state_table():
     state_ddl = _normalize_sql(PermissionAssignmentStateTable().get_create_table_sql())
     timeseries_ddl = _normalize_sql(PermissionAssignmentTimeSeriesTable().get_create_table_sql())
 
     assert "ASSIGNMENT_ID VARCHAR2 (4000) NOT NULL" in state_ddl
-    assert "ASSIGNMENT_ID VARCHAR2 (4000) NOT NULL" in timeseries_ddl
+    assert "ASSIGNMENT_ID VARCHAR2 (4000) NOT NULL" not in timeseries_ddl
 
 
 def test_column_definition_defaults_to_nullable():
@@ -788,6 +788,7 @@ def test_permission_assignment_delete_with_permission_filters_input_sizes_to_sql
                 "target_identity_id": "identity-1",
                 "global_identity_id": "global-1",
                 "permission_id": "permission-1",
+                "event_timestamp": "03-Aug-26 01:00:00.000000 PM",
                 "service_instance_id": "svc-1",
                 "tenancy_id": "tenant-1",
             }
@@ -800,12 +801,14 @@ def test_permission_assignment_delete_with_permission_filters_input_sizes_to_sql
     assert input_size_names == {
         "TARGET_IDENTITY_ID",
         "PERMISSION_ID",
+        "EVENT_TIMESTAMP",
         "SERVICE_INSTANCE_ID",
         "TENANCY_ID",
     }
     assert cursor.setinputsizes.call_args.kwargs == {
         "TARGET_IDENTITY_ID": len("identity-1"),
         "PERMISSION_ID": len("permission-1"),
+        "EVENT_TIMESTAMP": None,
         "SERVICE_INSTANCE_ID": len("svc-1"),
         "TENANCY_ID": len("tenant-1"),
     }
@@ -817,11 +820,13 @@ def test_permission_assignment_delete_with_permission_filters_input_sizes_to_sql
     assert ":PERMISSION_ID" in executed_sql
     assert ":SERVICE_INSTANCE_ID" in executed_sql
     assert ":TENANCY_ID" in executed_sql
+    assert '"EVENT_TIMESTAMP"<:EVENT_TIMESTAMP' in executed_sql
     bind_rows = cursor.executemany.call_args.args[1]
     assert bind_rows == [
         {
             "TARGET_IDENTITY_ID": "identity-1",
             "PERMISSION_ID": "permission-1",
+            "EVENT_TIMESTAMP": "03-Aug-26 01:00:00.000000 PM",
             "SERVICE_INSTANCE_ID": "svc-1",
             "TENANCY_ID": "tenant-1",
         }
@@ -844,6 +849,7 @@ def test_permission_assignment_delete_with_assignment_id_uses_assignment_key(moc
                 "assignment_id": "assignment-1",
                 "target_identity_id": "identity-1",
                 "permission_id": "permission-1",
+                "event_timestamp": "03-Aug-26 01:00:00.000000 PM",
                 "service_instance_id": "svc-1",
                 "tenancy_id": "tenant-1",
             }
@@ -857,9 +863,11 @@ def test_permission_assignment_delete_with_assignment_id_uses_assignment_key(moc
     assert ":ASSIGNMENT_ID" in executed_sql
     assert ":TARGET_IDENTITY_ID" not in executed_sql
     assert ":PERMISSION_ID" not in executed_sql
+    assert '"EVENT_TIMESTAMP"<:EVENT_TIMESTAMP' in executed_sql
     assert bind_rows == [
         {
             "ASSIGNMENT_ID": "assignment-1",
+            "EVENT_TIMESTAMP": "03-Aug-26 01:00:00.000000 PM",
             "SERVICE_INSTANCE_ID": "svc-1",
             "TENANCY_ID": "tenant-1",
         }
@@ -880,6 +888,7 @@ def test_permission_assignment_delete_without_permission_filters_input_sizes_to_
                 "target_identity_id": "identity-1",
                 "global_identity_id": "global-1",
                 "permission_id": "",
+                "event_timestamp": "03-Aug-26 01:00:00.000000 PM",
                 "service_instance_id": "svc-1",
                 "tenancy_id": "tenant-1",
             }
@@ -891,11 +900,13 @@ def test_permission_assignment_delete_without_permission_filters_input_sizes_to_
     input_size_names = set(cursor.setinputsizes.call_args.kwargs)
     assert input_size_names == {
         "TARGET_IDENTITY_ID",
+        "EVENT_TIMESTAMP",
         "SERVICE_INSTANCE_ID",
         "TENANCY_ID",
     }
     assert cursor.setinputsizes.call_args.kwargs == {
         "TARGET_IDENTITY_ID": len("identity-1"),
+        "EVENT_TIMESTAMP": None,
         "SERVICE_INSTANCE_ID": len("svc-1"),
         "TENANCY_ID": len("tenant-1"),
     }
@@ -906,10 +917,12 @@ def test_permission_assignment_delete_without_permission_filters_input_sizes_to_
     assert ":TARGET_IDENTITY_ID" in executed_sql
     assert ":SERVICE_INSTANCE_ID" in executed_sql
     assert ":TENANCY_ID" in executed_sql
+    assert '"EVENT_TIMESTAMP"<:EVENT_TIMESTAMP' in executed_sql
     bind_rows = cursor.executemany.call_args.args[1]
     assert bind_rows == [
         {
             "TARGET_IDENTITY_ID": "identity-1",
+            "EVENT_TIMESTAMP": "03-Aug-26 01:00:00.000000 PM",
             "SERVICE_INSTANCE_ID": "svc-1",
             "TENANCY_ID": "tenant-1",
         }
@@ -1160,14 +1173,14 @@ def test_snapshot_cleanup_lock_targets_deterministic_tracker_row(mock_get_cursor
 
 
 @patch("dfa.adw.query_builders.base_query_builder.AdwConnection.commit")
-def test_ensure_helper_table_exists_ensures_supporting_objects_for_existing_table(mock_commit):
+def test_ensure_helper_table_exists_uses_table_create_as_single_entry_point(mock_commit):
     qb = AccessBundleStateUpdateQueryBuilder([])
     tracker_table = MagicMock()
 
     qb._ensure_helper_table_exists(tracker_table)
 
     tracker_table.create.assert_called_once()
-    tracker_table.ensure_supporting_objects.assert_called_once()
+    tracker_table.ensure_supporting_objects.assert_not_called()
     mock_commit.assert_called_once()
 
 

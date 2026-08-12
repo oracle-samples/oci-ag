@@ -78,6 +78,7 @@ class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQuery
                     "tenancy_id",
                 ],
                 events=events_with_assignment,
+                require_newer_event=True,
             )
         if events_with_permission:
             self.executemany_delete_for_events(
@@ -88,6 +89,7 @@ class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQuery
                     "tenancy_id",
                 ],
                 events=events_with_permission,
+                require_newer_event=True,
             )
         if events_without_permission:
             self.executemany_delete_for_events(
@@ -97,6 +99,7 @@ class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQuery
                     "tenancy_id",
                 ],
                 events=events_without_permission,
+                require_newer_event=True,
             )
 
 

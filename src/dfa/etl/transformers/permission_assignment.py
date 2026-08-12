@@ -9,14 +9,30 @@ from dfa.etl.transformers.base_event_transformer import BaseEventTransformer
 
 class PermissionAssignmentEventTransformer(BaseEventTransformer):
 
-    def __process_permission_assignments(self, assignment_list, base_pa, pa_list):
+    def __process_permission_assignments(
+        self,
+        assignment_list,
+        base_pa,
+        pa_list,
+        identity_operation_type=None,
+        created_field=None,
+        updated_field=None,
+    ):
         for i in assignment_list:
+            if not isinstance(i, dict):
+                self.logger.warning("Skipping invalid permission assignment row")
+                continue
+            if not self.is_timeseries() and i.get("id") in (None, ""):
+                self.logger.warning("Skipping permission assignment state row without an id")
+                continue
             pa_copy = base_pa.copy()
+            if identity_operation_type:
+                pa_copy["identity_operation_type"] = identity_operation_type
             if "id" in i:
                 pa_copy["assignment_id"] = i["id"]
-            if "targetIdentityId" in i:
+            if i.get("targetIdentityId") not in (None, ""):
                 pa_copy["target_identity_id"] = i["targetIdentityId"]
-            if "globalIdentityId" in i:
+            if i.get("globalIdentityId") not in (None, ""):
                 pa_copy["global_identity_id"] = i["globalIdentityId"]
             if "externalId" in i:
                 pa_copy["external_id"] = i["externalId"]
@@ -60,18 +76,22 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
                 pa_copy["valid_from"] = i["validFrom"]
             if "validTo" in i and i["validTo"] not in (0, "0"):
                 pa_copy["valid_to"] = i["validTo"]
+            if created_field and created_field in i and i[created_field] not in (0, "0"):
+                pa_copy["created_on"] = i[created_field]
+            if updated_field and updated_field in i and i[updated_field] not in (0, "0"):
+                pa_copy["updated_on"] = i[updated_field]
             if "status" in i:
                 pa_copy["status"] = i["status"]
             if "accountStatus" in i:
                 pa_copy["account_status"] = i["accountStatus"]
-            if "customAttributes" in i:
-                pa_copy["assignment_attributes"] = json.dumps(i["customAttributes"])
             if "additionalProperties" in i:
                 pa_copy["attributes"] = json.dumps(i["additionalProperties"])
+            if "customAttributes" in i:
+                pa_copy["attributes"] = json.dumps(i["customAttributes"])
 
             pa_list.append(pa_copy)
 
-    def _get_base_permission_assignment(self):
+    def _get_base_permission_assignment(self, raw_event=None):
         base_pa = PermissionAssignmentStateTable().get_default_row()
         if self._get_tenancy_id():
             base_pa["tenancy_id"] = self._get_tenancy_id()
@@ -82,15 +102,60 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
         if self._get_event_timestamp():
             base_pa["event_timestamp"] = self._get_event_timestamp()
 
+        if isinstance(raw_event, dict):
+            if "targetIdentityId" in raw_event:
+                base_pa["target_identity_id"] = raw_event["targetIdentityId"]
+            if "globalIdentityId" in raw_event:
+                base_pa["global_identity_id"] = raw_event["globalIdentityId"]
+            if "additionalProperties" in raw_event:
+                base_pa["attributes"] = json.dumps(raw_event["additionalProperties"])
+
+        base_pa["operation_type"] = self.get_operation_type()
+        base_pa["event_object_type"] = self.get_event_object_type()
+
         return base_pa
+
+    def _transform_v1_event(self, raw_event):
+        base_pa = self._get_base_permission_assignment(raw_event)
+        pa_list = []
+
+        if self.get_operation_type() == "DELETE":
+            permission_ids = raw_event.get("ids", [])
+            for permission_id in permission_ids:
+                pa_copy = base_pa.copy()
+                pa_copy["permission_id"] = permission_id
+                pa_list.append(pa_copy)
+            if not permission_ids:
+                pa_list.append(base_pa)
+            return pa_list
+
+        add_assignments = raw_event.get("add", [])
+        remove_assignments = raw_event.get("remove", [])
+        self.__process_permission_assignments(
+            add_assignments,
+            base_pa,
+            pa_list,
+            identity_operation_type="add",
+        )
+        self.__process_permission_assignments(
+            remove_assignments,
+            base_pa,
+            pa_list,
+            identity_operation_type="remove",
+        )
+        return pa_list
 
     def _transform_v2_assignment(self, assignment):
         base_pa = self._get_base_permission_assignment()
         pa_list = []
+        identity_operation_type = "remove" if self.get_operation_type() == "DELETE" else "add"
         self.__process_permission_assignments(
             [assignment],
             base_pa,
             pa_list,
+            identity_operation_type=identity_operation_type,
+            created_field="created",
+            updated_field="lastModified",
         )
         return pa_list
 
@@ -111,6 +176,14 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
         return []
 
     def transform_raw_event(self, raw_event):
+        if self.get_event_type_version() == "1.0":
+            if isinstance(raw_event, list):
+                transformed_pa = []
+                for event in raw_event:
+                    transformed_pa.extend(self._transform_v1_event(event))
+                return transformed_pa
+            return self._transform_v1_event(raw_event)
+
         transformed_pa = []
         for assignment in self._get_v2_assignments(raw_event):
             transformed_pa.extend(self._transform_v2_assignment(assignment))

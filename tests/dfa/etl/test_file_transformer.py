@@ -335,7 +335,7 @@ class TestFileTransformer(unittest.TestCase):
         self.transformer.load_data()
         self.mock_cursor.executemany.assert_called_once()
 
-    def test_permission_assignment_v1_is_skipped(self):
+    def test_permission_assignment_v1_is_transformed(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/permission_assignment.jsonl")
         mock_object = MagicMock()
         mock_object.data.content.decode.return_value = content
@@ -347,10 +347,10 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._operation_type, "CREATE")
 
         self.transformer.transform_data()
-        self.assertEqual(self.transformer._prepared_events, [])
+        self.assertEqual(len(self.transformer._prepared_events), 8)
 
         self.transformer.load_data()
-        self.mock_cursor.executemany.assert_not_called()
+        self.mock_cursor.executemany.assert_called_once()
 
     def test_permission_assignment_v2_flat_jsonl_rows(self):
         headers = {
@@ -387,6 +387,21 @@ class TestFileTransformer(unittest.TestCase):
         self.assertEqual(len(self.transformer._prepared_events), 2)
         self.assertEqual(self.transformer._prepared_events[0]["assignment_id"], "assignment-1")
         self.assertEqual(self.transformer._prepared_events[1]["assignment_id"], "assignment-2")
+
+    def test_permission_assignment_v2_jsonl_fixture_timestamps(self):
+        content = self.read_file_content("tests/dfa/etl/test_data/file/permission_assignment_2.0.jsonl")
+        mock_object = MagicMock()
+        mock_object.data.content.decode.return_value = content
+        self.mock_storage.download.return_value = mock_object
+
+        self.transformer.extract_data()
+        self.transformer.transform_data()
+
+        self.assertEqual(len(self.transformer._prepared_events), 1)
+        assignment = self.transformer._prepared_events[0]
+        self.assertEqual(assignment["created_on"], 1785758400000)
+        self.assertEqual(assignment["updated_on"], 1785758400000)
+        self.assertEqual(json.loads(assignment["attributes"]), {})
 
     def test_permission_assignment_v2_json_encoded_flat_list_file(self):
         self.transformer._object_name = "permission-assignment.json"

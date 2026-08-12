@@ -98,18 +98,40 @@ class TestStreamTransformer(unittest.TestCase):
 
         self.assertEqual(self.transformer._prepared_events, [])
 
-    def test_permission_assignment_v1_message_is_skipped(self):
+    def test_permission_assignment_v1_add_remove_is_transformed(self):
         messages = {
             "PERMISSION_ASSIGNMENT": {
-                "CREATE": [
+                "UPDATE": [
                     {
                         "value": {
                             "headers": {
                                 "messageType": "PERMISSION_ASSIGNMENT",
-                                "operation": "CREATE",
+                                "operation": "UPDATE",
                                 "eventTypeVersion": "1.0",
+                                "eventTime": "2026-08-07T18:00:00Z",
+                                "tenancyId": "tenant-1",
+                                "serviceInstanceId": "service-1",
                             },
-                            "data": [{"id": "id-1"}],
+                            "data": {
+                                "targetIdentityId": "target-identity-001",
+                                "globalIdentityId": "global-identity-001",
+                                "add": [
+                                    {
+                                        "id": "assignment-001",
+                                        "targetIdentityId": None,
+                                        "globalIdentityId": None,
+                                        "permissionId": "permission-001",
+                                        "customAttributes": {"grantDate": 1786100400000},
+                                    }
+                                ],
+                                "remove": [
+                                    {
+                                        "id": "assignment-002",
+                                        "permissionId": "permission-002",
+                                        "customAttributes": {"grantDate": 1786100500000},
+                                    }
+                                ],
+                            },
                         }
                     }
                 ]
@@ -118,7 +140,155 @@ class TestStreamTransformer(unittest.TestCase):
 
         self.transformer.transform_messages(messages)
 
-        self.assertEqual(self.transformer._prepared_events, [])
+        self.assertEqual(len(self.transformer._prepared_events), 2)
+        self.assertEqual(self.transformer._prepared_events[0]["assignment_id"], "assignment-001")
+        self.assertEqual(
+            self.transformer._prepared_events[0]["target_identity_id"],
+            "target-identity-001",
+        )
+        self.assertEqual(
+            self.transformer._prepared_events[0]["global_identity_id"],
+            "global-identity-001",
+        )
+        self.assertEqual(self.transformer._prepared_events[0]["identity_operation_type"], "add")
+        self.assertIsNone(self.transformer._prepared_events[0]["created_on"])
+        self.assertEqual(
+            json.loads(self.transformer._prepared_events[0]["attributes"]),
+            {"grantDate": 1786100400000},
+        )
+        self.assertEqual(self.transformer._prepared_events[1]["assignment_id"], "assignment-002")
+        self.assertEqual(self.transformer._prepared_events[1]["identity_operation_type"], "remove")
+        self.assertIsNone(self.transformer._prepared_events[1]["created_on"])
+        self.assertEqual(
+            json.loads(self.transformer._prepared_events[1]["attributes"]),
+            {"grantDate": 1786100500000},
+        )
+
+    def test_permission_assignment_v1_rows_without_id_are_skipped(self):
+        messages = {
+            "PERMISSION_ASSIGNMENT": {
+                "CREATE": [
+                    {
+                        "value": {
+                            "headers": {
+                                "eventTypeVersion": "1.0",
+                                "eventTime": "2026-08-07T18:00:00Z",
+                                "tenancyId": "tenant-1",
+                                "serviceInstanceId": "service-1",
+                            },
+                            "data": {
+                                "add": [
+                                    {"permissionId": "permission-without-id"},
+                                    {"id": None, "permissionId": "permission-null-id"},
+                                    {"id": "assignment-001", "permissionId": "permission-001"},
+                                ]
+                            },
+                        }
+                    }
+                ]
+            }
+        }
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(len(self.transformer._prepared_events), 1)
+        self.assertEqual(self.transformer._prepared_events[0]["assignment_id"], "assignment-001")
+
+    def test_permission_assignment_v2_rows_without_id_are_skipped(self):
+        messages = {
+            "PERMISSION_ASSIGNMENT": {
+                "CREATE": [
+                    {
+                        "value": {
+                            "headers": {
+                                "eventTypeVersion": "2.0",
+                                "eventTime": "2026-08-07T18:00:00Z",
+                                "tenancyId": "tenant-1",
+                                "serviceInstanceId": "service-1",
+                            },
+                            "data": [
+                                {"permissionId": "permission-without-id"},
+                                {"id": None, "permissionId": "permission-null-id"},
+                                {"id": "assignment-001", "permissionId": "permission-001"},
+                            ],
+                        }
+                    }
+                ]
+            }
+        }
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(len(self.transformer._prepared_events), 1)
+        self.assertEqual(self.transformer._prepared_events[0]["assignment_id"], "assignment-001")
+
+    def test_permission_assignment_v1_timeseries_rows_without_id_are_retained(self):
+        transformer = StreamTransformer(is_timeseries=True)
+        messages = {
+            "PERMISSION_ASSIGNMENT": {
+                "UPDATE": [
+                    {
+                        "value": {
+                            "headers": {
+                                "eventTypeVersion": "1.0",
+                                "eventTime": "2026-08-07T18:00:00Z",
+                                "tenancyId": "tenant-1",
+                                "serviceInstanceId": "service-1",
+                            },
+                            "data": {
+                                "targetIdentityId": "target-identity-001",
+                                "globalIdentityId": "global-identity-001",
+                                "add": [
+                                    {
+                                        "id": None,
+                                        "targetIdentityId": None,
+                                        "globalIdentityId": None,
+                                        "permissionId": "permission-without-id",
+                                    }
+                                ],
+                                "remove": [{"id": None, "permissionId": "permission-null-id"}],
+                            },
+                        }
+                    }
+                ]
+            }
+        }
+
+        transformer.transform_messages(messages)
+
+        self.assertEqual(len(transformer._prepared_events), 2)
+        self.assertIsNone(transformer._prepared_events[0]["assignment_id"])
+        self.assertIsNone(transformer._prepared_events[1]["assignment_id"])
+        for assignment in transformer._prepared_events:
+            self.assertEqual(assignment["target_identity_id"], "target-identity-001")
+            self.assertEqual(assignment["global_identity_id"], "global-identity-001")
+
+    def test_permission_assignment_v2_timeseries_rows_without_id_are_retained(self):
+        transformer = StreamTransformer(is_timeseries=True)
+        messages = {
+            "PERMISSION_ASSIGNMENT": {
+                "UPDATE": [
+                    {
+                        "value": {
+                            "headers": {
+                                "eventTypeVersion": "2.0",
+                                "eventTime": "2026-08-07T18:00:00Z",
+                                "tenancyId": "tenant-1",
+                                "serviceInstanceId": "service-1",
+                            },
+                            "data": [
+                                {"permissionId": "permission-without-id"},
+                                {"id": None, "permissionId": "permission-null-id"},
+                            ],
+                        }
+                    }
+                ]
+            }
+        }
+
+        transformer.transform_messages(messages)
+
+        self.assertEqual(len(transformer._prepared_events), 2)
 
     def test_permission_assignment_v2_flat_list_is_transformed(self):
         messages = {
@@ -188,7 +358,9 @@ class TestStreamTransformer(unittest.TestCase):
                 "userLogin": "jsmith",
                 "validFrom": 1785758400000,
                 "validTo": 1817294400000,
-                "customAttributes": {"created": 1785758400000},
+                "created": 1785758400000,
+                "lastModified": 1785844800000,
+                "customAttributes": {"source": "AG"},
             },
             {
                 "id": "permission-assignment-002",
@@ -228,14 +400,67 @@ class TestStreamTransformer(unittest.TestCase):
         self.assertEqual(first_assignment["account_status"], "ACTIVE")
         self.assertEqual(first_assignment["grant_type"], "POLICY")
         self.assertEqual(first_assignment["valid_from"], 1785758400000)
+        self.assertEqual(first_assignment["created_on"], 1785758400000)
+        self.assertEqual(first_assignment["updated_on"], 1785844800000)
         self.assertEqual(
-            json.loads(first_assignment["assignment_attributes"]),
-            {"created": 1785758400000},
+            json.loads(first_assignment["attributes"]),
+            {"source": "AG"},
         )
         self.assertEqual(
             self.transformer._prepared_events[1]["assignment_id"],
             "permission-assignment-002",
         )
+
+    def test_permission_assignment_v2_created_fixture_timestamps(self):
+        messages = self.read_file_content("tests/dfa/etl/test_data/stream/permission_assignment_created_2.0.json")
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(len(self.transformer._prepared_events), 2)
+        first_assignment = self.transformer._prepared_events[0]
+        self.assertEqual(first_assignment["created_on"], 1785758400000)
+        self.assertEqual(first_assignment["updated_on"], 1785758400000)
+        self.assertEqual(json.loads(first_assignment["attributes"]), {})
+        second_assignment = self.transformer._prepared_events[1]
+        self.assertEqual(second_assignment["created_on"], 1785844800000)
+        self.assertEqual(second_assignment["updated_on"], 1785844800000)
+        self.assertEqual(json.loads(second_assignment["attributes"]), {})
+
+    def test_permission_assignment_v2_deleted_fixture_ids(self):
+        messages = self.read_file_content("tests/dfa/etl/test_data/stream/permission_assignment_deleted_2.0.json")
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(len(self.transformer._prepared_events), 2)
+        self.assertEqual(
+            self.transformer._prepared_events[0]["assignment_id"],
+            "permission-assignment-001",
+        )
+        self.assertEqual(
+            self.transformer._prepared_events[1]["assignment_id"],
+            "permission-assignment-002",
+        )
+        for assignment in self.transformer._prepared_events:
+            self.assertEqual(assignment["operation_type"], "DELETE")
+            self.assertEqual(assignment["identity_operation_type"], "remove")
+
+    def test_permission_assignment_v1_deleted_fixture_identity_ids(self):
+        messages = self.read_file_content("tests/dfa/etl/test_data/stream/permission_assignment_deleted.json")
+
+        self.transformer.transform_messages(messages)
+
+        self.assertEqual(len(self.transformer._prepared_events), 1)
+        assignment = self.transformer._prepared_events[0]
+        self.assertEqual(
+            assignment["permission_id"],
+            "29dbccf64e35.c5be56c42b7e689693e483e34db7ba7d",
+        )
+        self.assertEqual(
+            assignment["target_identity_id"],
+            "b00c385f-6e64-433e-b9a7-66c9a42fdca9",
+        )
+        self.assertEqual(assignment["global_identity_id"], "global-identity-001")
+        self.assertEqual(assignment["operation_type"], "DELETE")
 
     @patch("dfa.etl.stream_transformer.get_query_builder")
     def test_load_data_builds_query_builder_for_prepared_events(self, mock_get_query_builder):
@@ -254,11 +479,36 @@ class TestStreamTransformer(unittest.TestCase):
         mock_get_query_builder.assert_called_once_with(
             "IDENTITY",
             "UPDATE",
-            [{"id": "identity-1"}],
+            [
+                {
+                    "event_object_type": "IDENTITY",
+                    "operation_type": "UPDATE",
+                    "id": "identity-1",
+                }
+            ],
             False,
         )
         mock_query_builder.execute_sql_for_events.assert_called_once()
         self.mock_adw_close.assert_not_called()
+
+    @patch("dfa.etl.stream_transformer.get_query_builder")
+    def test_load_data_preserves_delete_operation_type(self, mock_get_query_builder):
+        mock_query_builder = MagicMock()
+        mock_get_query_builder.return_value = mock_query_builder
+        self.transformer._prepared_events = [
+            {
+                "event_object_type": "PERMISSION_ASSIGNMENT",
+                "operation_type": "DELETE",
+                "assignment_id": "assignment-1",
+            }
+        ]
+
+        self.transformer.load_data()
+
+        loaded_events = mock_get_query_builder.call_args.args[2]
+        self.assertEqual(loaded_events[0]["operation_type"], "DELETE")
+        self.assertEqual(loaded_events[0]["event_object_type"], "PERMISSION_ASSIGNMENT")
+        mock_query_builder.execute_sql_for_events.assert_called_once()
 
     @patch("dfa.etl.stream_transformer.get_query_builder")
     def test_load_data_rolls_back_and_closes_on_failure(self, mock_get_query_builder):
