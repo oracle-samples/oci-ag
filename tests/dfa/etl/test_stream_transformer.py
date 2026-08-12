@@ -90,7 +90,13 @@ class TestStreamTransformer(unittest.TestCase):
         mock_get_query_builder.assert_called_once_with(
             "IDENTITY",
             "UPDATE",
-            [{"id": "identity-1"}],
+            [
+                {
+                    "event_object_type": "IDENTITY",
+                    "operation_type": "UPDATE",
+                    "id": "identity-1",
+                }
+            ],
             False,
         )
         mock_query_builder.execute_sql_for_events.assert_called_once()
