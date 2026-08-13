@@ -542,9 +542,40 @@ class TestFileTransformer(unittest.TestCase):
 
         self.transformer.transform_data()
         self.assertEqual(len(self.transformer._prepared_events), 2)
+        self.assertTrue(all(row["operation_type"] == "CREATE" for row in self.transformer._prepared_events))
 
         self.transformer.load_data()
         self.mock_cursor.executemany.assert_called_once()
+
+    def test_day0_file_rows_are_labeled_export_for_state(self):
+        content = self.read_file_content("tests/dfa/etl/test_data/file/resource.jsonl").replace(
+            '"operation":"CREATE"', '"operation":"CREATE","isDay0":true'
+        )
+        mock_object = MagicMock()
+        mock_object.data.content.decode.return_value = content
+        self.mock_storage.download.return_value = mock_object
+
+        self.transformer.extract_data()
+        self.transformer.transform_data()
+
+        self.assertEqual(self.transformer.get_operation_type(), "CREATE")
+        self.assertTrue(all(row["operation_type"] == "EXPORT" for row in self.transformer._prepared_events))
+
+    def test_day0_file_rows_are_labeled_export_for_time_series(self):
+        timeseries_transformer = FileTransformer("test_namespace", "test_bucket", "test_object.jsonl", True)
+        content = self.read_file_content("tests/dfa/etl/test_data/file/resource.jsonl").replace(
+            '"operation":"CREATE"', '"operation":"CREATE","isDay0":"true"'
+        )
+        mock_object = MagicMock()
+        mock_object.data.content.decode.return_value = content
+        self.mock_storage.download.return_value = mock_object
+
+        timeseries_transformer.extract_data()
+        timeseries_transformer.transform_data()
+
+        self.assertEqual(timeseries_transformer.get_operation_type(), "CREATE")
+        self.assertEqual(len(timeseries_transformer._prepared_events), 2)
+        self.assertTrue(all(row["operation_type"] == "EXPORT" for row in timeseries_transformer._prepared_events))
 
     def test_role(self):
         content = self.read_file_content("tests/dfa/etl/test_data/file/role.jsonl")
