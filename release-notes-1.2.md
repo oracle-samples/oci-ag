@@ -7,9 +7,9 @@ DFA now supports permission-assignment event versions 1.0 and 2.0 for both file 
 - Version 1.0 supports the nested `add` and `remove` payload format.
 - Version 2.0 supports the flat permission-assignment array format. Delete payloads use the same array format and may contain only the assignment `id`.
 - Version 2.0 `created` and `lastModified` values are stored in `CREATED_ON` and `UPDATED_ON`.
-- For both versions, `customAttributes` is stored in `ATTRIBUTES`.
+
 - Permission-assignment time-series rows may have a null assignment ID. State rows without an assignment ID are skipped.
-- Streamed rows retain `EVENT_OBJECT_TYPE` and `OPERATION_TYPE`, including delete operations.
+
 
 ## State-table event ordering
 
@@ -24,11 +24,11 @@ Permission-assignment state and time-series tables add these columns:
 - `STATUS`
 - `ACCOUNT_STATUS`
 
-`ASSIGNMENT_ATTRIBUTES` is removed. The permission-assignment state-table unique constraint is now based on `ASSIGNMENT_ID`, `SERVICE_INSTANCE_ID`, and `TENANCY_ID`; `ASSIGNMENT_ID` remains nullable in the time-series table and is non-null in the state table.
+The permission-assignment state-table unique constraint is now based on `ASSIGNMENT_ID`, `SERVICE_INSTANCE_ID`, and `TENANCY_ID`; `ASSIGNMENT_ID` remains nullable in the time-series table and is non-null in the state table.
 
 ### Upgrade requirement
 
-Existing deployments require a manual database migration before deploying version 1.2. Add the new columns, migrate any data that must be retained from `ASSIGNMENT_ATTRIBUTES` into `ATTRIBUTES`, resolve null or duplicate state-table assignment IDs, replace the existing permission-assignment state unique constraint and backing index, and then remove `ASSIGNMENT_ATTRIBUTES` if appropriate. DFA creates the new schema for fresh installations but does not alter existing tables or indexes automatically.
+Existing deployments require a manual database migration before deploying version 1.2. Add the new columns, resolve null or duplicate state-table assignment IDs, and replace the existing permission-assignment state unique constraint and backing index. DFA creates the new schema for fresh installations but does not alter existing tables or indexes automatically.
 
 ```
 -- verify assignment_id is not null
@@ -49,11 +49,6 @@ ALTER TABLE DFA_USER.PERMISSION_ASSIGNMENT_STATE
 ADD (STATUS VARCHAR2(256), ACCOUNT_STATUS VARCHAR2(256), CREATED_ON NUMBER, UPDATED_ON NUMBER);
 ALTER TABLE DFA_USER.PERMISSION_ASSIGNMENT_TS
 ADD (STATUS VARCHAR2(256), ACCOUNT_STATUS VARCHAR2(256), CREATED_ON NUMBER, UPDATED_ON NUMBER);
-
-ALTER TABLE DFA_USER.PERMISSION_ASSIGNMENT_STATE
-DROP COLUMN ASSIGNMENT_ATTRIBUTES;
-ALTER TABLE DFA_USER.PERMISSION_ASSIGNMENT_TS
-DROP COLUMN ASSIGNMENT_ATTRIBUTES;
 
 -- verify there are no duplicates
 SELECT ASSIGNMENT_ID, COUNT(*)

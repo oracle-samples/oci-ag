@@ -153,14 +153,14 @@ class TestStreamTransformer(unittest.TestCase):
         self.assertEqual(self.transformer._prepared_events[0]["identity_operation_type"], "add")
         self.assertIsNone(self.transformer._prepared_events[0]["created_on"])
         self.assertEqual(
-            json.loads(self.transformer._prepared_events[0]["attributes"]),
+            json.loads(self.transformer._prepared_events[0]["assignment_attributes"]),
             {"grantDate": 1786100400000},
         )
         self.assertEqual(self.transformer._prepared_events[1]["assignment_id"], "assignment-002")
         self.assertEqual(self.transformer._prepared_events[1]["identity_operation_type"], "remove")
         self.assertIsNone(self.transformer._prepared_events[1]["created_on"])
         self.assertEqual(
-            json.loads(self.transformer._prepared_events[1]["attributes"]),
+            json.loads(self.transformer._prepared_events[1]["assignment_attributes"]),
             {"grantDate": 1786100500000},
         )
 
@@ -403,7 +403,7 @@ class TestStreamTransformer(unittest.TestCase):
         self.assertEqual(first_assignment["created_on"], 1785758400000)
         self.assertEqual(first_assignment["updated_on"], 1785844800000)
         self.assertEqual(
-            json.loads(first_assignment["attributes"]),
+            json.loads(first_assignment["assignment_attributes"]),
             {"source": "AG"},
         )
         self.assertEqual(
@@ -420,11 +420,11 @@ class TestStreamTransformer(unittest.TestCase):
         first_assignment = self.transformer._prepared_events[0]
         self.assertEqual(first_assignment["created_on"], 1785758400000)
         self.assertEqual(first_assignment["updated_on"], 1785758400000)
-        self.assertEqual(json.loads(first_assignment["attributes"]), {})
+        self.assertEqual(json.loads(first_assignment["assignment_attributes"]), {})
         second_assignment = self.transformer._prepared_events[1]
         self.assertEqual(second_assignment["created_on"], 1785844800000)
         self.assertEqual(second_assignment["updated_on"], 1785844800000)
-        self.assertEqual(json.loads(second_assignment["attributes"]), {})
+        self.assertEqual(json.loads(second_assignment["assignment_attributes"]), {})
 
     def test_permission_assignment_v2_deleted_fixture_ids(self):
         messages = self.read_file_content("tests/dfa/etl/test_data/stream/permission_assignment_deleted_2.0.json")

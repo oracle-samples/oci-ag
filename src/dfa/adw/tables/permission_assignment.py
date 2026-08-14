@@ -42,6 +42,7 @@ class PermissionAssignmentTimeSeriesTable(BaseTable):
         {"field_name":"UPDATED_ON","column_name":"UPDATED_ON","column_expression":null,"skip_column":false,"data_type":"NUMBER","data_length":null,"data_format":null},
         {"field_name":"STATUS","column_name":"STATUS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":256,"data_format":null},
         {"field_name":"ACCOUNT_STATUS","column_name":"ACCOUNT_STATUS","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":256,"data_format":null},
+        {"field_name":"ASSIGNMENT_ATTRIBUTES","column_name":"ASSIGNMENT_ATTRIBUTES","column_expression":null,"skip_column":false,"data_type":"CLOB","data_length":null,"data_format":null},
         {"field_name":"EVENT_OBJECT_TYPE","column_name":"EVENT_OBJECT_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"OPERATION_TYPE","column_name":"OPERATION_TYPE","column_expression":null,"skip_column":false,"data_type":"VARCHAR2","data_length":4000,"data_format":null},
         {"field_name":"EVENT_TIMESTAMP","column_name":"EVENT_TIMESTAMP","column_expression":"SYSTIMESTAMP","skip_column":false,"data_type":"TIMESTAMP WITH TIME ZONE","data_length":null,"data_format":"YYYY-MM-DD\\"T\\"HH24:MI:SS.FFTZH:TZM"},

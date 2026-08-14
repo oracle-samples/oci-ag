@@ -401,7 +401,7 @@ class TestFileTransformer(unittest.TestCase):
         assignment = self.transformer._prepared_events[0]
         self.assertEqual(assignment["created_on"], 1785758400000)
         self.assertEqual(assignment["updated_on"], 1785758400000)
-        self.assertEqual(json.loads(assignment["attributes"]), {})
+        self.assertEqual(json.loads(assignment["assignment_attributes"]), {})
 
     def test_permission_assignment_v2_json_encoded_flat_list_file(self):
         self.transformer._object_name = "permission-assignment.json"

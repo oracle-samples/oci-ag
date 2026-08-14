@@ -84,10 +84,10 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
                 pa_copy["status"] = i["status"]
             if "accountStatus" in i:
                 pa_copy["account_status"] = i["accountStatus"]
-            if "additionalProperties" in i:
-                pa_copy["attributes"] = json.dumps(i["additionalProperties"])
             if "customAttributes" in i:
-                pa_copy["attributes"] = json.dumps(i["customAttributes"])
+                pa_copy["assignment_attributes"] = json.dumps(i["customAttributes"])
+            if "additionalProperties" in i:
+                pa_copy["assignment_attributes"] = json.dumps(i["additionalProperties"])
 
             pa_list.append(pa_copy)
 
@@ -108,7 +108,7 @@ class PermissionAssignmentEventTransformer(BaseEventTransformer):
             if "globalIdentityId" in raw_event:
                 base_pa["global_identity_id"] = raw_event["globalIdentityId"]
             if "additionalProperties" in raw_event:
-                base_pa["attributes"] = json.dumps(raw_event["additionalProperties"])
+                base_pa["assignment_attributes"] = json.dumps(raw_event["additionalProperties"])
 
         base_pa["operation_type"] = self.get_operation_type()
         base_pa["event_object_type"] = self.get_event_object_type()

@@ -68,6 +68,14 @@ def test_permission_assignment_id_is_required_only_for_state_table():
     assert "ASSIGNMENT_ID VARCHAR2 (4000) NOT NULL" not in timeseries_ddl
 
 
+def test_permission_assignment_ddl_retains_assignment_attributes():
+    state_ddl = _normalize_sql(PermissionAssignmentStateTable().get_create_table_sql())
+    timeseries_ddl = _normalize_sql(PermissionAssignmentTimeSeriesTable().get_create_table_sql())
+
+    assert "ASSIGNMENT_ATTRIBUTES CLOB" in state_ddl
+    assert "ASSIGNMENT_ATTRIBUTES CLOB" in timeseries_ddl
+
+
 def test_column_definition_defaults_to_nullable():
     ddl = _normalize_sql(PermissionStateTable().get_create_table_sql())
 
