@@ -23,6 +23,7 @@ class FileTransformer(AbstractTransformer):
     _num_of_batches = None
     _snapshot_id = None
     _snapshot_status = None
+    _is_day0_export = False
 
     def __init__(self, namespace, bucket_name, object_name, is_timeseries=False):
         self.is_timeseries = is_timeseries
@@ -45,13 +46,25 @@ class FileTransformer(AbstractTransformer):
                 return None
         return None
 
+    @staticmethod
+    def _parse_bool_header_value(value):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() == "true"
+        return False
+
     def _apply_headers(self, headers):
         if "messageType" in headers:
             self._event_object_type = headers["messageType"]
         if "operation" in headers:
             self._operation_type = headers["operation"]
+        if "isDay0" in headers:
+            self._is_day0_export = self._parse_bool_header_value(headers["isDay0"])
         if "eventTime" in headers:
             self._event_timestamp = headers["eventTime"]
+        if "eventTypeVersion" in headers:
+            self._event_type_version = headers["eventTypeVersion"]
         if "correlationId" in headers:
             self._snapshot_id = headers["correlationId"]
         if "status" in headers:
@@ -105,6 +118,8 @@ class FileTransformer(AbstractTransformer):
         self._snapshot_id = None
         self._num_of_batches = None
         self._snapshot_status = None
+        self._event_type_version = None
+        self._is_day0_export = False
         self._set_raw_event_data(event_data)
 
     def _get_snapshot_id_for_batch(self):
@@ -127,8 +142,20 @@ class FileTransformer(AbstractTransformer):
     def _get_utc_current_event_timestamp(self):
         return datetime.fromisoformat(self._event_timestamp).astimezone(timezone.utc).strftime("%d-%b-%y %H:%M:%S.%f")
 
+    def _mark_export_operation_type(self, transformed_event):
+        """Label Day0 CREATE file rows as exports without changing routing."""
+        if not self._is_day0_export or self.get_operation_type() != "CREATE":
+            return
+
+        rows = transformed_event if isinstance(transformed_event, list) else [transformed_event]
+        for row in rows:
+            if isinstance(row, dict):
+                row["operation_type"] = "EXPORT"
+
     def transform_data(self):
-        if self.is_valid_object_type(self.get_event_object_type()):
+        if self.is_valid_object_type(self.get_event_object_type()) and self.is_supported_event_type_version(
+            self.get_event_object_type(), self._event_type_version
+        ):
             transformer = self.transformer_factory()
 
             self._prepared_events = []
@@ -136,7 +163,9 @@ class FileTransformer(AbstractTransformer):
                 transformer.set_tenancy_id(self._tenancy_id)
                 transformer.set_service_instance_id(self._service_instance_id)
                 transformer.set_event_timestamp_for_message(self._event_timestamp)
-                self._append_prepared_event(transformer.transform_raw_event(raw_event))
+                transformed_event = transformer.transform_raw_event(raw_event)
+                self._mark_export_operation_type(transformed_event)
+                self._append_prepared_event(transformed_event)
 
             self.logger.info(
                 "%s transformed %d %s %s events",
@@ -144,6 +173,12 @@ class FileTransformer(AbstractTransformer):
                 len(self._prepared_events),
                 self._event_object_type,
                 self._operation_type,
+            )
+        elif self.is_valid_object_type(self.get_event_object_type()):
+            self.logger.warning(
+                "Skipping unsupported %s eventTypeVersion %s",
+                self.get_event_object_type(),
+                self._event_type_version,
             )
 
     def chunk_prepared_events(self, chunk_size=None):
@@ -164,6 +199,10 @@ class FileTransformer(AbstractTransformer):
                 not self.is_timeseries
                 and self.get_operation_type() == "CREATE"
                 and self.is_valid_object_type(self.get_event_object_type())
+                and self.is_supported_event_type_version(
+                    self.get_event_object_type(),
+                    self._event_type_version,
+                )
             )
             is_snapshot_completion_marker = self._is_snapshot_completion_marker()
             should_track_snapshot_batch = should_track_snapshot and not is_snapshot_completion_marker

@@ -32,6 +32,12 @@ class StreamTransformer(AbstractTransformer):
     def extract_data(self):
         pass
 
+    @staticmethod
+    def _get_message_headers(message):
+        if isinstance(message, dict):
+            return message.get("value", {}).get("headers", {})
+        return message.value.get("headers", {})
+
     def transform_data(self):
         self._prepared_events = []
 
@@ -50,6 +56,16 @@ class StreamTransformer(AbstractTransformer):
                 event_type_ops_messages = self._get_raw_events()[event_type][operation]
 
                 for message in event_type_ops_messages:
+                    headers = self._get_message_headers(message)
+                    event_type_version = headers.get("eventTypeVersion")
+                    if not self.is_supported_event_type_version(event_type, event_type_version):
+                        self.logger.warning(
+                            "Skipping unsupported %s eventTypeVersion %s",
+                            event_type,
+                            event_type_version,
+                        )
+                        continue
+                    transformer.set_event_type_version(event_type_version)
                     self._append_prepared_event(transformer.transform_stream_message(message))
 
         self.logger.info(

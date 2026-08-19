@@ -44,6 +44,8 @@ class InsertManyQueryBuilder:
 
 
 class UpdateManyQueryBuilder:
+    _event_timestamp_column = "event_timestamp"
+
     def get_operation_sql(
         self,
         query_builder: Any,
@@ -83,6 +85,17 @@ class UpdateManyQueryBuilder:
             else:
                 # For non-nullable columns, simple equality is sufficient
                 update_sql = update_sql.where(column == param)
+
+        # State-table events use an insert-first upsert. When an insert hits the
+        # unique key, only let the update fallback apply a strictly newer event.
+        # Equal timestamps are duplicate deliveries and older events must not
+        # overwrite newer state. Keep this conditional so the generic builder
+        # remains usable by callers that do not supply EVENT_TIMESTAMP.
+        if self._event_timestamp_column in {column_name.lower() for column_name in event}:
+            update_sql = update_sql.where(
+                getattr(query_builder, self._event_timestamp_column.upper())
+                < Parameter(f":{self._event_timestamp_column.upper()}")
+            )
 
         complete_update_stmt = update_sql.get_sql()
 
@@ -145,6 +158,8 @@ class MergeManyQueryBuilder:
         if len(updatable_cols) > 0:
             set_parts = [f't."{c.upper()}" = s."{c.upper()}"' for c in updatable_cols]
             update_clause = " WHEN MATCHED THEN UPDATE SET " + ", ".join(set_parts)
+            if "event_timestamp" in {column.lower() for column in all_cols}:
+                update_clause += ' WHERE t."EVENT_TIMESTAMP" < s."EVENT_TIMESTAMP"'
         else:
             # If nothing to update, skip UPDATE branch
             update_clause = ""
@@ -170,6 +185,7 @@ class DeleteManyQueryBuilder:
         query_builder: Any,
         where_columns: list[str],
         nullable_columns: list[str] | None = None,
+        require_newer_event: bool = False,
     ) -> str:
         delete_sql: Any = Query.from_(query_builder).delete()
         where_columns = [col.lower() for col in where_columns]
@@ -184,6 +200,9 @@ class DeleteManyQueryBuilder:
                 delete_sql = delete_sql.where(decode(column, param, 1, 0) == 1)
             else:
                 delete_sql = delete_sql.where(column == param)
+
+        if require_newer_event:
+            delete_sql = delete_sql.where(getattr(query_builder, "EVENT_TIMESTAMP") < Parameter(":EVENT_TIMESTAMP"))
 
         return delete_sql.get_sql()
 
@@ -352,8 +371,6 @@ class BaseQueryBuilder:
     def _ensure_helper_table_exists(self, table_manager):
         try:
             table_manager.create()
-            if hasattr(table_manager, "ensure_supporting_objects"):
-                table_manager.ensure_supporting_objects()
             AdwConnection.commit()
         except oracledb.DatabaseError as e:
             AdwConnection.rollback()
@@ -865,6 +882,7 @@ class BaseQueryBuilder:
         where_columns: list[str],
         events: list[dict[str, Any]] | None = None,
         nullable_columns: list[str] | None = None,
+        require_newer_event: bool = False,
     ):
         active_events = self.events if events is None else events
         if not active_events or len(active_events) == 0:
@@ -887,6 +905,7 @@ class BaseQueryBuilder:
             self,
             where_columns,
             nullable_columns,
+            require_newer_event,
         )
         input_sizes = self.get_input_sizes_for_events(
             self.table_manager.get_column_list_definition_for_table_ddl(),

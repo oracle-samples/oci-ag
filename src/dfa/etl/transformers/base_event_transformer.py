@@ -16,6 +16,7 @@ class BaseEventTransformer(ABC):
     _tenancy_id = None
     _service_instance_id = None
     _event_timestamp = None
+    _event_type_version = None
 
     def __init__(self, event_object_type, operation_type, is_timeseries=False):
         self.__event_object_type = event_object_type
@@ -31,6 +32,12 @@ class BaseEventTransformer(ABC):
 
     def get_operation_type(self):
         return self.__operation_type
+
+    def set_event_type_version(self, event_type_version):
+        self._event_type_version = event_type_version
+
+    def get_event_type_version(self):
+        return self._event_type_version
 
     def is_timeseries(self):
         return self.__is_timesteries

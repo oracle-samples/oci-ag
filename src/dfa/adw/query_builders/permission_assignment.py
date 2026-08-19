@@ -58,15 +58,28 @@ class PermissionAssignmentStateUpdateQueryBuilder(PermissionAssignmentStateQuery
 class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQueryBuilder):
     def execute_sql_for_events(self):
         self.logger.info("Row delete for permission assignment delete request")
+        events_with_assignment = []
         events_with_permission = []
         events_without_permission = []
 
         for event in self.events:
-            if event["permission_id"] != "":
+            if event.get("assignment_id", "") != "":
+                events_with_assignment.append(event)
+            elif event["permission_id"] != "":
                 events_with_permission.append(event)
             else:
                 events_without_permission.append(event)
 
+        if events_with_assignment:
+            self.executemany_delete_for_events(
+                [
+                    "assignment_id",
+                    "service_instance_id",
+                    "tenancy_id",
+                ],
+                events=events_with_assignment,
+                require_newer_event=True,
+            )
         if events_with_permission:
             self.executemany_delete_for_events(
                 [
@@ -76,6 +89,7 @@ class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQuery
                     "tenancy_id",
                 ],
                 events=events_with_permission,
+                require_newer_event=True,
             )
         if events_without_permission:
             self.executemany_delete_for_events(
@@ -85,6 +99,7 @@ class PermissionAssignmentStateDeleteQueryBuilder(PermissionAssignmentStateQuery
                     "tenancy_id",
                 ],
                 events=events_without_permission,
+                require_newer_event=True,
             )
 
 
