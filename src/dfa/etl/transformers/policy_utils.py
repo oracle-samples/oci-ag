@@ -205,11 +205,10 @@ def parse_policy_statement(line: str) -> Dict[str, Any]:
 
     # Base score from action/resource/scope per reviewed guideline.
     score = _base_score(primary_verb, resource_breadth, scope_kind)
-    if score >= 4:
-        reasons.append(
-            f"High score from action/resource/scope "
-            f'(action={primary_verb},resource="{resource_phrase}", scope="{scope_phrase}")'
-        )
+    reasons.append(
+        f"Base score {score} from action/resource/scope "
+        f'(action={primary_verb}, resource="{resource_phrase}", scope="{scope_phrase}")'
+    )
 
     # Cross-tenancy trust and condition adjustments are independent.
     if cross_tenancy:

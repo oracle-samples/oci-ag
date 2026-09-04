@@ -72,6 +72,23 @@ def test_unconditioned_tenancy_family_manage_grants():
         assert attrs.get("permissive_score") == expected, statement
 
 
+def test_every_parsed_score_has_a_reason():
+    statements = [
+        "allow group readers to use objects in tenancy",
+        "allow group readers to inspect buckets in compartment apps",
+        "allow group operators to manage key-family in tenancy",
+        "allow group operators to manage objects in tenancy where target.compartment.name = 'apps'",
+    ]
+
+    transformer = CloudPolicyEventTransformer("cloud_policy", "CREATE")
+    for statement in statements:
+        rows = transformer.transform_raw_event({"id": "reason-policy", "statement": statement})
+        attrs = json.loads(rows[0].get("attributes") or "{}")
+        assert attrs.get("permissive_score") in {1, 2, 3, 4, 5}, statement
+        assert attrs.get("reasons"), statement
+        assert "Base score" in attrs["reasons"], statement
+
+
 def test_all_patterns_in_csv_match_expected_scores():
     csv_path = "tests/dfa/etl/test_data/policy/anti-pattern.cleaned.csv"
     load_test_cases_from_csv(csv_path)
