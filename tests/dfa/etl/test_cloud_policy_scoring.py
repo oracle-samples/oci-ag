@@ -8,7 +8,7 @@ import re
 from dfa.etl.transformers.cloud_policy import CloudPolicyEventTransformer
 
 
-def test_one_example():
+def test_dynamic_group_manage_in_compartment_scores_four():
     transformer = CloudPolicyEventTransformer("cloud_policy", "CREATE")
     raw_event = {
         "id": "pol-8",
@@ -17,7 +17,59 @@ def test_one_example():
     }
     rows = transformer.transform_raw_event(raw_event)
     attrs = json.loads(rows[0].get("attributes") or "{}")
-    assert attrs.get("permissive_score") == 5
+    assert attrs.get("permissive_score") == 4
+
+
+def test_reviewed_policy_score_transitions():
+    cases = [
+        ("allow group admins to manage all-resources in compartment apps", 4),
+        ("allow group readers to use objects in tenancy", 2),
+        (
+            "allow group readers to use objects in tenancy " "where target.compartment.name = /apps-*/",
+            1,
+        ),
+        ("endorse group operators to use secret-family in tenancy external", 4),
+        (
+            "allow group operators to manage volume-family in tenancy " "where target.compartment.name = /apps-*/",
+            3,
+        ),
+        ("allow dynamic-group workers to manage objects in tenancy", 5),
+        ("allow service objectstorage to manage objects in tenancy", 5),
+        (
+            "endorse any-user to {OBJECT_READ} in any-tenancy " "where request.principal.type = 'workload'",
+            5,
+        ),
+    ]
+
+    transformer = CloudPolicyEventTransformer("cloud_policy", "CREATE")
+    for statement, expected in cases:
+        rows = transformer.transform_raw_event({"id": "reviewed-policy", "statement": statement})
+        attrs = json.loads(rows[0].get("attributes") or "{}")
+        assert attrs.get("permissive_score") == expected, statement
+
+
+def test_unconditioned_tenancy_family_manage_grants():
+    cases = [
+        ("allow group agents-service to manage object-family in tenancy", 5),
+        ("allow group core-service-group to manage repos in tenancy", 5),
+        ("allow group service-managers to manage cloud-guard-family in tenancy", 5),
+        ("allow group admins to manage recovery-service-family in tenancy", 5),
+        ("allow group GBUDS-ITOps to manage ai-service-speech-family in tenancy", 5),
+        ("allow group pipeline-serviceaccounts to manage object-family in tenancy", 5),
+        ("allow group admins to manage serviceconnectors in tenancy", 4),
+        ("allow group operators to manage key-family in tenancy", 5),
+        ("allow group operators to manage objects in tenancy", 4),
+        (
+            "allow group agents-service to manage object-family in tenancy " "where target.compartment.name = /apps-*/",
+            3,
+        ),
+    ]
+
+    transformer = CloudPolicyEventTransformer("cloud_policy", "CREATE")
+    for statement, expected in cases:
+        rows = transformer.transform_raw_event({"id": "service-policy", "statement": statement})
+        attrs = json.loads(rows[0].get("attributes") or "{}")
+        assert attrs.get("permissive_score") == expected, statement
 
 
 def test_all_patterns_in_csv_match_expected_scores():

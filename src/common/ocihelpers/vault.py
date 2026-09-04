@@ -393,6 +393,22 @@ class DfaBaseSecret:
 
         return True
 
+    def _update_secret_value(self, secret_ocid, secret_value, content_name="dfa_user_base64"):
+        """Create a new current version for an existing OCI Vault secret."""
+        response = self.__get_vault_client().update_secret(
+            secret_id=secret_ocid,
+            update_secret_details=oci.vault.models.UpdateSecretDetails(
+                secret_content=oci.vault.models.Base64SecretContentDetails(
+                    content_type="BASE64",
+                    name=content_name,
+                    stage="CURRENT",
+                    content=base64.b64encode(secret_value.encode("utf-8")).decode("ascii"),
+                )
+            ),
+        )
+        self._secret_value_cache[secret_ocid] = secret_value
+        return response.data
+
 
 class AdwSecrets(DfaBaseSecret):
     admin_password_name = None
@@ -431,6 +447,17 @@ class AdwSecrets(DfaBaseSecret):
             }
         )
         return self._create_secret(secret_name, material)
+
+    def update_connection_password(self, password, secret_ocid=None):
+        """Store ``password`` in a new version of the consolidated connection secret."""
+        secret_ocid = secret_ocid or os.getenv("DFA_ADW_CONNECTION_SECRET_OCID")
+        if not secret_ocid:
+            raise ValueError("DFA_ADW_CONNECTION_SECRET_OCID must be configured")
+
+        material = self.get_connection_material()
+        material["dfa_user_password"] = password
+        material["wallet"] = base64.b64encode(material["wallet"]).decode("ascii")
+        return self._update_secret_value(secret_ocid, json.dumps(material), "dfa_connection_base64")
 
     def _get_secret_ocid_by_name(self, secret_name):
         return self._get_secret_ocid(secret_name)
