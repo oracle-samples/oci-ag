@@ -25,18 +25,18 @@ def test_reviewed_policy_score_transitions():
         ("allow group admins to manage all-resources in compartment apps", 4),
         ("allow group readers to use objects in tenancy", 2),
         (
-            "allow group readers to use objects in tenancy " "where target.compartment.name = /apps-*/",
+            "allow group readers to use objects in tenancy " + "where target.compartment.name = /apps-*/",
             1,
         ),
         ("endorse group operators to use secret-family in tenancy external", 4),
         (
-            "allow group operators to manage volume-family in tenancy " "where target.compartment.name = /apps-*/",
+            "allow group operators to manage volume-family in tenancy " + "where target.compartment.name = /apps-*/",
             3,
         ),
         ("allow dynamic-group workers to manage objects in tenancy", 5),
         ("allow service objectstorage to manage objects in tenancy", 5),
         (
-            "endorse any-user to {OBJECT_READ} in any-tenancy " "where request.principal.type = 'workload'",
+            "endorse any-user to {OBJECT_READ} in any-tenancy " + "where request.principal.type = 'workload'",
             5,
         ),
     ]
@@ -60,7 +60,8 @@ def test_unconditioned_tenancy_family_manage_grants():
         ("allow group operators to manage key-family in tenancy", 5),
         ("allow group operators to manage objects in tenancy", 4),
         (
-            "allow group agents-service to manage object-family in tenancy " "where target.compartment.name = /apps-*/",
+            "allow group agents-service to manage object-family in tenancy "
+            + "where target.compartment.name = /apps-*/",
             3,
         ),
     ]
@@ -91,58 +92,74 @@ def test_every_parsed_score_has_a_reason():
 
 def test_all_patterns_in_csv_match_expected_scores():
     csv_path = "tests/dfa/etl/test_data/policy/anti-pattern.cleaned.csv"
-    load_test_cases_from_csv(csv_path)
+    assert load_test_cases_from_csv(csv_path) > 0
     csv_path = "tests/dfa/etl/test_data/policy/policy_examples.csv"
-    load_test_cases_from_csv(csv_path)
+    assert load_test_cases_from_csv(csv_path, expected_case_count=546) == 546
 
 
-def load_test_cases_from_csv(csv_path):
+def _policy_score_csv_columns(fieldnames, csv_path):
+    fieldnames = set(fieldnames or [])
+    if {"statement", "permissive_score"}.issubset(fieldnames):
+        return "statement", "permissive_score"
+    raise AssertionError(f"Unsupported policy score CSV columns in {csv_path}: {sorted(fieldnames)}")
+
+
+def _expected_scores(score_str, exact_score):
+    if exact_score:
+        return {int(score_str)}
+    digits = [int(ch) for ch in score_str if ch.isdigit()]
+    if not digits:
+        return set()
+    return {1, 2} if any(score in (1, 2) for score in digits) else set(digits)
+
+
+def _transformed_policy_score(transformer, pattern):
+    rows = transformer.transform_raw_event({"id": "csv-pol", "statement": pattern})
+    assert len(rows) >= 1
+    attrs = json.loads(rows[0].get("attributes") or "{}")
+    return attrs.get("permissive_score")
+
+
+def _read_policy_score_csv(csv_path):
+    with open(csv_path, "rb") as source:
+        raw = source.read()
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("latin-1", errors="ignore")
+
+
+def load_test_cases_from_csv(csv_path, expected_case_count=None):
     transformer = CloudPolicyEventTransformer("cloud_policy", "CREATE")
 
     # Read with tolerant decoding (CSV may contain non-UTF8 characters like 'Ð')
-    with open(csv_path, "rb") as fb:
-        raw = fb.read()
-    try:
-        text = raw.decode("utf-8")
-    except UnicodeDecodeError:
-        text = raw.decode("latin-1", errors="ignore")
+    reader = csv.DictReader(io.StringIO(_read_policy_score_csv(csv_path)))
+    pattern_column, score_column = _policy_score_csv_columns(reader.fieldnames, csv_path)
+    exact_score = score_column == "permissive_score"
 
-    reader = csv.DictReader(io.StringIO(text))
+    tested_case_count = 0
+    mismatches = []
     for row in reader:
-        pattern = (row.get("Pattern", "") or "").strip()
-        score_str = (row.get("Permissive Score", "") or "").strip()
+        assert None not in row, f"Malformed CSV row in {csv_path}: {row}"
+        pattern = (row.get(pattern_column, "") or "").strip()
+        score_str = (row.get(score_column, "") or "").strip()
         if not pattern or not score_str:
             continue
         # Skip narrative-only rows that do not contain an actionable policy grammar
-        if not re.search(r"\b(allow|admit)\b", pattern, re.IGNORECASE):
+        if not re.search(r"\b(allow|admit|endorse)\b", pattern, re.IGNORECASE):
             continue
-        # Extract digits from the score cell
-        digits = [int(ch) for ch in score_str if ch.isdigit()]
-        if not digits:
+        expected = _expected_scores(score_str, exact_score)
+        if not expected:
             # Skip rows without a concrete numeric score
             continue
-        expected = {1, 2} if any(score in (1, 2) for score in digits) else set(digits)
+        tested_case_count += 1
+        got = _transformed_policy_score(transformer, pattern)
+        if got not in expected:
+            mismatches.append(f"Pattern '{pattern}' expected score {sorted(expected)} but got {got}")
 
-        # Choose verb based on pattern text to better reflect the rule intent
-        pl = pattern.lower()
-        verb = "MANAGE"
-        if re.search(r"\bread\b", pl):
-            verb = "READ"
-        elif re.search(r"\buse\b", pl):
-            verb = "USE"
-        elif re.search(r"\binspect\b", pl):
-            verb = "INSPECT"
-
-        # Build a minimal event embedding the CSV pattern into 'statement'.
-        raw_event = {
-            "id": "csv-pol",
-            "statement": pattern,
-            "verb": verb,
-        }
-
-        rows = transformer.transform_raw_event(raw_event)
-        assert len(rows) >= 1
-        row0 = rows[0]
-        attrs = json.loads(row0.get("attributes") or "{}")
-        got = attrs.get("permissive_score")
-        assert got in expected, f"Pattern '{pattern}' expected score {sorted(expected)} but got {got}"
+    if expected_case_count is not None:
+        assert (
+            tested_case_count == expected_case_count
+        ), f"Expected {expected_case_count} policy cases in {csv_path}, executed {tested_case_count}"
+    assert not mismatches, f"{len(mismatches)} score mismatches in {csv_path}:\n" + "\n".join(mismatches[:20])
+    return tested_case_count
