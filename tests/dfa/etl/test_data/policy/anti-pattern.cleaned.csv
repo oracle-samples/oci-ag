@@ -1,4 +1,4 @@
-Pattern,Permissive Score
+statement,permissive_score
 admit any-user from any-tenancy to manage <resource-family> in tenancy,5
 admit any-user from any-tenancy to manage all-resources in tenancy,5
 admit group BOAT of tenancy <internal> to manage all-resources in tenancy,5
