@@ -46,6 +46,7 @@ from dfa.adw.tables.policy_statement_resource_mapping import (
 )
 from dfa.adw.tables.resource import ResourceStateTable, ResourceTimeSeriesTable
 from dfa.adw.tables.role import RoleStateTable, RoleTimeSeriesTable
+from dfa.adw.tables.system_events import SystemEventsTimeSeriesTable
 
 
 @pytest.fixture(autouse=True)
@@ -262,6 +263,7 @@ def test_permission_assignment_unique_constraint_is_backed_by_its_index():
 def test_event_timestamp_indexes_cover_all_requested_tables():
     expected_indexes = {
         "AUDIT_EVENTS": "DFA_AE_ET_IDX",
+        "SYSTEM_EVENTS": "DFA_SE_ET_IDX",
         "IDENTITY_STATE": "DFA_ID_ST_ET_IDX",
         "PERMISSION_ASSIGNMENT_STATE": "DFA_PA_ST_ET_IDX",
         "GLOBAL_IDENTITY_COLLECTION_STATE": "DFA_GIC_ST_ET_IDX",
@@ -300,6 +302,7 @@ def test_event_timestamp_indexes_cover_all_requested_tables():
             table
             for table in [
                 AuditEventsTable(),
+                SystemEventsTimeSeriesTable(),
                 AccessBundleStateTable(),
                 AccessBundleTimeSeriesTable(),
                 AccessGuardrailStateTable(),
@@ -335,10 +338,22 @@ def test_event_timestamp_indexes_cover_all_requested_tables():
         )
         if table is not None:
             definition = table.get_index_definition_details()[0]
-            assert definition == {
+            expected_definition = {
                 "name": index_name,
                 "columns": ["EVENT_TIMESTAMP", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
             }
+            if table_name == "SYSTEM_EVENTS":
+                expected_definition["expressions"] = {"EVENT_TIMESTAMP": 'SYS_EXTRACT_UTC("EVENT_TIMESTAMP")'}
+            assert definition == expected_definition
+
+
+def test_system_events_index_uses_utc_timestamp_expression():
+    table = SystemEventsTimeSeriesTable()
+    ddl = table._build_index_ddl(table.get_index_definition_details()[0])
+    assert _normalize_sql(ddl) == (
+        "CREATE INDEX DFA.DFA_SE_ET_IDX ON DFA.SYSTEM_EVENTS "
+        '(SYS_EXTRACT_UTC("EVENT_TIMESTAMP"), "SERVICE_INSTANCE_ID", "TENANCY_ID")'
+    )
 
 
 def test_event_timestamp_index_ddl_does_not_include_a_literal_backslash():

@@ -19,6 +19,7 @@ class BaseTable(ABC):
     _ensured_index_names: ClassVar[set[str]] = set()
     _event_timestamp_index_names: ClassVar[dict[str, str]] = {
         "AUDIT_EVENTS": "DFA_AE_ET_IDX",
+        "SYSTEM_EVENTS": "DFA_SE_ET_IDX",
         "IDENTITY_STATE": "DFA_ID_ST_ET_IDX",
         "PERMISSION_ASSIGNMENT_STATE": "DFA_PA_ST_ET_IDX",
         "GLOBAL_IDENTITY_COLLECTION_STATE": "DFA_GIC_ST_ET_IDX",
@@ -98,7 +99,8 @@ class BaseTable(ABC):
         ]
 
     def _build_index_ddl(self, index_definition):
-        index_columns_ddl = '"' + '", "'.join(index_definition["columns"]) + '"'
+        expressions = index_definition.get("expressions", {})
+        index_columns_ddl = ", ".join(expressions.get(column, f'"{column}"') for column in index_definition["columns"])
         return f"""
             CREATE INDEX {self.get_schema()}.{index_definition["name"]} ON \
 {self.get_schema()}.{self.get_table_name()} ({index_columns_ddl})

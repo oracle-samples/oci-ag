@@ -9,7 +9,7 @@ from common.logger.logger import Logger
 from common.ocihelpers.stream import DataEnablementStream
 from dfa.adw.connection import AdwConnection
 from dfa.bootstrap.envvars import bootstrap_base_environment_variables
-from dfa.etl.audit_transformer import AuditTransformer
+from dfa.etl.event_transformer import EventTransformer
 
 
 def handler(ctx, data: Optional[io.BytesIO] = None):
@@ -26,7 +26,7 @@ def handler(ctx, data: Optional[io.BytesIO] = None):
         messages = DataEnablementStream.decode_connector_hub_source_stream_messages(messages)
         messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
 
-        transformer = AuditTransformer()
+        transformer = EventTransformer()
         transformer.transform_messages(messages)
         transformer.load_data()
 

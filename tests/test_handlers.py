@@ -49,7 +49,7 @@ def test_audit_handler_happy_path(monkeypatch):
         def load_data(self):
             return None
 
-    monkeypatch.setattr(audit_handler, "AuditTransformer", DummyTransformer)
+    monkeypatch.setattr(audit_handler, "EventTransformer", DummyTransformer)
 
     body = [{"value": json.dumps({"headers": {"messageType": "AUDIT", "operation": "CREATE"}})}]
     data = io.BytesIO(json.dumps(body).encode("utf-8"))
