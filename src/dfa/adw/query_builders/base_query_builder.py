@@ -13,12 +13,13 @@ from time import sleep
 from typing import Any, Optional, cast
 
 import oracledb
-from pypika import CustomFunction, Order, Parameter, Query, Table
+from pypika import Order, Parameter, Query, Table
 from pypika.functions import ToDate
+from pypika.terms import LiteralValue
 
 from common.logger.logger import Logger
 from dfa.adw.connection import AdwConnection
-from dfa.adw.tables.base_table import SnapshotBatchTrackerTable, StreamOffsetTrackerTable
+from dfa.adw.tables.base_table import BaseStateTable, SnapshotBatchTrackerTable, StreamOffsetTrackerTable
 
 
 class InsertManyQueryBuilder:
@@ -73,28 +74,26 @@ class UpdateManyQueryBuilder:
         if update_sql is None:
             return None
 
-        # Use Oracle DECODE for NULL-safe equality on executemany binds
-        decode = CustomFunction("DECODE", ["expr1", "expr2", "ret_equal", "ret_not_equal"])
+        normalize_key = BaseStateTable.nullable_unique_key_expression
         for where_column_name in where_columns:
             bind_name = where_column_name.upper()
             column = getattr(query_builder, bind_name)
             param = Parameter(f":{bind_name}")
             if where_column_name in nullable_columns:
-                # For nullable columns, treat NULL = NULL as a match using DECODE
-                update_sql = update_sql.where(decode(column, param, 1, 0) == 1)
+                # Match the function-based unique index expression for nullable keys.
+                update_sql = update_sql.where(normalize_key(column) == normalize_key(param))
             else:
                 # For non-nullable columns, simple equality is sufficient
                 update_sql = update_sql.where(column == param)
 
         # State-table events use an insert-first upsert. When an insert hits the
-        # unique key, only let the update fallback apply a strictly newer event.
-        # Equal timestamps are duplicate deliveries and older events must not
-        # overwrite newer state. Keep this conditional so the generic builder
+        # unique key, let the update fallback apply a newer or equal-timestamp event.
+        # Older events must not overwrite newer state. Keep this conditional so the generic builder
         # remains usable by callers that do not supply EVENT_TIMESTAMP.
         if self._event_timestamp_column in {column_name.lower() for column_name in event}:
             update_sql = update_sql.where(
                 getattr(query_builder, self._event_timestamp_column.upper())
-                < Parameter(f":{self._event_timestamp_column.upper()}")
+                <= Parameter(f":{self._event_timestamp_column.upper()}")
             )
 
         complete_update_stmt = update_sql.get_sql()
@@ -147,9 +146,12 @@ class MergeManyQueryBuilder:
 
         # Build ON clause with composite keys if needed
         on_conditions = []
+        normalize_key = BaseStateTable.nullable_unique_key_expression
         for k in where_columns:
             if k.lower() in nullable_cols:
-                on_conditions.append(f'DECODE(t."{k.upper()}", s."{k.upper()}", 1, 0) = 1')
+                target_key = normalize_key(LiteralValue(f't."{k.upper()}"'))
+                source_key = normalize_key(LiteralValue(f's."{k.upper()}"'))
+                on_conditions.append(f"{target_key.get_sql()} = {source_key.get_sql()}")
             else:
                 on_conditions.append(f't."{k.upper()}" = s."{k.upper()}"')
         on_clause = " AND ".join(on_conditions)
@@ -159,7 +161,7 @@ class MergeManyQueryBuilder:
             set_parts = [f't."{c.upper()}" = s."{c.upper()}"' for c in updatable_cols]
             update_clause = " WHEN MATCHED THEN UPDATE SET " + ", ".join(set_parts)
             if "event_timestamp" in {column.lower() for column in all_cols}:
-                update_clause += ' WHERE t."EVENT_TIMESTAMP" < s."EVENT_TIMESTAMP"'
+                update_clause += ' WHERE t."EVENT_TIMESTAMP" <= s."EVENT_TIMESTAMP"'
         else:
             # If nothing to update, skip UPDATE branch
             update_clause = ""
@@ -191,13 +193,13 @@ class DeleteManyQueryBuilder:
         where_columns = [col.lower() for col in where_columns]
         nullable_columns = [col.lower() for col in (nullable_columns or [])]
 
-        decode = CustomFunction("DECODE", ["expr1", "expr2", "ret_equal", "ret_not_equal"])
+        normalize_key = BaseStateTable.nullable_unique_key_expression
         for where_column_name in where_columns:
             bind_name = where_column_name.upper()
             column = getattr(query_builder, bind_name)
             param = Parameter(f":{bind_name}")
             if where_column_name in nullable_columns:
-                delete_sql = delete_sql.where(decode(column, param, 1, 0) == 1)
+                delete_sql = delete_sql.where(normalize_key(column) == normalize_key(param))
             else:
                 delete_sql = delete_sql.where(column == param)
 

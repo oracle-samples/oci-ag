@@ -7,6 +7,9 @@ from abc import ABC, abstractmethod
 from typing import ClassVar, Optional
 
 import oracledb
+from pypika import Field
+from pypika.functions import Coalesce
+from pypika.terms import Term
 
 from common.logger.logger import Logger
 from dfa.adw.connection import AdwConnection
@@ -274,6 +277,11 @@ class BaseStateTable(BaseTable, ABC):
     _ensured_delete_index_names: ClassVar[set[str]] = set()
     _nullable_unique_index_sentinel: ClassVar[str] = "__DFA_NULL__"
 
+    @classmethod
+    def nullable_unique_key_expression(cls, expression: Term) -> Coalesce:
+        """Normalize nullable keys identically in unique indexes and DML predicates."""
+        return Coalesce(expression, cls._nullable_unique_index_sentinel)
+
     @abstractmethod
     def get_unique_contraint_definition_details(self):
         pass
@@ -303,7 +311,7 @@ class BaseStateTable(BaseTable, ABC):
         quoted_column = f'"{column_name}"'
         if column_name.upper() not in nullable_columns:
             return quoted_column
-        return f"COALESCE({quoted_column}, '{self._nullable_unique_index_sentinel}')"
+        return self.nullable_unique_key_expression(Field(column_name)).get_sql(quote_char='"')
 
     def _build_unique_index_ddl(self):
 
