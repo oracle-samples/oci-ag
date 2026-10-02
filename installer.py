@@ -34,6 +34,7 @@ from dfa.adw.tables.policy import *
 from dfa.adw.tables.policy_statement_resource_mapping import *
 from dfa.adw.tables.resource import *
 from dfa.adw.tables.role import *
+from dfa.adw.tables.system_events import *
 from dfa.adw.user_schema import UserSchema
 from dfa.bootstrap.envvars import bootstrap_local_machine_environment_variables
 
@@ -70,6 +71,7 @@ def create_adw_tables():
     agrs_table = AccessGuardrailStateTable()
     aw_table = ApprovalWorkflowStateTable()
     aes_table = AuditEventsTable()
+    sets_table = SystemEventsTimeSeriesTable()
     ocs_table = OwnershipCollectionStateTable()
     oss_table = OrchestratedSystemStateTable()
 
@@ -109,6 +111,7 @@ def create_adw_tables():
             agrs_table.delete()
             aw_table.delete()
             aes_table.delete()
+            sets_table.delete()
             ocs_table.delete()
             oss_table.delete()
 
@@ -144,6 +147,7 @@ def create_adw_tables():
     agrs_table.create()
     aw_table.create()
     aes_table.create()
+    sets_table.create()
     ocs_table.create()
     oss_table.create()
 

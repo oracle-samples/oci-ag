@@ -13,7 +13,12 @@ from dfa.adw.query_builders.access_bundle import (
 from dfa.adw.query_builders.access_guardrail import AccessGuardrailStateDeleteQueryBuilder
 from dfa.adw.query_builders.approval_workflow import ApprovalWorkflowStateDeleteQueryBuilder
 from dfa.adw.query_builders.audit_events import AuditEventsStateCreateQueryBuilder
-from dfa.adw.query_builders.base_query_builder import BaseQueryBuilder, MergeManyQueryBuilder, UpdateManyQueryBuilder
+from dfa.adw.query_builders.base_query_builder import (
+    BaseQueryBuilder,
+    DeleteManyQueryBuilder,
+    MergeManyQueryBuilder,
+    UpdateManyQueryBuilder,
+)
 from dfa.adw.query_builders.cloud_policy import CloudPolicyStateDeleteQueryBuilder
 from dfa.adw.query_builders.identity import IdentityStateDeleteQueryBuilder, IdentityStateUpdateQueryBuilder
 from dfa.adw.query_builders.orchestrated_system import OrchestratedSystemStateDeleteQueryBuilder
@@ -46,6 +51,7 @@ from dfa.adw.tables.policy_statement_resource_mapping import (
 )
 from dfa.adw.tables.resource import ResourceStateTable, ResourceTimeSeriesTable
 from dfa.adw.tables.role import RoleStateTable, RoleTimeSeriesTable
+from dfa.adw.tables.system_events import SystemEventsTimeSeriesTable
 
 
 @pytest.fixture(autouse=True)
@@ -94,11 +100,11 @@ def test_update_many_nullable_none_uses_equality():
     norm = _normalize_sql(sql).lower()
     # basic shape
     assert "update" in norm and " where " in norm
-    # should NOT use DECODE when nullable_columns is None
-    assert "decode(" not in norm
+    assert '"id"=:id' in norm
+    assert "coalesce(" not in norm
 
 
-def test_update_many_nullable_lowercase_uses_decode_for_where():
+def test_update_many_nullable_lowercase_uses_index_expression_for_where():
     qb = Table("dummy")
     builder = UpdateManyQueryBuilder()
 
@@ -109,11 +115,10 @@ def test_update_many_nullable_lowercase_uses_decode_for_where():
     assert sql is not None
     norm = _normalize_sql(sql).upper()
     assert "UPDATE" in norm and " WHERE " in norm
-    # should use Oracle DECODE for NULL-safe equality on the where column
-    assert "DECODE(" in norm
+    assert "COALESCE(\"ID\",'__DFA_NULL__')=COALESCE(:ID,'__DFA_NULL__')" in norm
 
 
-def test_update_many_nullable_uppercase_uses_decode_for_where():
+def test_update_many_nullable_uppercase_uses_index_expression_for_where():
     qb = Table("dummy")
     builder = UpdateManyQueryBuilder()
 
@@ -124,11 +129,59 @@ def test_update_many_nullable_uppercase_uses_decode_for_where():
     assert sql is not None
     norm = _normalize_sql(sql).upper()
     assert "UPDATE" in norm and " WHERE " in norm
-    # still should engage DECODE because nullable list is case-insensitive
-    assert "DECODE(" in norm
+    assert "COALESCE(\"ID\",'__DFA_NULL__')=COALESCE(:ID,'__DFA_NULL__')" in norm
 
 
-def test_update_many_with_event_timestamp_only_updates_for_newer_event():
+@pytest.mark.parametrize("operation", ["update", "merge", "delete"])
+@pytest.mark.parametrize("sentinel", ["__DFA_NULL__", "custom'null"])
+def test_gic_nullable_key_predicate_matches_unique_index(operation, sentinel, monkeypatch):
+    monkeypatch.setattr(BaseStateTable, "_nullable_unique_index_sentinel", sentinel)
+    table = GlobalIdentityCollectionStateTable()
+    qb = Table(table.get_table_name())
+    qb.table_manager = table
+    keys = table.get_unique_contraint_definition_details()["columns"]
+    nullable = table.get_nullable_constraint_columns()
+    events = [
+        {
+            "id": "group-1",
+            "member_global_id": "",
+            "service_instance_id": "service-1",
+            "tenancy_id": "tenant-1",
+            "name": "Group",
+            "event_timestamp": "03-Aug-26 01:00:00.000000 PM",
+        }
+    ]
+    if operation == "delete":
+        sql = DeleteManyQueryBuilder().get_operation_sql(qb, keys, nullable, require_newer_event=True)
+    else:
+        builder = MergeManyQueryBuilder() if operation == "merge" else UpdateManyQueryBuilder()
+        sql = builder.get_operation_sql(qb, events, [], keys, nullable)
+
+    escaped_sentinel = sentinel.replace("'", "''")
+    expression = f"COALESCE(\"MEMBER_GLOBAL_ID\",'{escaped_sentinel}')"
+    compact = re.sub(r"\s+", "", sql)
+    assert expression in re.sub(r"\s+", "", table._build_unique_index_ddl())
+    if operation == "merge":
+        assert (
+            expression.replace('"MEMBER_GLOBAL_ID"', 't."MEMBER_GLOBAL_ID"')
+            + "="
+            + expression.replace('"MEMBER_GLOBAL_ID"', 's."MEMBER_GLOBAL_ID"')
+            in compact
+        )
+        assert 't."ID"=s."ID"' in compact
+        assert 't."SERVICE_INSTANCE_ID"=s."SERVICE_INSTANCE_ID"' in compact
+        assert 't."TENANCY_ID"=s."TENANCY_ID"' in compact
+        assert 't."EVENT_TIMESTAMP"<=s."EVENT_TIMESTAMP"' in compact
+    else:
+        assert expression + "=" + expression.replace('"MEMBER_GLOBAL_ID"', ":MEMBER_GLOBAL_ID") in compact
+        for key in ("ID", "SERVICE_INSTANCE_ID", "TENANCY_ID"):
+            assert f'"{key}"=:{key}' in compact
+        timestamp_operator = "<" if operation == "delete" else "<="
+        assert f'"EVENT_TIMESTAMP"{timestamp_operator}:EVENT_TIMESTAMP' in compact
+    assert "DECODE(" not in sql
+
+
+def test_update_many_with_event_timestamp_updates_for_newer_or_equal_event():
     qb = Table("dummy")
     builder = UpdateManyQueryBuilder()
 
@@ -148,7 +201,7 @@ def test_update_many_with_event_timestamp_only_updates_for_newer_event():
 
     assert sql is not None
     norm = _normalize_sql(sql).upper()
-    assert '"EVENT_TIMESTAMP"<:EVENT_TIMESTAMP' in norm
+    assert '"EVENT_TIMESTAMP"<=:EVENT_TIMESTAMP' in norm
 
 
 def test_update_many_without_event_timestamp_does_not_add_newer_event_predicate():
@@ -184,7 +237,7 @@ def test_merge_many_binds_clob_columns_directly():
     assert 'MERGE INTO "DFA"."DUMMY_TABLE"' in norm
 
 
-def test_merge_many_only_updates_for_newer_event_timestamp():
+def test_merge_many_updates_for_newer_or_equal_event_timestamp():
     qb = Table("dummy")
     qb.table_manager = MagicMock()
     qb.table_manager.get_schema.return_value = "dfa"
@@ -202,7 +255,7 @@ def test_merge_many_only_updates_for_newer_event_timestamp():
 
     norm = _normalize_sql(sql).upper()
     assert "WHEN MATCHED THEN UPDATE SET" in norm
-    assert 'WHERE T."EVENT_TIMESTAMP" < S."EVENT_TIMESTAMP"' in norm
+    assert 'WHERE T."EVENT_TIMESTAMP" <= S."EVENT_TIMESTAMP"' in norm
 
 
 def test_merge_many_without_event_timestamp_has_no_update_timestamp_predicate():
@@ -221,7 +274,7 @@ def test_merge_many_without_event_timestamp_has_no_update_timestamp_predicate():
 
     norm = _normalize_sql(sql).upper()
     assert "WHEN MATCHED THEN UPDATE SET" in norm
-    assert 'T."EVENT_TIMESTAMP" < S."EVENT_TIMESTAMP"' not in norm
+    assert "EVENT_TIMESTAMP" not in norm
 
 
 def test_nullable_unique_index_uses_function_based_columns():
@@ -230,7 +283,7 @@ def test_nullable_unique_index_uses_function_based_columns():
     index_ddl = _normalize_sql(table._build_unique_index_ddl())
     constraint_ddl = table._build_unique_constraint_ddl()
 
-    assert "COALESCE(\"ID\", '__DFA_NULL__')" in index_ddl
+    assert "COALESCE(\"ID\",'__DFA_NULL__')" in index_ddl
     assert '"TI_ID"' in index_ddl
     assert constraint_ddl == ""
 
@@ -262,6 +315,7 @@ def test_permission_assignment_unique_constraint_is_backed_by_its_index():
 def test_event_timestamp_indexes_cover_all_requested_tables():
     expected_indexes = {
         "AUDIT_EVENTS": "DFA_AE_ET_IDX",
+        "SYSTEM_EVENTS": "DFA_SE_ET_IDX",
         "IDENTITY_STATE": "DFA_ID_ST_ET_IDX",
         "PERMISSION_ASSIGNMENT_STATE": "DFA_PA_ST_ET_IDX",
         "GLOBAL_IDENTITY_COLLECTION_STATE": "DFA_GIC_ST_ET_IDX",
@@ -300,6 +354,7 @@ def test_event_timestamp_indexes_cover_all_requested_tables():
             table
             for table in [
                 AuditEventsTable(),
+                SystemEventsTimeSeriesTable(),
                 AccessBundleStateTable(),
                 AccessBundleTimeSeriesTable(),
                 AccessGuardrailStateTable(),
@@ -335,10 +390,22 @@ def test_event_timestamp_indexes_cover_all_requested_tables():
         )
         if table is not None:
             definition = table.get_index_definition_details()[0]
-            assert definition == {
+            expected_definition = {
                 "name": index_name,
                 "columns": ["EVENT_TIMESTAMP", "SERVICE_INSTANCE_ID", "TENANCY_ID"],
             }
+            if table_name == "SYSTEM_EVENTS":
+                expected_definition["expressions"] = {"EVENT_TIMESTAMP": 'SYS_EXTRACT_UTC("EVENT_TIMESTAMP")'}
+            assert definition == expected_definition
+
+
+def test_system_events_index_uses_utc_timestamp_expression():
+    table = SystemEventsTimeSeriesTable()
+    ddl = table._build_index_ddl(table.get_index_definition_details()[0])
+    assert _normalize_sql(ddl) == (
+        "CREATE INDEX DFA.DFA_SE_ET_IDX ON DFA.SYSTEM_EVENTS "
+        '(SYS_EXTRACT_UTC("EVENT_TIMESTAMP"), "SERVICE_INSTANCE_ID", "TENANCY_ID")'
+    )
 
 
 def test_event_timestamp_index_ddl_does_not_include_a_literal_backslash():

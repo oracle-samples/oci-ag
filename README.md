@@ -196,7 +196,9 @@ By default, the installer script will create the resources with prefix 'dfa'. Th
 Any variable ending in *_FUNCTION_PROVISIONED_CONCURRENCY is related to the provisioned concurrency units used by the OCI Functions. Adjust these values in config.ini as needed based on tenancy limits and amount of AG data. The concurrency units can be changed in OCI once the functions have been created by the script.
 </br>
 
-The `REPOSITORY_NAME` variable should match the OCI repository name used by the build script. The installer derives the image version from `pyproject.toml` and the current git commit, producing tags like `1.2-a1b2c3d`. To deploy a specific prebuilt image tag, set `DFA_IMAGE_VERSION` in the shell before running the installer.
+The `REPOSITORY_NAME` variable should match the OCI repository name used by the build script. The installer derives the image version from `pyproject.toml` and the current git commit, producing tags like `1.3-a1b2c3d`. To deploy a specific prebuilt image tag, set `DFA_IMAGE_VERSION` in the shell before running the installer.
+
+For existing deployments, follow the [1.3 release notes and database upgrade instructions](release-notes-1.3.md) before deploying the new image.
 </br>
 
 The `DFA_RECREATE_DFA_ADW_TABLES` variable should be set to false when running the script for the first time. This variable should be set to true if a table's schema or unique constraints have changed. Setting this variable to true will delete the existing DFA tables and will re-create them.
@@ -219,7 +221,7 @@ In the case you need to delete the OCI resources created by the installer script
 - Unit test backed examples:
   - File-based: tests/dfa/etl/test_file_transformer.py (uses sample JSONL in tests/dfa/etl/test_data/file/)
   - Stream-based: tests/dfa/etl/test_stream_transformer.py
-  - Audit events: tests/dfa/etl/test_audit_transformer.py
+  - Audit events: tests/dfa/etl/test_event_transformer.py
   - Run locally with coverage: `tox -e py312`
 - Quick local demo snippet:
   ```python
@@ -260,6 +262,17 @@ Core runtime environment variables:
   - `audit`, `stream`, `file`, `stream_to_ts`, `file_to_ts`
 - DFA_LOG_LEVEL: Optional log level for structured logs. Defaults to `INFO`. Examples: `DEBUG`, `INFO`, `WARNING`.
 - DFA_BATCH_SIZE: Optional batch size for load operations. Defaults to `10000`.
+
+`SYSTEM_EVENTS` version `1.0` (`CREATE` envelopes) is processed by the existing
+`audit` handler and `EventTransformer` alongside audit events, using the same OCI Function and stream
+connector. Audit events are written to `AUDIT_EVENTS`; system events are appended
+to `SYSTEM_EVENTS`. The installer creates both tables independently of
+`CREATE_TIME_SERIES`. Generic stream and file handlers skip system events,
+preventing duplicate ingestion. Both event types share the audit function's
+capacity and retry boundary.
+`EVENT_TIMESTAMP` stores the envelope time, `SOURCE_EVENT_TIMESTAMP` preserves the
+original timestamp including nanoseconds, and `DATA` stores the full nested JSON
+in a CLOB. Source event metadata is stored in separate columns.
 
 ADW connection and wallet:
 - DFA_ADW_DFA_SCHEMA: Database username (schema) for DFA.
@@ -304,7 +317,7 @@ This repository includes practical examples you can use to understand DFA’s ET
     - File-based examples: tests/dfa/etl/test_file_transformer.py
       - Uses sample JSONL in tests/dfa/etl/test_data/file/*.jsonl (e.g., permission.jsonl, identity.jsonl)
     - Stream-based examples: tests/dfa/etl/test_stream_transformer.py
-    - Audit events example: tests/dfa/etl/test_audit_transformer.py
+    - Audit events example: tests/dfa/etl/test_event_transformer.py
   - Run with coverage:
     tox -e py312
 

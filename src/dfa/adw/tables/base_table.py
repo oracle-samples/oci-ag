@@ -7,6 +7,9 @@ from abc import ABC, abstractmethod
 from typing import ClassVar, Optional
 
 import oracledb
+from pypika import Field
+from pypika.functions import Coalesce
+from pypika.terms import Term
 
 from common.logger.logger import Logger
 from dfa.adw.connection import AdwConnection
@@ -19,6 +22,7 @@ class BaseTable(ABC):
     _ensured_index_names: ClassVar[set[str]] = set()
     _event_timestamp_index_names: ClassVar[dict[str, str]] = {
         "AUDIT_EVENTS": "DFA_AE_ET_IDX",
+        "SYSTEM_EVENTS": "DFA_SE_ET_IDX",
         "IDENTITY_STATE": "DFA_ID_ST_ET_IDX",
         "PERMISSION_ASSIGNMENT_STATE": "DFA_PA_ST_ET_IDX",
         "GLOBAL_IDENTITY_COLLECTION_STATE": "DFA_GIC_ST_ET_IDX",
@@ -98,7 +102,8 @@ class BaseTable(ABC):
         ]
 
     def _build_index_ddl(self, index_definition):
-        index_columns_ddl = '"' + '", "'.join(index_definition["columns"]) + '"'
+        expressions = index_definition.get("expressions", {})
+        index_columns_ddl = ", ".join(expressions.get(column, f'"{column}"') for column in index_definition["columns"])
         return f"""
             CREATE INDEX {self.get_schema()}.{index_definition["name"]} ON \
 {self.get_schema()}.{self.get_table_name()} ({index_columns_ddl})
@@ -272,6 +277,11 @@ class BaseStateTable(BaseTable, ABC):
     _ensured_delete_index_names: ClassVar[set[str]] = set()
     _nullable_unique_index_sentinel: ClassVar[str] = "__DFA_NULL__"
 
+    @classmethod
+    def nullable_unique_key_expression(cls, expression: Term) -> Coalesce:
+        """Normalize nullable keys identically in unique indexes and DML predicates."""
+        return Coalesce(expression, cls._nullable_unique_index_sentinel)
+
     @abstractmethod
     def get_unique_contraint_definition_details(self):
         pass
@@ -301,7 +311,7 @@ class BaseStateTable(BaseTable, ABC):
         quoted_column = f'"{column_name}"'
         if column_name.upper() not in nullable_columns:
             return quoted_column
-        return f"COALESCE({quoted_column}, '{self._nullable_unique_index_sentinel}')"
+        return self.nullable_unique_key_expression(Field(column_name)).get_sql(quote_char='"')
 
     def _build_unique_index_ddl(self):
 

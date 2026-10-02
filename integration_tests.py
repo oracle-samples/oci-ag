@@ -8,7 +8,7 @@ from installer import setup
 
 from common.ocihelpers.stream import DataEnablementStream
 from dfa.bootstrap.envvars import bootstrap_local_machine_environment_variables
-from dfa.etl.audit_transformer import AuditTransformer
+from dfa.etl.event_transformer import EventTransformer
 from dfa.etl.file_transformer import FileTransformer
 from dfa.etl.stream_transformer import StreamTransformer
 
@@ -40,7 +40,7 @@ def test_file_transformer(data_type: str, is_timeseries: bool = False):
     transformer.load_data()
 
 
-def test_audit_transformer():
+def test_event_transformer():
     messages = []
     with open("tests/dfa/etl/test_data/stream/audit_events.json", "r") as file:
         message = {}
@@ -49,7 +49,7 @@ def test_audit_transformer():
         messages = DataEnablementStream.decode_source_stream_messages(messages)
         messages = DataEnablementStream.sort_connector_hub_source_stream_messages(messages)
 
-    transformer = AuditTransformer()
+    transformer = EventTransformer()
     transformer._stream_manager.get_sorted_latest_events = MagicMock(return_value=messages)
 
     transformer.transform_messages(messages)
@@ -145,7 +145,7 @@ def main():
     # - set DFA_RECREATE_DFA_ADW_TABLES to True in order to recreate the tables
     # setup(application_ocid=os.getenv('DFA_APPLICATION_OCID')
 
-    test_audit_transformer()
+    test_event_transformer()
     test_identity_stream_transformer()
     test_permission_assignment_stream_transformer()
     test_policy_resource_mapping_stream_transformer()

@@ -5,10 +5,10 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from common.ocihelpers.stream import DataEnablementStream
-from dfa.etl.audit_transformer import AuditTransformer
+from dfa.etl.event_transformer import EventTransformer
 
 
-class TestAuditTransformer(unittest.TestCase):
+class TestEventTransformer(unittest.TestCase):
 
     def setUp(self):
         self.adw_patcher = patch("dfa.adw.connection.AdwConnection", autospec=True)
@@ -19,7 +19,7 @@ class TestAuditTransformer(unittest.TestCase):
         self.mock_stream = self.patcher_stream.start()
         self.addCleanup(self.patcher_stream.stop)
 
-        self.transformer = AuditTransformer()
+        self.transformer = EventTransformer()
 
     def test_is_valid_object_type(self):
         self.assertTrue(self.transformer.is_valid_object_type("AUDIT_EVENTS"))
